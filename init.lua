@@ -769,6 +769,9 @@ require('lazy').setup({
         -- See :h blink-cmp-config-keymap for defining your own keymap
         preset = 'default',
 
+        ['<Tab>'] = { 'accept', 'fallback' },
+        ['<S-Tab>'] = { 'select_prev', 'fallback' },
+
         -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
         --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
       },
@@ -881,6 +884,56 @@ require('lazy').setup({
     end,
   },
 
+
+  {
+    "okuuva/auto-save.nvim",
+    cmd = "ASToggle", 
+    event = { "InsertLeave", "TextChanged" }, 
+    opts = {
+      -- This will use the default settings:
+      -- It automatically saves when you leave Insert mode or stop typing.
+    },
+  },
+
+
+  {
+  "pmizio/typescript-tools.nvim",
+  dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+  opts = {},
+  },
+
+
+{
+    "CRAG666/code_runner.nvim",
+    config = function()
+      require('code_runner').setup({
+        -- Choose your preferred mode: "float", "term", or "tab"
+        mode = "term",
+        focus = true,
+        startinsert = true,
+
+        -- ADD THE FILETYPE BLOCK HERE:
+        filetype = {
+          javascript = "bun",
+          python = "python3 -u",
+          typescript = "bun",
+          typescriptreact = "bun",
+          
+          -- You can keep your compiled languages here too if you use them:
+          cpp = { "cd $dir && g++ $fileName -o $fileNameWithoutExt && ./$fileNameWithoutExt" },
+          c = { "cd $dir && gcc $fileName -o $fileNameWithoutExt && ./$fileNameWithoutExt" },
+        },
+
+
+      })
+    end,
+    keys = {
+      -- You can change <leader>r to whatever shortcut you prefer
+      { "<leader>r", ":RunCode<CR>", desc = "[R]un [C]ode" },
+      { "<leader>rf", ":RunFile<CR>", desc = "[R]un [F]ile" },
+    },
+  },
+
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     lazy = false,
@@ -988,3 +1041,6 @@ require('lazy').setup({
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+
+
+
