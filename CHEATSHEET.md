@@ -9,6 +9,9 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
 | `<leader>e` | Toggle File Explorer | `neo-tree.nvim` |
+| `<leader>tt` | Toggle Bottom Terminal | `toggleterm.nvim` |
+| `<C-\>` | Toggle Terminal (Any mode) | `toggleterm.nvim` |
+| `<leader>t1/2/3`| Switch to Terminal 1, 2, or 3 | `toggleterm.nvim` |
 | `<S-h>` | Previous Tab / Buffer | `bufferline.nvim` |
 | `<S-l>` | Next Tab / Buffer | `bufferline.nvim` |
 | `<leader>bd` | Delete Current Buffer | `bufferline.nvim` |
@@ -20,6 +23,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | Keybinding | Action |
 | :--- | :--- |
 | `<leader>sf` | Search Files |
+| `<leader>sp` | Search Projects (Switch project) |
 | `<leader>sg` | Search by Grep (Search across files) |
 | `<leader>sw` | Search current Word |
 | `<leader>sh` | Search Help tags |
@@ -39,6 +43,20 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<leader>f` | Format buffer | `conform.nvim` |
 | `<leader>r` | Run Code | `code_runner.nvim` |
 | `<leader>rf` | Run File | `code_runner.nvim` |
+
+## 🌿 Git Integration
+
+| Keybinding | Action | Plugin |
+| :--- | :--- | :--- |
+| `<leader>gs` | Git Status (Full UI) | `neogit` |
+| `<leader>gc` | Git Commit | `neogit` |
+| `<leader>gp` | Git Push | `neogit` |
+| `[c` | Previous Hunk | `gitsigns` |
+| `]c` | Next Hunk | `gitsigns` |
+| `<leader>hs` | Stage Hunk | `gitsigns` |
+| `<leader>hr` | Reset Hunk | `gitsigns` |
+| `<leader>hp` | Preview Hunk | `gitsigns` |
+| `<leader>hb` | Blame Line | `gitsigns` |
 
 ## 🧠 LSP (Language Server Protocol)
 
@@ -62,6 +80,12 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
     * `saiw)` - **S**urround **A**dd **I**nner **W**ord **)** Paren
     * `sd'` - **S**urround **D**elete **'** quotes
     * `sr)'` - **S**urround **R**eplace **)** with **'**
+
+## 🐚 Terminal Navigation
+
+When inside the terminal:
+* `<Esc>` or `jk`: Exit terminal mode (return to normal mode).
+* `<C-h/j/k/l>`: Switch directly to another window from terminal mode.
 
 ---
 *Generated based on your `init.lua` settings.*

@@ -402,12 +402,14 @@ require('lazy').setup({
       -- Enable Telescope extensions if they are installed
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
+      pcall(require('telescope').load_extension, 'projects')
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>sp', function() require('telescope').extensions.projects.projects {} end, { desc = '[S]earch [P]rojects' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set({ 'n', 'v' }, '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
@@ -797,11 +799,8 @@ require('lazy').setup({
       -- Blink.cmp includes an optional, recommended rust fuzzy matcher,
       -- which automatically downloads a prebuilt binary when enabled.
       --
-      -- By default, we use the Lua implementation instead, but you may enable
-      -- the rust implementation via `'prefer_rust_with_warning'`
-      --
       -- See :h blink-cmp-config-fuzzy for more information
-      fuzzy = { implementation = 'lua' },
+      -- fuzzy = { implementation = 'lua' },
 
       -- Shows a signature help window while you type arguments for a function
       signature = { enabled = true },
@@ -1028,6 +1027,59 @@ require('lazy').setup({
   },
 
   {
+    'akinsho/toggleterm.nvim',
+    version = "*",
+    opts = {
+      open_mapping = [[<c-\>]],
+      direction = 'horizontal',
+      size = 15,
+      hide_numbers = true,
+      shade_terminals = true,
+      start_in_insert = true,
+      insert_mappings = true,
+      persist_size = true,
+      close_on_exit = true,
+    },
+    keys = {
+      { "<leader>tt", "<cmd>ToggleTerm<cr>", desc = "[T]oggle [T]erminal" },
+      { "<leader>t1", "<cmd>1ToggleTerm<cr>", desc = "Terminal [1]" },
+      { "<leader>t2", "<cmd>2ToggleTerm<cr>", desc = "Terminal [2]" },
+      { "<leader>t3", "<cmd>3ToggleTerm<cr>", desc = "Terminal [3]" },
+      { "<leader>tn", "<cmd>TermExec cmd=''<cr>", desc = "[T]erminal [N]ew" },
+    },
+  },
+
+  {
+    "ahmedkhalf/project.nvim",
+    config = function()
+      require("project_nvim").setup({
+        -- Methods of detecting the root directory. **"lsp"** uses the native neovim lsp,
+        -- while **"pattern"** uses vim-rooter like glob pattern matching. Here order matters:
+        -- if one is not detected, the other is used as fallback. You can also delete or
+        -- append to these "lsp" and "pattern" settings.
+        detection_methods = { "lsp", "pattern" },
+        -- patterns used to detect root dir, when "pattern" is in detection_methods
+        patterns = { ".git", "_darcs", ".hg", ".bzr", ".svn", "Makefile", "package.json" },
+      })
+    end,
+  },
+
+  {
+    "NeogitOrg/neogit",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "sindrets/diffview.nvim",
+      "nvim-telescope/telescope.nvim",
+    },
+    config = true,
+    keys = {
+      { "<leader>gs", "<cmd>Neogit<cr>", desc = "[G]it [S]tatus (Neogit)" },
+      { "<leader>gc", "<cmd>Neogit commit<cr>", desc = "[G]it [C]ommit" },
+      { "<leader>gp", "<cmd>Neogit push<cr>", desc = "[G]it [P]ush" },
+    },
+  },
+
+  {
     "folke/flash.nvim",
     event = "VeryLazy",
     opts = {},
@@ -1064,6 +1116,7 @@ require('lazy').setup({
   -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
   -- you can continue same window with `<space>sr` which resumes last telescope search
 }, { ---@diagnostic disable-line: missing-fields
+  rocks = { enabled = false },
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
     -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
@@ -1087,6 +1140,22 @@ require('lazy').setup({
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+
+-- [[ Terminal Keymaps ]]
+-- Better navigation when in terminal mode
+function _G.set_terminal_keymaps()
+  local opts = {buffer = 0}
+  vim.keymap.set('t', '<esc>', [[<C-\><C-n>]], opts)
+  vim.keymap.set('t', 'jk', [[<C-\><C-n>]], opts)
+  vim.keymap.set('t', '<C-h>', [[<Cmd>wincmd h<CR>]], opts)
+  vim.keymap.set('t', '<C-j>', [[<Cmd>wincmd j<CR>]], opts)
+  vim.keymap.set('t', '<C-k>', [[<Cmd>wincmd k<CR>]], opts)
+  vim.keymap.set('t', '<C-l>', [[<Cmd>wincmd l<CR>]], opts)
+  vim.keymap.set('t', '<C-w>', [[<C-\><C-n><C-w>]], opts)
+end
+
+-- if you only want these mappings for toggle term use termopen
+vim.cmd('autocmd! TermOpen term://* lua set_terminal_keymaps()')
 
 
 
