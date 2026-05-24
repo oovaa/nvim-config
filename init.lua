@@ -734,12 +734,12 @@ require('lazy').setup({
           -- `friendly-snippets` contains a variety of premade snippets.
           --    See the README about individual language/framework/plugin snippets:
           --    https://github.com/rafamadriz/friendly-snippets
-          -- {
-          --   'rafamadriz/friendly-snippets',
-          --   config = function()
-          --     require('luasnip.loaders.from_vscode').lazy_load()
-          --   end,
-          -- },
+        {
+          'rafamadriz/friendly-snippets',
+          config = function()
+            require('luasnip.loaders.from_vscode').lazy_load()
+          end,
+        },
         },
         opts = {},
       },
@@ -1159,3 +1159,24 @@ vim.cmd('autocmd! TermOpen term://* lua set_terminal_keymaps()')
 
 
 
+
+
+-- [[ Custom Filetype Detection for Bun Shebang ]]
+-- Automatically sets filetype and triggers LSP activation for bun scripts
+vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
+  group = vim.api.nvim_create_augroup('bun-shebang-detection', { clear = true }),
+  callback = function(args)
+    local first_line = vim.api.nvim_buf_get_lines(args.buf, 0, 1, false)[1] or ""
+    if first_line:match('^#!.*bin.*[ /]bun%s*$') or first_line:match('^#!.*bin.*[ /]bun ') then
+      -- FIX: Index vim.bo like a table instead of calling it
+      vim.bo[args.buf].filetype = 'typescript'
+      
+      -- Explicitly force LSP configs to attach to this buffer now that the filetype is recognized
+      vim.schedule(function()
+        if vim.api.nvim_buf_is_valid(args.buf) then
+          vim.cmd('LspStart')
+        end
+      end)
+    end
+  end,
+})
