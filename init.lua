@@ -184,7 +184,7 @@ vim.diagnostic.config {
   virtual_lines = false, -- Text shows up underneath the line, with virtual lines
 
   -- Auto open the float, so you can easily read the errors when jumping with `[d` and `]d`
-  jump = { float = true },
+  jump = { on_jump = true },
 }
 
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
@@ -1080,6 +1080,18 @@ require('lazy').setup({
   },
 
   {
+    "rmagatti/auto-session",
+    event = "VimEnter",
+    config = function()
+      require("auto-session").setup({
+        log_level = "error",
+        auto_session_suppress_dirs = { "~/", "~/Downloads", "/etc" },
+        pre_save_cmds = { "Neotree close" },
+      })
+    end,
+  },
+
+  {
     "folke/flash.nvim",
     event = "VeryLazy",
     opts = {},
@@ -1157,6 +1169,9 @@ end
 -- if you only want these mappings for toggle term use termopen
 vim.cmd('autocmd! TermOpen term://* lua set_terminal_keymaps()')
 
+-- [[ Project Switching Keymap ]]
+-- Open recent projects (like VS Code's Ctrl+R)
+vim.keymap.set('n', '<C-r>', '<cmd>Telescope projects<cr>', { desc = 'Open [R]ecent Projects' })
 
 
 
@@ -1171,12 +1186,8 @@ vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
       -- FIX: Index vim.bo like a table instead of calling it
       vim.bo[args.buf].filetype = 'typescript'
       
-      -- Explicitly force LSP configs to attach to this buffer now that the filetype is recognized
-      vim.schedule(function()
-        if vim.api.nvim_buf_is_valid(args.buf) then
-          vim.cmd('LspStart')
-        end
-      end)
+      -- Trigger FileType autocommands so LSPs attach after filetype is set
+      vim.api.nvim_exec_autocmds('FileType', { buffer = args.buf })
     end
   end,
 })

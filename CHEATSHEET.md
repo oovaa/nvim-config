@@ -1,8 +1,14 @@
 # Neovim Configuration Cheat Sheet
 
-This repository is based on `kickstart.nvim`, customized with several plugins to provide a familiar, VS Code-like experience. 
+This repository is based on `kickstart.nvim`, customized with several plugins to provide a familiar, VS Code-like experience.
 
 **Leader Key:** `<Space>`
+
+## 🚀 Session Management
+
+| Keybinding | Action | Plugin |
+| :--- | :--- | :--- |
+| `<C-r>` | Open Recent Projects | `project.nvim` + `auto-session` |
 
 ## 🗂️ UI & File Navigation
 
@@ -24,6 +30,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | :--- | :--- |
 | `<leader>sf` | Search Files |
 | `<leader>sp` | Search Projects (Switch project) |
+| `<C-r>` | Open Recent Projects (VS Code style) |
 | `<leader>sg` | Search by Grep (Search across files) |
 | `<leader>sw` | Search current Word |
 | `<leader>sh` | Search Help tags |
