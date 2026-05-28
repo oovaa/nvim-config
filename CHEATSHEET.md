@@ -4,6 +4,18 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 
 **Leader Key:** `<Space>`
 
+## 🐍 Python Development
+
+| Tool | Purpose |
+| :--- | :--- |
+| `pyright` | LSP (autocomplete, type checking, goto definition, etc.) |
+| `ruff` | Linting + formatting (replaces flake8, isort, black) |
+| Treesitter | Syntax highlighting for Python |
+
+- **Autoformat on save** is enabled for Python (ruff).
+- LSP and formatters are auto-installed via Mason.
+- Works with virtualenvs automatically.
+
 ## 🚀 Session Management
 
 | Keybinding | Action | Plugin |
