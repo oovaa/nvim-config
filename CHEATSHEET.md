@@ -62,6 +62,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | :--- | :--- | :--- |
 | `<Tab>` | Accept Autocompletion Suggestion | `blink.cmp` |
 | `<S-Tab>` | Previous Autocompletion Suggestion | `blink.cmp` |
+| `<C-BS>` | Delete previous word | built-in |
 | `<leader>f` | Format buffer | `conform.nvim` |
 | `<leader>r` | Run Code | `code_runner.nvim` |
 | `<leader>rf` | Run File | `code_runner.nvim` |
