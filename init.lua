@@ -84,6 +84,10 @@ I hope you enjoy your Neovim journey,
 P.S. You can delete this when you're done too. It's your config now! :)
 --]]
 
+-- Disable unused providers to suppress warnings
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_ruby_provider = 0
+
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
@@ -896,9 +900,13 @@ require('lazy').setup({
 
 
   {
-  "pmizio/typescript-tools.nvim",
-  dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
-  opts = {},
+    "pmizio/typescript-tools.nvim",
+    dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+    opts = {
+      settings = {
+        filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
+      },
+    },
   },
 
 
@@ -1081,11 +1089,12 @@ require('lazy').setup({
 
   {
     "rmagatti/auto-session",
-    event = "VimEnter",
+    lazy = false,
     config = function()
+      vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
       require("auto-session").setup({
         log_level = "error",
-        auto_session_suppress_dirs = { "~/", "~/Downloads", "/etc" },
+        suppressed_dirs = { "~/", "~/Downloads", "/etc" },
         pre_save_cmds = { "Neotree close" },
       })
     end,

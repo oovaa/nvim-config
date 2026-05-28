@@ -38,6 +38,9 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<leader>sd` | Search Diagnostics |
 | `<leader>sr` | Search Resume (resume last search) |
 | `<leader>s.` | Search Recent Files |
+| `<leader>sc` | Search Commands |
+| `<leader>sn` | Search Neovim config files |
+| `<leader>s/` | Search in Open Files |
 | `<leader><space>` | Search Existing Buffers |
 | `<leader>/` | Fuzzily search in current buffer |
 
