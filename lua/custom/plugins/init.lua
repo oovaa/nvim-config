@@ -5,4 +5,9 @@
 
 ---@module 'lazy'
 ---@type LazySpec
-return {}
+return {
+  {
+    "nvim-telescope/telescope-file-browser.nvim",
+    dependencies = { "nvim-telescope/telescope.nvim" },
+  },
+}
