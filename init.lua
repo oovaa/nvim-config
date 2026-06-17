@@ -625,8 +625,9 @@ require('lazy').setup({
 
         stylua = {}, -- Used to format Lua code
 
-        pyright = {},
         ruff = {},
+
+        pyrefly = {},
 
         -- Special Lua Config, as recommended by neovim help docs
         lua_ls = {
@@ -672,7 +673,9 @@ require('lazy').setup({
       -- You can press `g?` for help in this menu.
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
-        -- You can add other tools here that you want Mason to install
+        'black',
+        'ruff',
+        'pyrefly',
       })
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -716,7 +719,7 @@ require('lazy').setup({
       },
       -- You can also specify external formatters in here.
       formatters_by_ft = {
-        python = { 'ruff_organize_imports', 'ruff_format' },
+        python = { 'ruff_organize_imports', 'black' },
       },
     },
   },
@@ -1134,6 +1137,63 @@ require('lazy').setup({
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   { import = 'custom.plugins' },
+
+  -- ==================== Python Development ====================
+
+  -- Debugger (DAP)
+  {
+    'mfussenegger/nvim-dap',
+    dependencies = {
+      'rcarriga/nvim-dap-ui',
+      'nvim-neotest/nvim-nio',
+      'mfussenegger/nvim-dap-python',
+    },
+    keys = {
+      { '<leader>db', function() require('dap').toggle_breakpoint() end, desc = '[D]ebug [B]reakpoint' },
+      { '<leader>dc', function() require('dap').continue() end, desc = '[D]ebug [C]ontinue' },
+      { '<leader>di', function() require('dap').step_into() end, desc = '[D]ebug Step [I]nto' },
+      { '<leader>do', function() require('dap').step_over() end, desc = '[D]ebug Step [O]ver' },
+      { '<leader>dO', function() require('dap').step_out() end, desc = '[D]ebug Step [O]ut' },
+      { '<leader>dr', function() require('dap').repl.toggle() end, desc = '[D]ebug [R]epl' },
+      { '<leader>dl', function() require('dap').run_last() end, desc = '[D]ebug Run [L]ast' },
+      { '<leader>dt', function() require('dap').terminate() end, desc = '[D]ebug [T]erminate' },
+      { '<leader>dn', function() require('dap-python').test_method() end, desc = '[D]ebug [N]earest Test' },
+      { '<leader>df', function() require('dap-python').test_class() end, desc = '[D]ebug Test [F]ile' },
+      { '<leader>ds', function() require('dap-python').debug_selection() end, mode = 'v', desc = '[D]ebug [S]election' },
+    },
+    config = function()
+      local dap = require('dap')
+      local dapui = require('dapui')
+
+      dapui.setup()
+
+      -- Auto open/close DAP UI
+      dap.listeners.after.event_initialized['dapui_config'] = function() dapui.open() end
+      dap.listeners.before.event_terminated['dapui_config'] = function() dapui.close() end
+      dap.listeners.before.event_exited['dapui_config'] = function() dapui.close() end
+
+      -- Python debugging with debugpy
+      require('dap-python').setup('~/.local/share/nvim/mason/packages/debugpy/venv/bin/python')
+    end,
+  },
+
+  -- Remote SSH Development
+  {
+    'amitds1997/remote-nvim.nvim',
+    version = '0.*',
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'MunifTanjim/nui.nvim',
+      'rcarriga/nvim-dap',
+    },
+    opts = {},
+    keys = {
+      { '<leader>rc', '<cmd>RemoteConnect<cr>', desc = '[R]emote [C]onnect' },
+      { '<leader>rd', '<cmd>RemoteDisconnect<cr>', desc = '[R]emote [D]isconnect' },
+      { '<leader>rs', '<cmd>RemoteStop<cr>', desc = '[R]emote [S]top' },
+      { '<leader>rl', '<cmd>RemoteLog<cr>', desc = '[R]emote [L]og' },
+    },
+  },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!

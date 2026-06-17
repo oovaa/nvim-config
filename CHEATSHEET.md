@@ -104,6 +104,45 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
     * `sd'` - **S**urround **D**elete **'** quotes
     * `sr)'` - **S**urround **R**eplace **)** with **'**
 
+## 🐛 Python Debugging (DAP)
+
+| Keybinding | Action | Plugin |
+| :--- | :--- | :--- |
+| `<leader>db` | Toggle Breakpoint | `nvim-dap` |
+| `<leader>dc` | Continue / Start Debugging | `nvim-dap` |
+| `<leader>di` | Step Into | `nvim-dap` |
+| `<leader>do` | Step Over | `nvim-dap` |
+| `<leader>dO` | Step Out | `nvim-dap` |
+| `<leader>dr` | Toggle REPL | `nvim-dap` |
+| `<leader>dl` | Run Last | `nvim-dap` |
+| `<leader>dt` | Terminate Debugging | `nvim-dap` |
+| `<leader>dn` | Debug Nearest Test (pytest) | `nvim-dap-python` |
+| `<leader>df` | Debug Test File | `nvim-dap-python` |
+| `<leader>ds` | Debug Selection (visual mode) | `nvim-dap-python` |
+
+## 📓 Jupyter Notebooks (Molten)
+
+| Keybinding | Action | Plugin |
+| :--- | :--- | :--- |
+| `<leader>mi` | Initialize Jupyter Kernel | `molten-nvim` |
+| `<leader>ml` | Evaluate Current Line | `molten-nvim` |
+| `<leader>mv` | Evaluate Visual Selection | `molten-nvim` |
+| `<leader>mr` | Re-evaluate Cell | `molten-nvim` |
+| `<leader>mh` | Hide Output | `molten-nvim` |
+| `<leader>md` | Delete Cell Output | `molten-nvim` |
+| `<leader>mn` | Next Cell | `molten-nvim` |
+| `<leader>mp` | Previous Cell | `molten-nvim` |
+| `<leader>mo` | Open in Browser | `molten-nvim` |
+
+## 🌐 Remote SSH Development
+
+| Keybinding | Action | Plugin |
+| :--- | :--- | :--- |
+| `<leader>rc` | Connect to Remote Host | `remote-nvim.nvim` |
+| `<leader>rd` | Disconnect | `remote-nvim.nvim` |
+| `<leader>rs` | Stop Remote Session | `remote-nvim.nvim` |
+| `<leader>rl` | View Remote Log | `remote-nvim.nvim` |
+
 ## 🐚 Terminal Navigation
 
 When inside the terminal:
