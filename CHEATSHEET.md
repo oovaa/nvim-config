@@ -37,6 +37,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<leader>bd` | Delete Current Buffer | `bufferline.nvim` |
 | `s` | Fast Jump (Flash) | `flash.nvim` |
 | `S` | Fast Jump Treesitter Mode | `flash.nvim` |
+| `<C-h/j/k/l>` | Switch between windows (editor, terminal, explorer) | built-in |
 
 ## 🔍 Searching (Telescope)
 
