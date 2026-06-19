@@ -27,6 +27,8 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
 | `<leader>e` | Toggle File Explorer | `neo-tree.nvim` |
+| `t` | Open file in new tab (in neo-tree) | `neo-tree.nvim` |
+| `<C-t>` | Open file in new tab (in Telescope) | `telescope.nvim` |
 | `<leader>tt` | Toggle Bottom Terminal | `toggleterm.nvim` |
 | `<C-\>` | Toggle Terminal (Any mode) | `toggleterm.nvim` |
 | `<leader>t1/2/3`| Switch to Terminal 1, 2, or 3 | `toggleterm.nvim` |
