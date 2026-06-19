@@ -672,11 +672,6 @@ require('lazy').setup({
       --
       -- You can press `g?` for help in this menu.
       local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {
-        'black',
-        'ruff',
-        'pyrefly',
-      })
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -719,7 +714,7 @@ require('lazy').setup({
       },
       -- You can also specify external formatters in here.
       formatters_by_ft = {
-        python = { 'ruff_organize_imports', 'black' },
+        python = { 'ruff_organize_imports', 'ruff_format' },
       },
     },
   },
