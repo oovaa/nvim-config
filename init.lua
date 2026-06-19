@@ -1060,6 +1060,16 @@ require('lazy').setup({
 
   {
     "ahmedkhalf/project.nvim",
+    build = function()
+      -- Patch project.nvim to replace deprecated vim.lsp.buf_get_clients()
+      local f = vim.fn.stdpath("data") .. "/lazy/project.nvim/lua/project_nvim/project.lua"
+      local content = vim.fn.readfile(f, "\n")
+      local patched = table.concat(content, "\n"):gsub(
+        "vim%.lsp%.buf_get_clients%(",
+        "vim.lsp.get_clients("
+      )
+      vim.fn.writefile(vim.split(patched, "\n"), f)
+    end,
     config = function()
       require("project_nvim").setup({
         -- Methods of detecting the root directory. **"lsp"** uses the native neovim lsp,
