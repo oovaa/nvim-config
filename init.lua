@@ -488,10 +488,6 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sn', function() builtin.find_files { cwd = vim.fn.stdpath 'config' } end, { desc = '[S]earch [N]eovim files' })
       vim.keymap.set('n', '<leader>fe', '<cmd>Telescope file_browser<CR>', { desc = '[F]ile [E]xplorer (Telescope)' })
       vim.keymap.set('n', '<leader>fE', '<cmd>Telescope file_browser path=%:p:h<CR>', { desc = '[F]ile [E]xplorer (cwd)' })
-
-      -- VS Code style search keybindings
-      vim.keymap.set('n', '<C-f>', builtin.current_buffer_fuzzy_find, { desc = 'Search in current file' })
-      vim.keymap.set('n', '<C-S-f>', builtin.live_grep, { desc = 'Search in entire codebase' })
     end,
   },
 

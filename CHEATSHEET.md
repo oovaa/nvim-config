@@ -40,8 +40,6 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 
 | Keybinding | Action |
 | :--- | :--- |
-| `<C-f>` | Search in current file (VS Code style) |
-| `<C-S-f>` | Search in entire codebase (VS Code style) |
 | `<leader>sf` | Search Files |
 | `<leader>sp` | Search Projects (Switch project) |
 | `<C-r>` | Open Recent Projects (VS Code style) |
