@@ -1047,15 +1047,21 @@ require('lazy').setup({
 
   {
     "ahmedkhalf/project.nvim",
-    build = function()
+    init = function()
       -- Patch project.nvim to replace deprecated vim.lsp.buf_get_clients()
+      -- Runs before the plugin loads, survives :Lazy updates
       local f = vim.fn.stdpath("data") .. "/lazy/project.nvim/lua/project_nvim/project.lua"
-      local content = vim.fn.readfile(f, "\n")
-      local patched = table.concat(content, "\n"):gsub(
-        "vim%.lsp%.buf_get_clients%(",
-        "vim.lsp.get_clients("
-      )
-      vim.fn.writefile(vim.split(patched, "\n"), f)
+      if vim.fn.filereadable(f) == 1 then
+        local content = vim.fn.readfile(f)
+        local changed = false
+        for i, line in ipairs(content) do
+          if line:find("vim%.lsp%.buf_get_clients%(") then
+            content[i] = line:gsub("vim%.lsp%.buf_get_clients%(", "vim.lsp.get_clients(")
+            changed = true
+          end
+        end
+        if changed then vim.fn.writefile(content, f) end
+      end
     end,
     config = function()
       require("project_nvim").setup({
