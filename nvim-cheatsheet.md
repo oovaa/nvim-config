@@ -54,6 +54,15 @@
 | `<leader>r` | Run code |
 | `<leader>rf` | Run file |
 
+## Commenting
+
+| Keybinding | Action |
+|------------|--------|
+| `gcc` | Toggle comment of current line |
+| `gc{motion}` | Toggle comment of a motion (e.g. `gcap` for paragraph) |
+| `gc` (visual) | Toggle comment of selected lines |
+| `:10,20gcc` | Comment lines 10 through 20 (any range) |
+
 ## Other
 
 | Keybinding | Action |
