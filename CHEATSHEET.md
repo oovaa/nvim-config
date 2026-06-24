@@ -61,8 +61,12 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 
 ## 💻 Code & Editing
 
-| Keybinding | Action | Plugin/Feature |
+| Keybinding / Command | Action | Plugin/Feature |
 | :--- | :--- | :--- |
+| `:e <file>` | Open / create a file | built-in |
+| `:tabnew <file>` | Open file in new tab | built-in |
+| `:w` | Save current file | built-in |
+| `:wa` | Save all files | built-in |
 | `<Tab>` | Accept Autocompletion Suggestion | `blink.cmp` |
 | `<S-Tab>` | Previous Autocompletion Suggestion | `blink.cmp` |
 | `<C-BS>` | Delete previous word | built-in |
