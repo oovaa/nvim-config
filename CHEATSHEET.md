@@ -65,8 +65,11 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | :--- | :--- | :--- |
 | `:e <file>` | Open / create a file | built-in |
 | `:tabnew <file>` | Open file in new tab | built-in |
-| `:w` | Save current file | built-in |
+| `<leader>w` | Save current file | built-in |
 | `:wa` | Save all files | built-in |
+| `:%s/old/new/g` | Find & replace all in file | built-in |
+| `:%s/old/new/gc` | Find & replace with confirmation | built-in |
+| `:%s/old/new/gi` | Find & replace (case-insensitive) | built-in |
 | `<Tab>` | Accept Autocompletion Suggestion | `blink.cmp` |
 | `<S-Tab>` | Previous Autocompletion Suggestion | `blink.cmp` |
 | `<C-BS>` | Delete previous word | built-in |
