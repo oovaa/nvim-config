@@ -1048,20 +1048,30 @@ require('lazy').setup({
   {
     "ahmedkhalf/project.nvim",
     init = function()
-      -- Patch project.nvim to replace deprecated vim.lsp.buf_get_clients()
-      -- Runs before the plugin loads, survives :Lazy updates
-      local f = vim.fn.stdpath("data") .. "/lazy/project.nvim/lua/project_nvim/project.lua"
-      if vim.fn.filereadable(f) == 1 then
-        local content = vim.fn.readfile(f)
-        local changed = false
-        for i, line in ipairs(content) do
-          if line:find("vim%.lsp%.buf_get_clients%(") then
-            content[i] = line:gsub("vim%.lsp%.buf_get_clients%(", "vim.lsp.get_clients(")
-            changed = true
-          end
-        end
-        if changed then vim.fn.writefile(content, f) end
-      end
+      -- Monkey-patch project.nvim to replace deprecated vim.lsp.buf_get_clients()
+      -- at runtime, without modifying source files
+      local orig_find_lsp_root = nil
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "LazyLoad",
+        once = true,
+        callback = function()
+          vim.schedule(function()
+            local ok, project = pcall(require, "project_nvim.project")
+            if ok and project.find_lsp_root then
+              orig_find_lsp_root = project.find_lsp_root
+              project.find_lsp_root = function()
+                -- Temporarily replace the deprecated function
+                local old = vim.lsp.buf_get_clients
+                vim.lsp.buf_get_clients = vim.lsp.get_clients
+                local ok2, root, name = pcall(orig_find_lsp_root)
+                vim.lsp.buf_get_clients = old
+                if ok2 then return root, name end
+                return nil
+              end
+            end
+          end)
+        end,
+      })
     end,
     config = function()
       require("project_nvim").setup({
