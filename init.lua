@@ -698,6 +698,19 @@ require('lazy').setup({
         -- You can specify filetypes to autoformat on save here:
         local enabled_filetypes = {
           python = true,
+          javascript = true,
+          typescript = true,
+          javascriptreact = true,
+          typescriptreact = true,
+          vue = true,
+          json = true,
+          html = true,
+          css = true,
+          scss = true,
+          less = true,
+          markdown = true,
+          yaml = true,
+          graphql = true,
         }
         if enabled_filetypes[vim.bo[bufnr].filetype] then
           return { timeout_ms = 500 }
@@ -711,6 +724,19 @@ require('lazy').setup({
       -- You can also specify external formatters in here.
       formatters_by_ft = {
         python = { 'ruff_organize_imports', 'ruff_format' },
+        javascript = { 'prettierd', 'prettier' },
+        typescript = { 'prettierd', 'prettier' },
+        javascriptreact = { 'prettierd', 'prettier' },
+        typescriptreact = { 'prettierd', 'prettier' },
+        vue = { 'prettierd', 'prettier' },
+        json = { 'prettierd', 'prettier' },
+        html = { 'prettierd', 'prettier' },
+        css = { 'prettierd', 'prettier' },
+        scss = { 'prettierd', 'prettier' },
+        less = { 'prettierd', 'prettier' },
+        markdown = { 'prettierd', 'prettier' },
+        yaml = { 'prettierd', 'prettier' },
+        graphql = { 'prettierd', 'prettier' },
       },
     },
   },
