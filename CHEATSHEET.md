@@ -120,9 +120,10 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 
 * **`mini.ai`**: Enhanced text objects (e.g., `va)` to visually select around parens, `ci'` to change inside quotes).
 * **`mini.surround`**:
-    * `saiw)` - **S**urround **A**dd **I**nner **W**ord **)** Paren
-    * `sd'` - **S**urround **D**elete **'** quotes
-    * `sr)'` - **S**urround **R**eplace **)** with **'**
+    * `gsaiw)` - **S**urround **A**dd **I**nner **W**ord **)** Paren
+    * `gsd'` - **S**urround **D**elete **'** quotes
+    * `gsr)'` - **S**urround **R**eplace **)** with **'**
+    * Visual mode: select text, then `gsa` + character to surround
 
 ## 🐛 Python Debugging (DAP)
 
