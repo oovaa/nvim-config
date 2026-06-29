@@ -154,6 +154,15 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<leader>mp` | Previous Cell | `molten-nvim` |
 | `<leader>mo` | Open in Browser | `molten-nvim` |
 
+## 📝 Markdown Preview
+
+| Keybinding | Action | Plugin |
+| :--- | :--- | :--- |
+| `<leader>mp` | Open Markdown preview (floating window) | `peek.nvim` |
+| `<leader>mc` | Close Markdown preview | `peek.nvim` |
+
+**Workflow:** Open a `.md` file, press `<leader>mp`. A floating window renders the Markdown live. Requires [deno](https://deno.land) installed.
+
 ## 🌐 Remote SSH Development
 
 | Keybinding | Action | Plugin |

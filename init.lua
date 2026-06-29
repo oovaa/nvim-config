@@ -1228,6 +1228,29 @@ require('lazy').setup({
       { '<leader>rl', '<cmd>RemoteLog<cr>', desc = '[R]emote [L]og' },
     },
   },
+
+  -- Markdown Preview (floating window inside Neovim)
+  {
+    'toppair/peek.nvim',
+    ft = 'markdown',
+    build = 'deno task --quiet build:wait',
+    opts = {
+      closeOnBounce = false,
+    },
+    keys = {
+      { '<leader>mp', function() require('peek').open() end, desc = '[M]arkdown [P]eek' },
+      { '<leader>mc', function() require('peek').close() end, desc = '[M]arkdown [C]lose' },
+    },
+    config = function()
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'markdown',
+        callback = function()
+          vim.keymap.set('n', '<leader>mp', function() require('peek').open() end, { buffer = true, desc = '[M]arkdown [P]eek' })
+          vim.keymap.set('n', '<leader>mc', function() require('peek').close() end, { buffer = true, desc = '[M]arkdown [C]lose' })
+        end,
+      })
+    end,
+  },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
