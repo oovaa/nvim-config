@@ -156,12 +156,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 
 ## 📝 Markdown Preview
 
-| Keybinding | Action | Plugin |
-| :--- | :--- | :--- |
-| `<leader>mp` | Open Markdown preview (floating window) | `peek.nvim` |
-| `<leader>mc` | Close Markdown preview | `peek.nvim` |
-
-**Workflow:** Open a `.md` file, press `<leader>mp`. A floating window renders the Markdown live. Requires [deno](https://deno.land) installed.
+`render-markdown.nvim` renders Markdown directly in the buffer — no keybinding needed, it just works when you open a `.md` file. Headings, bold, code blocks, etc. are displayed with proper formatting and colors.
 
 ## 🌐 Remote SSH Development
 

@@ -1229,16 +1229,12 @@ require('lazy').setup({
     },
   },
 
-  -- Markdown Preview (floating window inside Neovim)
+  -- Markdown Preview (rendered inline in the buffer)
   {
-    'toppair/peek.nvim',
+    'MeanderingProgrammer/render-markdown.nvim',
     ft = 'markdown',
-    build = 'deno task build',
-    config = function()
-      require('peek').setup({ closeOnBounce = false })
-      vim.keymap.set('n', '<leader>mp', function() require('peek').open() end, { desc = '[M]arkdown [P]eek' })
-      vim.keymap.set('n', '<leader>mc', function() require('peek').close() end, { desc = '[M]arkdown [C]lose' })
-    end,
+    dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' },
+    opts = {},
   },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
