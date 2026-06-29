@@ -1233,7 +1233,7 @@ require('lazy').setup({
   {
     'toppair/peek.nvim',
     ft = 'markdown',
-    build = 'deno task --quiet build:wait',
+    build = 'deno task build',
     opts = {
       closeOnBounce = false,
     },
