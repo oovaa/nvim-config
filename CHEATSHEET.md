@@ -45,9 +45,10 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | :--- | :--- |
 | `<leader>sf` | Search Files |
 | `<leader>sp` | Search Projects (Switch project) |
+| `<leader>sg` | Search by Grep (Search across entire codebase) |
+| `<leader>sw` | Grep word under cursor |
+| `<leader>s/` | Grep in currently open files |
 | `<C-r>` | Open Recent Projects (VS Code style) |
-| `<leader>sg` | Search by Grep (Search across files) |
-| `<leader>sw` | Search current Word |
 | `<leader>sh` | Search Help tags |
 | `<leader>sk` | Search Keymaps |
 | `<leader>sd` | Search Diagnostics |
