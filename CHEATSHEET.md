@@ -59,6 +59,15 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<leader><space>` | Search Existing Buffers |
 | `<leader>/` | Fuzzily search in current buffer |
 
+**Telescope picker shortcuts (inside the picker):**
+
+| Key | Action |
+| :--- | :--- |
+| `<CR>` | Open in current window |
+| `<C-x>` | Open in horizontal split |
+| `<C-v>` | Open in vertical split |
+| `<C-t>` | Open in new tab |
+
 ## 💻 Code & Editing
 
 | Keybinding / Command | Action | Plugin/Feature |
