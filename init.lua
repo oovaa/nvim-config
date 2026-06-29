@@ -1234,21 +1234,10 @@ require('lazy').setup({
     'toppair/peek.nvim',
     ft = 'markdown',
     build = 'deno task build',
-    opts = {
-      closeOnBounce = false,
-    },
-    keys = {
-      { '<leader>mp', function() require('peek').open() end, desc = '[M]arkdown [P]eek' },
-      { '<leader>mc', function() require('peek').close() end, desc = '[M]arkdown [C]lose' },
-    },
     config = function()
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'markdown',
-        callback = function()
-          vim.keymap.set('n', '<leader>mp', function() require('peek').open() end, { buffer = true, desc = '[M]arkdown [P]eek' })
-          vim.keymap.set('n', '<leader>mc', function() require('peek').close() end, { buffer = true, desc = '[M]arkdown [C]lose' })
-        end,
-      })
+      require('peek').setup({ closeOnBounce = false })
+      vim.keymap.set('n', '<leader>mp', function() require('peek').open() end, { desc = '[M]arkdown [P]eek' })
+      vim.keymap.set('n', '<leader>mc', function() require('peek').close() end, { desc = '[M]arkdown [C]lose' })
     end,
   },
   --
