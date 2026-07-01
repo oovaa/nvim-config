@@ -1108,12 +1108,12 @@ require('lazy').setup({
 
   {
     "rmagatti/auto-session",
-    event = "VimEnter",
+    lazy = false,
     config = function()
       vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
       require("auto-session").setup({
         log_level = "error",
-        auto_session_suppress_dirs = { "~/", "~/Downloads", "/etc" },
+        suppressed_dirs = { "~/", "~/Downloads", "/etc" },
         pre_save_cmds = { "Neotree close" },
       })
     end,
