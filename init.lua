@@ -1210,6 +1210,21 @@ require('lazy').setup({
     },
   },
 
+  {
+    'tom-anders/telescope-vim-bookmarks.nvim',
+    dependencies = { 'MattesGroeger/vim-bookmarks' },
+    keys = {
+      { 'mm', '<cmd>BookmarkToggle<cr>', desc = '[B]ookmark [T]oggle' },
+      { 'mi', '<cmd>BookmarkAnnotate<cr>', desc = '[B]ookmark [A]nnotate' },
+      { 'mn', '<cmd>BookmarkNext<cr>', desc = '[B]ookmark [N]ext' },
+      { 'mp', '<cmd>BookmarkPrev<cr>', desc = '[B]ookmark [P]revious' },
+      { '<leader>mb', '<cmd>Telescope vim_bookmarks<cr>', desc = '[B]ookmark [L]ist' },
+    },
+    config = function()
+      require('telescope').load_extension('vim_bookmarks')
+    end,
+  },
+
   -- Markdown Preview (rendered inline in the buffer)
   {
     'MeanderingProgrammer/render-markdown.nvim',

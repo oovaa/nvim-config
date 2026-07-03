@@ -86,6 +86,11 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<Tab>` | Accept Autocompletion Suggestion | `blink.cmp` |
 | `<S-Tab>` | Previous Autocompletion Suggestion | `blink.cmp` |
 | `<C-BS>` | Delete previous word | built-in |
+| `mm` | Toggle bookmark on current line | `vim-bookmarks` |
+| `mi` | Annotate bookmark | `vim-bookmarks` |
+| `mn` | Jump to next bookmark | `vim-bookmarks` |
+| `mp` | Jump to previous bookmark | `vim-bookmarks` |
+| `<leader>mb` | List all bookmarks | `telescope-vim-bookmarks` |
 | `<leader>f` | Format buffer | `conform.nvim` |
 | `<leader>r` | Run Code | `code_runner.nvim` |
 | `<leader>rf` | Run File | `code_runner.nvim` |
