@@ -31,13 +31,14 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<C-t>` | Open file in new tab (in Telescope) | `telescope.nvim` |
 | `<leader>tt` | Toggle Bottom Terminal | `toggleterm.nvim` |
 | `<C-\>` | Toggle Terminal (Any mode) | `toggleterm.nvim` |
+| `<leader>tn` | New terminal window | `toggleterm.nvim` |
 | `<leader>t1/2/3`| Switch to Terminal 1, 2, or 3 | `toggleterm.nvim` |
 | `<S-h>` | Previous Tab / Buffer | `bufferline.nvim` |
 | `<S-l>` | Next Tab / Buffer | `bufferline.nvim` |
 | `<leader>bd` | Delete Current Buffer | `bufferline.nvim` |
 | `s` | Fast Jump (Flash) | `flash.nvim` |
 | `S` | Fast Jump Treesitter Mode | `flash.nvim` |
-| `<C-h/j/k/l>` | Switch between windows (editor, terminal, explorer) | built-in |
+| `<C-h/j/k/l>` | Switch focus between windows (editor, terminal, explorer) | built-in |
 
 ## 🔍 Searching (Telescope)
 
