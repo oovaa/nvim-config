@@ -1043,6 +1043,8 @@ require('lazy').setup({
     },
     keys = {
       { "<leader>tt", "<cmd>ToggleTerm<cr>", desc = "[T]oggle [T]erminal" },
+      { "<leader>tv", "<cmd>ToggleTerm direction=vertical<cr>", desc = "[T]erminal [V]ertical" },
+      { "<leader>tf", "<cmd>ToggleTerm direction=float<cr>", desc = "[T]erminal [F]loat" },
       { "<leader>t1", "<cmd>1ToggleTerm<cr>", desc = "Terminal [1]" },
       { "<leader>t2", "<cmd>2ToggleTerm<cr>", desc = "Terminal [2]" },
       { "<leader>t3", "<cmd>3ToggleTerm<cr>", desc = "Terminal [3]" },
