@@ -494,7 +494,7 @@ require('lazy').setup({
   {
     'roobert/search-replace.nvim',
     keys = {
-      { '<leader>fr', '<cmd>SearchReplace<cr>', desc = '[S]earch & [R]eplace' },
+      { '<leader>fr', function() require('search-replace').search_replace() end, desc = '[F]ind & [R]eplace' },
     },
     opts = {},
   },
