@@ -495,7 +495,7 @@ require('lazy').setup({
     'nvim-pack/nvim-spectre',
     dependencies = { 'nvim-lua/plenary.nvim' },
     keys = {
-      { '<leader>sr', '<cmd>Spectre<cr>', desc = '[S]earch & [R]eplace' },
+      { '<leader>rr', '<cmd>Spectre<cr>', desc = '[S]earch & [R]eplace' },
     },
     opts = {
       live_update = true,
