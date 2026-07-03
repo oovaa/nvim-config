@@ -491,6 +491,19 @@ require('lazy').setup({
     end,
   },
 
+  {
+    'nvim-pack/nvim-spectre',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    keys = {
+      { '<leader>sr', '<cmd>Spectre<cr>', desc = '[S]earch & [R]eplace' },
+    },
+    opts = {
+      live_update = true,
+      is_insert_mode = true,
+      open_cmd = 'vsplit',
+    },
+  },
+
   -- LSP Plugins
   {
     -- Main LSP Configuration

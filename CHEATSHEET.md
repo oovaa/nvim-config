@@ -60,6 +60,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<leader>sc` | Search Commands |
 | `<leader>sn` | Search Neovim config files |
 | `<leader>s/` | Search in Open Files |
+| `<leader>sr` | Search & replace (VS Code style) | `nvim-spectre` |
 | `<leader><space>` | Search Existing Buffers |
 | `<leader>/` | Fuzzily search in current buffer |
 
