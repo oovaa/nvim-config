@@ -1044,6 +1044,7 @@ require('lazy').setup({
     keys = {
       { "<leader>tt", "<cmd>ToggleTerm<cr>", desc = "[T]oggle [T]erminal" },
       { "<leader>tf", "<cmd>ToggleTerm direction=float<cr>", desc = "[T]erminal [F]loat" },
+      { "<leader>tm", "<cmd>TermExec cmd='tmux new -s float 2>/dev/null || tmux attach -t float' direction=float<cr>", desc = "[T]erminal t[M]ux" },
       { "<leader>t1", "<cmd>1ToggleTerm<cr>", desc = "Terminal [1]" },
       { "<leader>t2", "<cmd>2ToggleTerm<cr>", desc = "Terminal [2]" },
       { "<leader>t3", "<cmd>3ToggleTerm<cr>", desc = "Terminal [3]" },
