@@ -492,9 +492,10 @@ require('lazy').setup({
   },
 
   {
-    'roobert/search-replace.nvim',
+    'nvim-pack/nvim-spectre',
+    dependencies = { 'nvim-lua/plenary.nvim' },
     keys = {
-      { '<leader>fr', function() require('search-replace').search_replace() end, desc = '[F]ind & [R]eplace' },
+      { '<leader>fr', function() require('spectre').open() end, desc = '[F]ind & [R]eplace' },
     },
     opts = {},
   },
