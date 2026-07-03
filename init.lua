@@ -492,16 +492,11 @@ require('lazy').setup({
   },
 
   {
-    'nvim-pack/nvim-spectre',
-    dependencies = { 'nvim-lua/plenary.nvim' },
+    'roobert/search-replace.nvim',
     keys = {
-      { '<leader>rr', '<cmd>Spectre<cr>', desc = '[S]earch & [R]eplace' },
+      { '<leader>sr', '<cmd>SearchReplace<cr>', desc = '[S]earch & [R]eplace' },
     },
-    opts = {
-      live_update = true,
-      is_insert_mode = true,
-      open_cmd = 'vsplit',
-    },
+    opts = {},
   },
 
   -- LSP Plugins
