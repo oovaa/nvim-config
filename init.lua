@@ -87,6 +87,7 @@ P.S. You can delete this when you're done too. It's your config now! :)
 -- Disable unused providers to suppress warnings
 vim.g.loaded_perl_provider = 0
 vim.g.loaded_ruby_provider = 0
+vim.g.loaded_python3_provider = 0
 
 -- Set <space> as the leader key
 -- See `:help mapleader`
@@ -948,6 +949,10 @@ require('lazy').setup({
   {
     "pmizio/typescript-tools.nvim",
     dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+    init = function()
+      vim.filetype.add({ extension = { ["jsx"] = "javascript.jsx" } })
+      vim.filetype.add({ extension = { ["tsx"] = "typescript.tsx" } })
+    end,
     opts = {
       settings = {
         filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
@@ -1063,31 +1068,13 @@ require('lazy').setup({
 
   {
     "ahmedkhalf/project.nvim",
-    init = function()
-      -- Monkey-patch project.nvim to replace deprecated vim.lsp.buf_get_clients()
-      -- at runtime, without modifying source files
-      local orig_find_lsp_root = nil
-      vim.api.nvim_create_autocmd("User", {
-        pattern = "LazyLoad",
-        once = true,
-        callback = function()
-          vim.schedule(function()
-            local ok, project = pcall(require, "project_nvim.project")
-            if ok and project.find_lsp_root then
-              orig_find_lsp_root = project.find_lsp_root
-              project.find_lsp_root = function()
-                -- Temporarily replace the deprecated function
-                local old = vim.lsp.buf_get_clients
-                vim.lsp.buf_get_clients = vim.lsp.get_clients
-                local ok2, root, name = pcall(orig_find_lsp_root)
-                vim.lsp.buf_get_clients = old
-                if ok2 then return root, name end
-                return nil
-              end
-            end
-          end)
-        end,
-      })
+    build = function()
+      local f = vim.fn.stdpath("data") .. "/lazy/project.nvim/lua/project_nvim/project.lua"
+      local content = vim.fn.readfile(f)
+      for i, line in ipairs(content) do
+        content[i] = line:gsub("vim%.lsp%.buf_get_clients", "vim.lsp.get_clients")
+      end
+      vim.fn.writefile(content, f)
     end,
     config = function()
       require("project_nvim").setup({
