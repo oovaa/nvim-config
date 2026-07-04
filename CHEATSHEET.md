@@ -32,6 +32,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<leader>tt` | Toggle bottom terminal | `toggleterm.nvim` |
 | `<leader>tf` | Toggle floating terminal | `toggleterm.nvim` |
 | `<leader>tm` | Toggle floating terminal with tmux (multi-tab) | `toggleterm.nvim` |
+| `<leader>ht` | Toggle floating Herdr terminal | `toggleterm.nvim` |
 | `<C-\>` | Toggle Terminal (Any mode) | `toggleterm.nvim` |
 | `<leader>tn` | New terminal window | `toggleterm.nvim` |
 | `<leader>t1/2/3`| Switch to Terminal 1, 2, or 3 | `toggleterm.nvim` |
