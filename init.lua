@@ -89,9 +89,7 @@ vim.g.loaded_perl_provider = 0
 vim.g.loaded_ruby_provider = 0
 
 -- Compatibility shim for plugins using deprecated vim.lsp.buf_get_clients()
-if not vim.lsp.buf_get_clients then
-  vim.lsp.buf_get_clients = vim.lsp.get_clients
-end
+vim.lsp.buf_get_clients = vim.lsp.get_clients
 
 -- Set <space> as the leader key
 -- See `:help mapleader`
