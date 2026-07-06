@@ -313,13 +313,13 @@ require('lazy').setup({
 
   { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
-    event = 'VimEnter',
+    event = 'VeryLazy',
     ---@module 'which-key'
     ---@type wk.Opts
     ---@diagnostic disable-next-line: missing-fields
     opts = {
       -- delay between pressing a key and opening which-key (milliseconds)
-      delay = 0,
+      delay = 200,
       icons = { mappings = vim.g.have_nerd_font },
 
       -- Document existing key chains
@@ -754,7 +754,7 @@ require('lazy').setup({
 
   { -- Autocompletion
     'saghen/blink.cmp',
-    event = 'VimEnter',
+    event = 'InsertEnter',
     version = '1.*',
     dependencies = {
       -- Snippet Engine
@@ -880,6 +880,7 @@ require('lazy').setup({
 
   { -- Collection of various small independent plugins/modules
     'nvim-mini/mini.nvim',
+    event = 'VeryLazy',
     config = function()
       -- Better Around/Inside textobjects
       --
@@ -949,6 +950,7 @@ require('lazy').setup({
   {
     "pmizio/typescript-tools.nvim",
     dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+    ft = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
     init = function()
       vim.filetype.add({ extension = { ["jsx"] = "javascript.jsx" } })
       vim.filetype.add({ extension = { ["tsx"] = "typescript.tsx" } })
@@ -1048,6 +1050,7 @@ require('lazy').setup({
   {
     'akinsho/toggleterm.nvim',
     version = "*",
+    event = 'VeryLazy',
     opts = {
       open_mapping = [[<c-\>]],
       direction = 'horizontal',
@@ -1111,7 +1114,7 @@ require('lazy').setup({
 
   {
     "rmagatti/auto-session",
-    lazy = false,
+    event = 'VeryLazy',
     config = function()
       vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
       require("auto-session").setup({
@@ -1131,22 +1134,6 @@ require('lazy').setup({
       { "S", mode = { "n", "x", "o" }, function() require("flash").treesitter() end, desc = "Flash Treesitter" },
     },
   },
-
-  -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
-  -- init.lua. If you want these files, they are in the repository, so you can just download them and
-  -- place them in the correct locations.
-
-  -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
-  --
-  --  Here are some example plugins that I've included in the Kickstart repository.
-  --  Uncomment any of the lines below to enable them (you will need to restart nvim).
-  --
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommended keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
@@ -1178,18 +1165,23 @@ require('lazy').setup({
       { '<leader>ds', function() require('dap-python').debug_selection() end, mode = 'v', desc = '[D]ebug [S]election' },
     },
     config = function()
-      local dap = require('dap')
-      local dapui = require('dapui')
+      local ok_dap, dap = pcall(require, 'dap')
+      if not ok_dap then return end
 
-      dapui.setup()
-
-      -- Auto open/close DAP UI
-      dap.listeners.after.event_initialized['dapui_config'] = function() dapui.open() end
-      dap.listeners.before.event_terminated['dapui_config'] = function() dapui.close() end
-      dap.listeners.before.event_exited['dapui_config'] = function() dapui.close() end
+      local ok_dapui, dapui = pcall(require, 'dapui')
+      if ok_dapui then
+        dapui.setup()
+        dap.listeners.after.event_initialized['dapui_config'] = function() dapui.open() end
+        dap.listeners.before.event_terminated['dapui_config'] = function() dapui.close() end
+        dap.listeners.before.event_exited['dapui_config'] = function() dapui.close() end
+      end
 
       -- Python debugging with debugpy
-      require('dap-python').setup('~/.local/share/nvim/mason/packages/debugpy/venv/bin/python')
+      local debugpy_path = vim.fn.stdpath('data') .. '/mason/packages/debugpy/venv/bin/python'
+      local ok_dap_python, dap_python = pcall(require, 'dap-python')
+      if ok_dap_python then
+        dap_python.setup(debugpy_path)
+      end
     end,
   },
 
@@ -1200,7 +1192,7 @@ require('lazy').setup({
     dependencies = {
       'nvim-lua/plenary.nvim',
       'MunifTanjim/nui.nvim',
-      'rcarriga/nvim-dap',
+      'mfussenegger/nvim-dap',
     },
     opts = {},
     keys = {
@@ -1299,19 +1291,18 @@ require('lazy').setup({
 
 -- [[ Terminal Keymaps ]]
 -- Better navigation when in terminal mode
-function _G.set_terminal_keymaps()
-  local opts = {buffer = 0}
-  vim.keymap.set('t', '<esc>', [[<C-\><C-n>]], opts)
-  vim.keymap.set('t', 'jk', [[<C-\><C-n>]], opts)
-  vim.keymap.set('t', '<C-h>', [[<Cmd>wincmd h<CR>]], opts)
-  vim.keymap.set('t', '<C-j>', [[<Cmd>wincmd j<CR>]], opts)
-  vim.keymap.set('t', '<C-k>', [[<Cmd>wincmd k<CR>]], opts)
-  vim.keymap.set('t', '<C-l>', [[<Cmd>wincmd l<CR>]], opts)
-  vim.keymap.set('t', '<C-w>', [[<C-\><C-n><C-w>]], opts)
-end
-
--- if you only want these mappings for toggle term use termopen
-vim.cmd('autocmd! TermOpen term://* lua set_terminal_keymaps()')
+vim.api.nvim_create_autocmd('TermOpen', {
+  group = vim.api.nvim_create_augroup('terminal-keymaps', { clear = true }),
+  callback = function(args)
+    local opts = { buffer = args.buf }
+    vim.keymap.set('t', 'jk', [[<C-\><C-n>]], opts)
+    vim.keymap.set('t', '<C-h>', [[<Cmd>wincmd h<CR>]], opts)
+    vim.keymap.set('t', '<C-j>', [[<Cmd>wincmd j<CR>]], opts)
+    vim.keymap.set('t', '<C-k>', [[<Cmd>wincmd k<CR>]], opts)
+    vim.keymap.set('t', '<C-l>', [[<Cmd>wincmd l<CR>]], opts)
+    vim.keymap.set('t', '<C-w>', [[<C-\><C-n><C-w>]], opts)
+  end,
+})
 
 -- [[ Project Switching Keymap ]]
 -- Open recent projects (like VS Code's Ctrl+R)
