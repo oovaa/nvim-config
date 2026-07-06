@@ -87,7 +87,6 @@ P.S. You can delete this when you're done too. It's your config now! :)
 -- Disable unused providers to suppress warnings
 vim.g.loaded_perl_provider = 0
 vim.g.loaded_ruby_provider = 0
-vim.g.loaded_python3_provider = 0
 
 -- Set <space> as the leader key
 -- See `:help mapleader`
@@ -1075,26 +1074,11 @@ require('lazy').setup({
   },
 
   {
-    "ahmedkhalf/project.nvim",
-    build = function()
-      local f = vim.fn.stdpath("data") .. "/lazy/project.nvim/lua/project_nvim/project.lua"
-      local content = vim.fn.readfile(f)
-      for i, line in ipairs(content) do
-        content[i] = line:gsub("vim%.lsp%.buf_get_clients", "vim.lsp.get_clients")
-      end
-      vim.fn.writefile(content, f)
-    end,
-    config = function()
-      require("project_nvim").setup({
-        -- Methods of detecting the root directory. **"lsp"** uses the native neovim lsp,
-        -- while **"pattern"** uses vim-rooter like glob pattern matching. Here order matters:
-        -- if one is not detected, the other is used as fallback. You can also delete or
-        -- append to these "lsp" and "pattern" settings.
-        detection_methods = { "lsp", "pattern" },
-        -- patterns used to detect root dir, when "pattern" is in detection_methods
-        patterns = { ".git", "_darcs", ".hg", ".bzr", ".svn", "Makefile", "package.json" },
-      })
-    end,
+    "folke/project.nvim",
+    opts = {
+      detection_methods = { "lsp", "pattern" },
+      patterns = { ".git", "_darcs", ".hg", ".bzr", ".svn", "Makefile", "package.json" },
+    },
   },
 
   {
@@ -1114,7 +1098,7 @@ require('lazy').setup({
 
   {
     "rmagatti/auto-session",
-    event = 'VeryLazy',
+    lazy = false,
     config = function()
       vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
       require("auto-session").setup({
