@@ -996,11 +996,15 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     config = function()
-      require('nvim-treesitter').setup({
-        ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'python', 'query', 'vim', 'vimdoc' },
-        auto_install = true,
-        highlight = { enable = true },
-        indent = { enable = true },
+      -- main branch of nvim-treesitter only handles parser install dir
+      require('nvim-treesitter').setup({})
+
+      -- Enable treesitter highlighting via Neovim built-in APIs (main branch doesn't support old config)
+      vim.api.nvim_create_autocmd('FileType', {
+        group = vim.api.nvim_create_augroup('treesitter-start', { clear = true }),
+        callback = function(args)
+          pcall(vim.treesitter.start, args.buf)
+        end,
       })
     end,
   },
@@ -1219,6 +1223,39 @@ require('lazy').setup({
     },
     config = function()
       require('telescope').load_extension('vim_bookmarks')
+    end,
+  },
+
+  -- Rainbow indent lines + current chunk highlighting
+  {
+    'shellRaining/hlchunk.nvim',
+    event = { 'BufReadPre', 'BufNewFile' },
+    config = function()
+      require('hlchunk').setup({
+        chunk = {
+          enable = true,
+          style = {
+            { fg = '#806d9c' },
+            { fg = '#c21f30' },
+          },
+          chars = {
+            horizontal_line = '─',
+            vertical_line = '│',
+            left_top = '╭',
+            left_bottom = '╰',
+            right_arrow = '─',
+          },
+        },
+        indent = {
+          enable = true,
+          chars = {
+            '│',
+          },
+          style = {
+            { fg = '#4a4560' },
+          },
+        },
+      })
     end,
   },
 
