@@ -101,9 +101,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
-| `<leader>gs` | Git Status (Full UI) | `neogit` |
-| `<leader>gc` | Git Commit | `neogit` |
-| `<leader>gp` | Git Push | `neogit` |
+| `<leader>fg` | Open LazyGit (floating window) | `lazygit.nvim` |
 | `[c` | Previous Hunk | `gitsigns` |
 | `]c` | Next Hunk | `gitsigns` |
 | `<leader>hs` | Stage Hunk | `gitsigns` |

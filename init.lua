@@ -1082,6 +1082,17 @@ require('lazy').setup({
     },
   },
 
+  -- LazyGit: Floating terminal git client
+  -- PERFORMANCE: Loaded on cmd/keymap press only
+  {
+    'kdheepak/lazygit.nvim',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    cmd = { 'LazyGit', 'LazyGitConfig' },
+    keys = {
+      { "<leader>fg", "<cmd>LazyGit<cr>", desc = "[F]ile [G]it (LazyGit)" },
+    },
+  },
+
   -- ToggleTerm: Better terminal management
   -- PERFORMANCE: Loaded on VeryLazy (after UI is ready)
   {
