@@ -1043,6 +1043,16 @@ require('lazy').setup({
     },
   },
 
+  -- LazyGit - floating terminal git client
+  {
+    'kdheepak/lazygit.nvim',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    cmd = { 'LazyGit', 'LazyGitConfig' },
+    keys = {
+      { "<leader>fg", "<cmd>LazyGit<cr>", desc = "[F]ile [G]it (LazyGit)" },
+    },
+  },
+
   {
     'akinsho/toggleterm.nvim',
     version = "*",
