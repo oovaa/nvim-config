@@ -88,6 +88,11 @@ P.S. You can delete this when you're done too. It's your config now! :)
 vim.g.loaded_perl_provider = 0
 vim.g.loaded_ruby_provider = 0
 
+-- Compatibility shim for plugins using deprecated vim.lsp.buf_get_clients()
+if not vim.lsp.buf_get_clients then
+  vim.lsp.buf_get_clients = vim.lsp.get_clients
+end
+
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
