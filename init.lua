@@ -1110,7 +1110,11 @@ require('lazy').setup({
       require("auto-session").setup({
         log_level = "error",
         suppressed_dirs = { "~/", "~/Downloads", "/etc" },
-        pre_save_cmds = { "Neotree close" },
+        pre_save_cmds = {
+          function()
+            pcall(vim.cmd, 'Neotree close')
+          end,
+        },
       })
     end,
   },
