@@ -592,14 +592,24 @@ require('lazy').setup({
     opts = {},
   },
 
-  -- LSP Plugins
+  -- ============================================================================
+  -- SECTION 6.3: LANGUAGE SERVER PROTOCOL (LSP)
+  -- ============================================================================
+  -- LSP provides code intelligence: go-to-definition, find references,
+  -- autocompletion, diagnostics, and more.
+
+  -- NVIM-LSPCONFIG
+  -- WHAT: Configures language servers for Neovim (the main LSP plugin)
+  -- TO CHANGE: Add/remove servers in the `servers` table below
+  -- EFFECT: Each server provides language-specific features (e.g., pyright for Python)
+  --         Servers are loaded on-demand via FileType autocmds for performance
+  -- PERFORMANCE: FileType autocmds save ~50-150ms startup time
   {
-    -- Main LSP Configuration
     'neovim/nvim-lspconfig',
     dependencies = {
-      -- Automatically install LSPs and related tools to stdpath for Neovim
-      -- Mason must be loaded before its dependents so we need to set it up here.
-      -- NOTE: `opts = {}` is the same as calling `require('mason').setup({})`
+      -- Mason: auto-installs LSP servers and tools
+      -- TO CHANGE: Add tools to ensure_installed to auto-install them
+      -- EFFECT: Mason downloads and manages language servers for you
       {
         'mason-org/mason.nvim',
         ---@module 'mason.settings'
@@ -607,11 +617,12 @@ require('lazy').setup({
         ---@diagnostic disable-next-line: missing-fields
         opts = {},
       },
-      -- Maps LSP server names between nvim-lspconfig and Mason package names.
+      -- Bridges mason.nvim with nvim-lspconfig
       'mason-org/mason-lspconfig.nvim',
+      -- Auto-installs tools listed in ensure_installed
       'WhoIsSethDaniel/mason-tool-installer.nvim',
 
-      -- Useful status updates for LSP.
+      -- Shows LSP loading progress in the bottom-right corner
       { 'j-hui/fidget.nvim', opts = {} },
     },
     config = function()
@@ -807,10 +818,17 @@ require('lazy').setup({
   },
 
   -- ============================================================================
-  -- SECTION 6.3: FORMATTING & COMPLETION
+  -- SECTION 6.4: FORMATTING
   -- ============================================================================
+  -- Plugins that auto-format your code on save.
 
-  { -- Autoformat
+  -- CONFORM.NVIM
+  -- WHAT: Auto-formats your code when you save (uses external formatters)
+  -- TO CHANGE: Add/remove formatters in formatters_by_ft, or modify enabled_filetypes
+  -- EFFECT: When you save a Python file, it runs ruff; for JS/TS, it runs prettier
+  --         Press <leader>f to format manually at any time
+  -- LOADING: BufWritePre = loads only when you're about to save a file
+  {
     'stevearc/conform.nvim',
     event = { 'BufWritePre' },
     cmd = { 'ConformInfo' },
@@ -827,7 +845,8 @@ require('lazy').setup({
     opts = {
       notify_on_error = false,
       format_on_save = function(bufnr)
-        -- You can specify filetypes to autoformat on save here:
+        -- TO CHANGE: Add or remove filetypes from this table
+        -- EFFECT: Only files matching these types will auto-format on save
         local enabled_filetypes = {
           python = true,
           javascript = true,
@@ -873,32 +892,38 @@ require('lazy').setup({
     },
   },
 
-  { -- Autocompletion
+  -- ============================================================================
+  -- SECTION 6.5: AUTOCOMPLETION
+  -- ============================================================================
+  -- Plugins that provide code completion as you type.
+
+  -- BLINK.CMP
+  -- WHAT: Fast autocompletion engine (replaces nvim-cmp)
+  -- TO CHANGE: Change keymap preset, sources, or appearance settings
+  -- EFFECT: Shows completion menu as you type; Tab/S-Tab to navigate
+  --         Sources: LSP completions, file paths, snippets
+  -- LOADING: InsertEnter = loads only when you start typing
+  {
     'saghen/blink.cmp',
     event = 'InsertEnter',
     version = '1.*',
     dependencies = {
-      -- Snippet Engine
+      -- Snippet Engine: expands snippet placeholders
       {
         'L3MON4D3/LuaSnip',
         version = '2.*',
         build = (function()
-          -- Build Step is needed for regex support in snippets.
-          -- This step is not supported in many windows environments.
-          -- Remove the below condition to re-enable on windows.
           if vim.fn.has 'win32' == 1 or vim.fn.executable 'make' == 0 then return end
           return 'make install_jsregexp'
         end)(),
         dependencies = {
-          -- `friendly-snippets` contains a variety of premade snippets.
-          --    See the README about individual language/framework/plugin snippets:
-          --    https://github.com/rafamadriz/friendly-snippets
-        {
-          'rafamadriz/friendly-snippets',
-          config = function()
-            require('luasnip.loaders.from_vscode').lazy_load()
-          end,
-        },
+          -- Pre-made snippets for many languages/frameworks
+          {
+            'rafamadriz/friendly-snippets',
+            config = function()
+              require('luasnip.loaders.from_vscode').lazy_load()
+            end,
+          },
         },
         opts = {},
       },
@@ -907,34 +932,16 @@ require('lazy').setup({
     ---@type blink.cmp.Config
     opts = {
       keymap = {
-        -- 'default' (recommended) for mappings similar to built-in completions
-        --   <c-y> to accept ([y]es) the completion.
-        --    This will auto-import if your LSP supports it.
-        --    This will expand snippets if the LSP sent a snippet.
-        -- 'super-tab' for tab to accept
-        -- 'enter' for enter to accept
-        -- 'none' for no mappings
-        --
-        -- For an understanding of why the 'default' preset is recommended,
-        -- you will need to read `:help ins-completion`
-        --
-        -- No, but seriously. Please read `:help ins-completion`, it is really good!
-        --
-        -- All presets have the following mappings:
-        -- <tab>/<s-tab>: move to right/left of your snippet expansion
-        -- <c-space>: Open menu or open docs if already open
-        -- <c-n>/<c-p> or <up>/<down>: Select next/previous item
-        -- <c-e>: Hide menu
-        -- <c-k>: Toggle signature help
-        --
-        -- See :h blink-cmp-config-keymap for defining your own keymap
+        -- PRESET OPTIONS:
+        -- 'default'  = <C-y> to accept, Tab/S-Tab to navigate
+        -- 'super-tab' = Tab to accept
+        -- 'enter'    = Enter to accept
+        -- 'none'     = no mappings
+        -- SEE: `:help blink-cmp-config-keymap`
         preset = 'default',
 
         ['<Tab>'] = { 'accept', 'fallback' },
         ['<S-Tab>'] = { 'select_prev', 'fallback' },
-
-        -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
-        --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
       },
 
       appearance = {
@@ -967,22 +974,19 @@ require('lazy').setup({
   },
 
   -- ============================================================================
-  -- SECTION 6.4: AUTOCOMPLETION
+  -- SECTION 6.6: COLORSCHEME
   -- ============================================================================
+  -- Controls the colors and visual appearance of Neovim.
 
-  { -- You can easily change to a different colorscheme.
-    -- Change the name of the colorscheme plugin below, and then
-    -- change the command in the config to whatever the name of that colorscheme is.
-    --
-    -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    -- ============================================================================
-  -- SECTION 6.5: COLORSCHME & HIGHLIGHTING
-  -- ============================================================================
-
-  -- Tokyonight: Clean, dark color scheme
-  -- PERFORMANCE: priority=1000 ensures it loads before all other plugins
-  'folke/tokyonight.nvim',
-    priority = 1000, -- Make sure to load this before all the other start plugins.
+  -- TOKYONIGHT
+  -- WHAT: A clean, dark color scheme for Neovim
+  -- TO CHANGE: Change 'tokyonight-night' to 'tokyonight-storm', 'tokyonight-moon',
+  --            or 'tokyonight-day' for different styles
+  -- EFFECT: Changes all colors in the editor (syntax highlighting, UI, etc.)
+  -- LOADING: priority=1000 ensures it loads before all other plugins
+  {
+    'folke/tokyonight.nvim',
+    priority = 1000,
     config = function()
       ---@diagnostic disable-next-line: missing-fields
       require('tokyonight').setup {
@@ -990,6 +994,9 @@ require('lazy').setup({
           comments = { italic = false }, -- Disable italics in comments
         },
       }
+      vim.cmd.colorscheme 'tokyonight-night'
+    end,
+  },
 
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
@@ -999,11 +1006,16 @@ require('lazy').setup({
   },
 
   -- ============================================================================
-  -- SECTION 6.6: UI & EDITING UTILITIES
+  -- SECTION 6.7: EDITING UTILITIES
   -- ============================================================================
+  -- Plugins that enhance text editing and manipulation.
 
-  -- Todo-comments: Highlight TODO, FIXME, NOTE, etc. in comments
-  -- PERFORMANCE: Loaded on VeryLazy (after UI is ready)
+  -- TODO-COMMENTS
+  -- WHAT: Highlights TODO, FIXME, NOTE, WARN, etc. in comments with colors
+  -- TO CHANGE: Remove this plugin if you don't want comment highlighting
+  -- EFFECT: Words like TODO, FIXME, HACK get colored backgrounds in comments
+  --         Helps you find important notes in your code
+  -- LOADING: VeryLazy = loads after UI is ready
   {
     'folke/todo-comments.nvim',
     event = 'VeryLazy',
@@ -1014,9 +1026,11 @@ require('lazy').setup({
     opts = { signs = false },
   },
 
-  -- Mini.nvim: Collection of small, independent modules
-  -- PERFORMANCE: Loaded on VeryLazy (after UI is ready)
-  -- Provides: surround, ai textobjects, statusline
+  -- MINI.NVIM
+  -- WHAT: Collection of small, independent modules for text editing
+  -- TO CHANGE: Add/remove mini.* modules in the config function
+  -- EFFECT: Provides surround (gs prefix), ai textobjects, statusline
+  -- LOADING: VeryLazy = loads after UI is ready
   {
     'nvim-mini/mini.nvim',
     event = 'VeryLazy',
@@ -1074,20 +1088,23 @@ require('lazy').setup({
     end,
   },
 
-  -- Auto-save: Automatically save files on certain events
-  -- PERFORMANCE: Loaded on InsertLeave/TextChanged events
+  -- AUTO-SAVE
+  -- WHAT: Automatically saves your file when you leave insert mode or stop typing
+  -- TO CHANGE: Remove this plugin if you prefer manual saving
+  -- EFFECT: Your work is saved automatically - no need to press :w constantly
+  -- LOADING: InsertLeave/TextChanged = loads when you type or leave insert mode
   {
     "okuuva/auto-save.nvim",
     cmd = "ASToggle", 
     event = { "InsertLeave", "TextChanged" }, 
-    opts = {
-      -- This will use the default settings:
-      -- It automatically saves when you leave Insert mode or stop typing.
-    },
+    opts = {},
   },
 
-  -- TypeScript-specific LSP tools (overrides ts_ls for better TS/JS support)
-  -- PERFORMANCE: Loaded on ft filter (JS/TS files only)
+  -- TYPESCRIPT-TOOLS
+  -- WHAT: Enhanced TypeScript/JavaScript LSP features (better than ts_ls)
+  -- TO CHANGE: Remove if you prefer the built-in ts_ls
+  -- EFFECT: Adds better type checking, refactoring, and code actions for TS/JS
+  -- LOADING: ft = only loads for JavaScript/TypeScript files
   {
     "pmizio/typescript-tools.nvim",
     dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
@@ -1103,46 +1120,48 @@ require('lazy').setup({
     },
   },
 
-  -- Code Runner: Run code directly from the editor
-  -- PERFORMANCE: Loaded on keymap press only
+  -- CODE RUNNER
+  -- WHAT: Run code directly from the editor with a single keypress
+  -- TO CHANGE: Modify the filetype table to add/change run commands
+  -- EFFECT: <leader>r runs the current file; <leader>rf also runs the file
+  --         Output appears in a terminal split below
+  -- LOADING: keys = only loads when you press the keybindings
   {
     "CRAG666/code_runner.nvim",
     config = function()
       require('code_runner').setup({
-        -- Choose your preferred mode: "float", "term", or "tab"
         mode = "term",
         focus = true,
         startinsert = true,
-
-        -- ADD THE FILETYPE BLOCK HERE:
         filetype = {
           javascript = "bun",
           python = "python3 -u",
           typescript = "bun",
           typescriptreact = "bun",
-          
-          -- You can keep your compiled languages here too if you use them:
           cpp = { "cd $dir && g++ $fileName -o $fileNameWithoutExt && ./$fileNameWithoutExt" },
           c = { "cd $dir && gcc $fileName -o $fileNameWithoutExt && ./$fileNameWithoutExt" },
         },
-
-
       })
     end,
     keys = {
-      -- You can change <leader>r to whatever shortcut you prefer
       { "<leader>r", ":RunCode<CR>", desc = "[R]un [C]ode" },
       { "<leader>rf", ":RunFile<CR>", desc = "[R]un [F]ile" },
     },
   },
 
   -- ============================================================================
-  -- SECTION 6.7: SYNTAX & CODE INTELLIGENCE
+  -- SECTION 6.8: SYNTAX HIGHLIGHTING
   -- ============================================================================
+  -- Plugins that provide syntax highlighting and code parsing.
 
-  -- Treesitter: Syntax highlighting, text objects, and more
-  -- PERFORMANCE: Loaded on BufReadPost (after file is read)
+  -- TREESITTER
+  -- WHAT: Provides accurate, incremental syntax highlighting and text objects
+  -- TO CHANGE: Install more parsers with `:TSInstall <language>`
+  -- EFFECT: Better syntax highlighting than traditional regex-based highlighting
+  --         Enables features like incremental selection, text objects
+  -- LOADING: BufReadPost = loads when you open a file
   {
+    'nvim-treesitter/nvim-treesitter',
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     event = { 'BufReadPost', 'BufNewFile' },
@@ -1161,11 +1180,16 @@ require('lazy').setup({
   },
 
   -- ============================================================================
-  -- SECTION 6.8: UI COMPONENTS
+  -- SECTION 6.9: UI COMPONENTS
   -- ============================================================================
+  -- Plugins that add visual UI elements to Neovim.
 
-  -- Neo-tree: File explorer sidebar
-  -- PERFORMANCE: Loaded on keymap press only
+  -- NEO-TREE
+  -- WHAT: A file explorer sidebar that shows your project's file tree
+  -- TO CHANGE: Modify filesystem.hijack_netrw_behavior or keybindings
+  -- EFFECT: Press <leader>e to toggle the file explorer on the left
+  --         Replaces netrw (the built-in file browser)
+  -- LOADING: keys = only loads when you press <leader>e
   {
     "nvim-neo-tree/neo-tree.nvim",
     branch = "v3.x",
@@ -1184,8 +1208,12 @@ require('lazy').setup({
     },
   },
 
-  -- Bufferline: Tab/buffer bar at the top
-  -- PERFORMANCE: Loaded on keymap press only
+  -- BUFFERLINE
+  -- WHAT: Shows open buffers as tabs at the top of the screen
+  -- TO CHANGE: Change mode to 'tabs' for tab-style, or modify options
+  -- EFFECT: Shift+H/L to switch buffers; <leader>bd to delete a buffer
+  --         Shows LSP diagnostics indicators on buffer tabs
+  -- LOADING: keys = only loads when you press the keybindings
   {
     'akinsho/bufferline.nvim',
     version = "*",
@@ -1204,8 +1232,12 @@ require('lazy').setup({
     },
   },
 
-  -- LazyGit: Floating terminal git client
-  -- PERFORMANCE: Loaded on cmd/keymap press only
+  -- LAZYGIT
+  -- WHAT: Opens LazyGit (a terminal git UI) in a floating window
+  -- TO CHANGE: Change the keybinding or remove this plugin
+  -- EFFECT: Press <leader>fg to open a full git interface in a floating window
+  --         Much faster than command-line git for common operations
+  -- LOADING: cmd/keys = only loads when you press the keybinding
   {
     'kdheepak/lazygit.nvim',
     dependencies = { 'nvim-lua/plenary.nvim' },
@@ -1215,8 +1247,12 @@ require('lazy').setup({
     },
   },
 
-  -- ToggleTerm: Better terminal management
-  -- PERFORMANCE: Loaded on VeryLazy (after UI is ready)
+  -- TOGGLETERM
+  -- WHAT: Better terminal management with multiple terminal support
+  -- TO CHANGE: Modify direction, size, or keybindings
+  -- EFFECT: <C-\> to toggle terminal; <leader>tt for horizontal terminal
+  --         <leader>tf for floating terminal; <leader>t1/t2/t3 for numbered terminals
+  -- LOADING: VeryLazy = loads after UI is ready
   {
     'akinsho/toggleterm.nvim',
     version = "*",
@@ -1244,8 +1280,12 @@ require('lazy').setup({
     },
   },
 
-  -- Project: Auto-detect project root directories
-  -- PERFORMANCE: Loaded on VeryLazy (after UI is ready)
+  -- PROJECT.NVIM
+  -- WHAT: Auto-detects project root directories (where .git, package.json, etc. are)
+  -- TO CHANGE: Modify patterns to add/remove root markers
+  -- EFFECT: Enables project-aware features like Telescope project switching
+  --         Helps plugins know where your project starts and ends
+  -- LOADING: VeryLazy = loads after UI is ready
   {
     "folke/project.nvim",
     event = 'VeryLazy',
@@ -1258,11 +1298,16 @@ require('lazy').setup({
   },
 
   -- ============================================================================
-  -- SECTION 6.9: GIT INTEGRATION
+  -- SECTION 6.10: GIT INTEGRATION
   -- ============================================================================
+  -- Plugins for working with git inside Neovim.
 
-  -- Neogit: Git interface inside Neovim
-  -- PERFORMANCE: Loaded on keymap press only
+  -- NEOGIT
+  -- WHAT: A full git interface inside Neovim (like Magit for Emacs)
+  -- TO CHANGE: Remove if you prefer LazyGit or command-line git
+  -- EFFECT: Press <leader>gs to open git status; <leader>gc to commit
+  --         Press <leader>gp to push; provides staging, diffing, and more
+  -- LOADING: keys = only loads when you press the keybindings
   {
     "NeogitOrg/neogit",
     dependencies = {
@@ -1278,7 +1323,11 @@ require('lazy').setup({
     },
   },
 
-  -- Auto-session: Automatically save/restore Neovim sessions
+  -- AUTO-SESSION
+  -- WHAT: Automatically saves and restores Neovim sessions
+  -- TO CHANGE: Modify suppressed_dirs to prevent session saving in certain dirs
+  -- EFFECT: When you open Neovim in a directory, it restores your previous session
+  --         (open files, window layout, cursor positions)
   -- IMPORTANT: Must load at startup (lazy=false) for auto-restore to work
   {
     "rmagatti/auto-session",
@@ -1297,8 +1346,17 @@ require('lazy').setup({
     end,
   },
 
-  -- Flash: Jump to any location using labels (like hop.nvim)
-  -- PERFORMANCE: Loaded on VeryLazy (after UI is ready)
+  -- ============================================================================
+  -- SECTION 6.11: NAVIGATION
+  -- ============================================================================
+  -- Plugins for jumping around your code and files.
+
+  -- FLASH.NVIM
+  -- WHAT: Jump to any visible location using labeled targets (like hop.nvim)
+  -- TO CHANGE: Remove if you prefer sneak or easymotion
+  -- EFFECT: Press s to see jump labels; press the label letter to jump there
+  --         Press S for treesitter-aware jumps (jumps to function/class boundaries)
+  -- LOADING: VeryLazy = loads after UI is ready
   {
     "folke/flash.nvim",
     event = "VeryLazy",
@@ -1310,24 +1368,28 @@ require('lazy').setup({
   },
 
   -- ============================================================================
-  -- SECTION 6.10: CUSTOM PLUGINS
+  -- SECTION 6.12: CUSTOM PLUGINS
   -- ============================================================================
   -- Custom plugin definitions from `lua/custom/plugins/*.lua`
-  -- This is the easiest way to modularize your config.
   { import = 'custom.plugins' },
 
   -- ============================================================================
-  -- SECTION 6.11: PYTHON DEVELOPMENT
+  -- SECTION 6.13: PYTHON DEVELOPMENT
   -- ============================================================================
+  -- Plugins for Python debugging and development.
 
-  -- Debugger (DAP): Debug Adapter Protocol implementation
-  -- PERFORMANCE: Loaded on keymap press only
+  -- NVIM-DAP
+  -- WHAT: Debug Adapter Protocol (DAP) implementation for step-through debugging
+  -- TO CHANGE: Modify debug keybindings or add more language adapters
+  -- EFFECT: Set breakpoints (<leader>db), step through code (<leader>dc/di/do),
+  --         inspect variables, and debug Python tests
+  -- LOADING: keys = only loads when you press debug keybindings
   {
     'mfussenegger/nvim-dap',
     dependencies = {
-      'rcarriga/nvim-dap-ui',
-      'nvim-neotest/nvim-nio',
-      'mfussenegger/nvim-dap-python',
+      'rcarriga/nvim-dap-ui',      -- Visual UI for the debugger
+      'nvim-neotest/nvim-nio',     -- Required by dap-ui
+      'mfussenegger/nvim-dap-python', -- Python-specific debugging
     },
     keys = {
       { '<leader>db', function() require('dap').toggle_breakpoint() end, desc = '[D]ebug [B]reakpoint' },
@@ -1364,11 +1426,16 @@ require('lazy').setup({
   },
 
   -- ============================================================================
-  -- SECTION 6.12: REMOTE DEVELOPMENT
+  -- SECTION 6.14: REMOTE DEVELOPMENT
   -- ============================================================================
+  -- Plugins for working on remote machines.
 
-  -- Remote Nvim: SSH into remote machines and develop there
-  -- PERFORMANCE: Loaded on keymap press only
+  -- REMOTE-NVIM
+  -- WHAT: SSH into remote machines and develop there with full Neovim features
+  -- TO CHANGE: Remove if you don't do remote development
+  -- EFFECT: <leader>rc to connect to a remote machine; <leader>rd to disconnect
+  --         You get LSP, debugging, and all your plugins on the remote machine
+  -- LOADING: keys = only loads when you press the keybindings
   {
     'amitds1997/remote-nvim.nvim',
     version = '0.*',
@@ -1387,11 +1454,16 @@ require('lazy').setup({
   },
 
   -- ============================================================================
-  -- SECTION 6.13: BOOKMARKS & NAVIGATION
+  -- SECTION 6.15: BOOKMARKS
   -- ============================================================================
+  -- Plugins for marking and navigating to important lines.
 
-  -- Vim Bookmarks: Toggle bookmarks and navigate between them
-  -- PERFORMANCE: Loaded on keymap press only
+  -- TELESCOPE-VIM-BOOKMARKS
+  -- WHAT: Toggle bookmarks and list them with Telescope
+  -- TO CHANGE: Remove if you don't use bookmarks
+  -- EFFECT: mm to toggle bookmark; mn/mp to jump between bookmarks
+  --         <leader>mb to list all bookmarks in Telescope
+  -- LOADING: keys = only loads when you press the keybindings
   {
     'tom-anders/telescope-vim-bookmarks.nvim',
     dependencies = { 'MattesGroeger/vim-bookmarks' },
@@ -1408,11 +1480,16 @@ require('lazy').setup({
   },
 
   -- ============================================================================
-  -- SECTION 6.14: VISUAL ENHANCEMENTS
+  -- SECTION 6.16: VISUAL ENHANCEMENTS
   -- ============================================================================
+  -- Plugins that enhance the visual appearance of code.
 
-  -- Hlchunk: Rainbow indent lines + current chunk highlighting
-  -- PERFORMANCE: Loaded on VeryLazy (after UI is ready)
+  -- HLCHUNK
+  -- WHAT: Shows colored indent lines and highlights the current code chunk
+  -- TO CHANGE: Modify colors in opts.chunk.style or opts.indent.style
+  -- EFFECT: Purple/red chunk highlighting for the current block
+  --         Dimmed indent lines (│) for visual structure
+  -- LOADING: VeryLazy = loads after UI is ready
   {
     'shellRaining/hlchunk.nvim',
     event = { 'VeryLazy' },
@@ -1435,19 +1512,19 @@ require('lazy').setup({
         indent = {
           enable = true,
           delay = 0,
-          chars = {
-            '│',
-          },
-          style = {
-            { fg = '#4a4560' },
-          },
+          chars = { '│' },
+          style = { { fg = '#4a4560' } },
         },
       })
     end,
   },
 
-  -- Render-markdown: Better markdown rendering in Neovim
-  -- PERFORMANCE: Loaded on ft=markdown only
+  -- RENDER-MARKDOWN
+  -- WHAT: Better markdown rendering with icons, boxes, and formatting
+  -- TO CHANGE: Remove if you prefer plain markdown
+  -- EFFECT: Markdown headings get icons, code blocks get boxes,
+  --         checkboxes get rendered as [ ] and [x]
+  -- LOADING: ft = only loads for markdown files
   {
     'MeanderingProgrammer/render-markdown.nvim',
     ft = 'markdown',
@@ -1504,9 +1581,10 @@ require('lazy').setup({
 -- ============================================================================
 -- SECTION 7: TERMINAL KEYMAPS
 -- ============================================================================
--- Better navigation when in terminal mode
--- PERFORMANCE: Loaded on TermOpen event (when terminal is opened)
--- ============================================================================
+-- WHAT: Adds better navigation keybindings when inside a terminal buffer
+-- TO CHANGE: Remove this autocmd if you don't use terminal mode
+-- EFFECT: In terminal mode: jk exits to normal mode, Ctrl+H/J/K/L switches windows
+--         Ctrl+W works normally (passes through to window commands)
 vim.api.nvim_create_autocmd('TermOpen', {
   group = vim.api.nvim_create_augroup('terminal-keymaps', { clear = true }),
   callback = function(args)
@@ -1523,18 +1601,23 @@ vim.api.nvim_create_autocmd('TermOpen', {
 -- ============================================================================
 -- SECTION 8: PROJECT SWITCHING
 -- ============================================================================
--- Quick project switching via Telescope (like VS Code's Ctrl+R)
--- ============================================================================
+-- WHAT: Quick project switching via Telescope (like VS Code's Ctrl+R)
+-- TO CHANGE: Change <C-r> to your preferred key
+-- EFFECT: Opens a list of recently used projects; select one to switch to
 vim.keymap.set('n', '<C-r>', '<cmd>Telescope projects<cr>', { desc = 'Open [R]ecent Projects' })
 
 -- ============================================================================
 -- SECTION 9: FILETYPE DETECTION
 -- ============================================================================
--- Custom filetype detection for specific file types
--- ============================================================================
+-- WHAT: Custom rules for detecting file types based on file content
+-- TO CHANGE: Add more patterns for your specific file types
+-- EFFECT: Files matching the pattern get the correct filetype and LSP
 
--- Bun shebang detection: Automatically detect .ts/.js files with bun shebang
--- Sets filetype to 'typescript' and triggers LSP attachment
+-- BUN SHEBANG DETECTION
+-- WHAT: Detects Bun runtime in shebang lines and sets filetype to typescript
+-- TO CHANGE: Modify the pattern to match different shebangs
+-- EFFECT: Files with #!/usr/bin/env bun become TypeScript files,
+--         so TypeScript LSP and formatting work correctly
 vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
   group = vim.api.nvim_create_augroup('bun-shebang-detection', { clear = true }),
   callback = function(args)
