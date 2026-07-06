@@ -677,7 +677,6 @@ require('lazy').setup({
       --
       -- You can press `g?` for help in this menu.
       local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, { 'ruff' })
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
