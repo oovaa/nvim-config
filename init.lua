@@ -1213,7 +1213,7 @@ require('lazy').setup({
   -- Rainbow indent lines + current chunk highlighting
   {
     'shellRaining/hlchunk.nvim',
-    event = { 'BufReadPre', 'BufNewFile' },
+    event = { 'VeryLazy' },
     config = function()
       require('hlchunk').setup({
         chunk = {
@@ -1232,6 +1232,7 @@ require('lazy').setup({
         },
         indent = {
           enable = true,
+          delay = 0,
           chars = {
             '│',
           },
