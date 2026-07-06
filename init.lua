@@ -1,117 +1,107 @@
 --[[
 
-=====================================================================
-==================== PERFORMANCE OPTIMIZED CONFIG ====================
-=====================================================================
-=====                                    .-----.          ========
-=====         .----------------------.   | === |          ========
-=====         |.-""""""""""""""""""-.|   |-----|          ========
-=====         ||                    ||   | === |          ========
-=====         ||   KICKSTART.NVIM   ||   |-----|          ========
-=====         ||                    ||   | === |          ========
-=====         ||                    ||   |-----|          ========
-=====         ||:Tutor              ||   |:::::|          ========
-=====         |'-..................-'|   |____o|          ========
-=====         `"")----------------(""`   ___________      ========
-=====        /::::::::::|  |::::::::::\  \ no mouse \     ========
-=====       /:::========|  |==hjkl==:::\  \ required \    ========
-=====      '""""""""""""'  '""""""""""""'  '""""""""""'   ========
-=====                                                     ========
-=====================================================================
-=====================================================================
+================================================================================
+NEOVIM CONFIGURATION GUIDE
+================================================================================
 
-PERFORMANCE OPTIMIZATIONS APPLIED:
------------------------------------
-1. LSP servers loaded on-demand via FileType autocmds (saves 50-150ms)
-2. Plugins lazy-loaded with appropriate events (VeryLazy, BufReadPost, etc.)
-3. Disabled 8 unused built-in Neovim plugins (saves 10-20ms)
-4. Telescope LspAttach merged into lspconfig (reduced autocmd overhead)
-5. blink.cmp loaded on InsertEnter (not VimEnter)
-6. treesitter loaded on BufReadPost (not at boot)
+This is your Neovim configuration. Every setting is explained so you can
+understand what it does, change it safely, and know the effect of your changes.
 
-ESTIMATED STARTUP TIME: ~150-250ms (down from ~400-600ms)
+WHAT IS KICKSTART?
+  Kickstart.nvim is a starting point for your own configuration, not a distribution.
+  Read every line, understand it, and modify it to suit your needs.
 
-What is Kickstart?
+GETTING STARTED:
+  1. Read through this file top to bottom
+  2. Try changing a setting and see what happens
+  3. Use `:help <option>` to learn more about any option
+  4. Use `:Telescope keymaps` to see all available keybindings
 
-  Kickstart.nvim is *not* a distribution.
+LEADER KEY: <Space> (Section 2)
 
-  Kickstart.nvim is a starting point for your own configuration.
-    The goal is that you can read every line of code, top-to-bottom, understand
-    what your configuration is doing, and modify it to suit your needs.
+SECTION INDEX:
+  1.  Provider Disables        - Disable unused language providers
+  2.  Leader Key               - Set your leader key (MUST be before plugins)
+  3.  Options                  - Core Neovim settings
+  4.  Keymaps                  - Custom keybindings
+  5.  Autocommands             - Auto-run code on events
+  6.  Plugins (lazy.nvim)      - All plugin configurations
+     6.1  UI & Visual         - Indent, git signs, which-key
+     6.2  Fuzzy Finding       - Telescope, spectre
+     6.3  LSP                 - Language servers, Mason
+     6.4  Formatting          - Auto-format on save
+     6.5  Completion          - Autocompletion (blink.cmp)
+     6.6  Colorscheme         - TokyoNight theme
+     6.7  Editing Utilities   - Todo, mini.nvim, auto-save
+     6.8  Language Tools      - TypeScript, code runner
+     6.9  Syntax              - Treesitter highlighting
+     6.10 UI Components       - File explorer, tabs, terminal
+     6.11 Git Integration     - Neogit, sessions
+     6.12 Navigation          - Flash, projects, bookmarks
+     6.13 Visual              - Indent lines, markdown
+     6.14 Python Dev          - Debugger (DAP)
+     6.15 Remote Dev          - SSH into remote machines
+  7.  Terminal Keymaps         - Better terminal navigation
+  8.  Project Switching        - Quick project switching
+  9.  Filetype Detection       - Custom filetype rules
 
-    Once you've done that, you can start exploring, configuring and tinkering to
-    make Neovim your own! That might mean leaving Kickstart just the way it is for a while
-    or immediately breaking it into modular pieces. It's up to you!
-
-    If you don't know anything about Lua, I recommend taking some time to read through
-    a guide. One possible example which will only take 10-15 minutes:
-      - https://learnxinyminutes.com/docs/lua/
-
-    After understanding a bit more about Lua, you can use `:help lua-guide` as a
-    reference for how Neovim integrates Lua.
-    - :help lua-guide
-    - (or HTML version): https://neovim.io/doc/user/lua-guide.html
-
-Key Mappings Reference:
------------------------
-  Leader key: <Space>
-
-  Search:      <leader>s{f,g,w,/,n,r,.,c,d,k}
-  Terminal:    <leader>t{t,f,m,1,2,3,n}
-  Git:         <leader>g{s,c,p,P,l}
-  Debug:       <leader>d{b,c,i,o,O,r,l,t,n,f,s}
-  LSP:         gr{n,a,D}, grr, gri, grd, grt, gO, gW
-  Bookmarks:   m{m,i,n,p}, <leader>mb
-  Remote:      <leader>r{c,d,s,l}
-  Molten:      <leader>m{i,l,v,r,h,d,n,p,o}
-
-SECTIONS:
-  Section 1: Provider Disables
-  Section 2: Leader Key Configuration
-  Section 3: Neovim Options
-  Section 4: Keymaps & Diagnostics
-  Section 5: Autocommands
-  Section 6: Lazy.nvim Plugin Manager
-    6.1: UI & Visual Enhancements
-    6.2: Fuzzy Finding & File Management
-    6.3: Formatting & Completion
-    6.4: Autocompletion
-    6.5: Colorscheme & Highlighting
-    6.6: UI & Editing Utilities
-    6.7: Syntax & Code Intelligence
-    6.8: UI Components
-    6.9: Git Integration
-    6.10: Custom Plugins
-    6.11: Python Development
-    6.12: Remote Development
-    6.13: Bookmarks & Navigation
-    6.14: Visual Enhancements
-  Section 7: Terminal Keymaps
-  Section 8: Project Switching
-  Section 9: Filetype Detection
+KEYBINDINGS QUICK REFERENCE:
+  <leader>s  = Search          <leader>t  = Terminal
+  <leader>f  = File/Git        <leader>d  = Debug
+  <leader>g  = Git             <leader>m  = Bookmarks/Molten
+  <leader>r  = Run/Remote      gr         = LSP actions
+  mm         = Toggle bookmark S/s        = Flash jump
 
 --]]
 
 -- ============================================================================
 -- SECTION 1: PROVIDER DISABLES
 -- ============================================================================
--- Disable unused language providers to reduce startup time and suppress warnings.
--- Each provider (perl, ruby, python3, node) adds overhead even if unused.
--- Only enable the ones you actually use.
+-- WHAT: Neovim can connect to external language tools (Python, Ruby, Perl,
+--        Node.js) called "providers". Each adds startup time even if unused.
+--        Disabling them speeds up startup by ~5-10ms each.
+--
+-- TO CHANGE:
+--   - If you use Python plugins (like molten-nvim), keep python3 enabled
+--   - If you use Ruby plugins, remove the ruby line
+--   - If you use Perl plugins, remove the perl line
+--   - Check active providers: `:checkhealth provider`
+--
+-- EFFECT:
+--   Setting a provider to 0 = disabled (faster startup, but plugins needing it break)
+--   Removing the line = provider enabled (slower startup, but plugins can use it)
 -- ============================================================================
-vim.g.loaded_perl_provider = 0  -- Disable Perl provider (not used)
-vim.g.loaded_ruby_provider = 0  -- Disable Ruby provider (not used)
+vim.g.loaded_perl_provider = 0  -- Disable Perl provider (not used by any plugin)
+vim.g.loaded_ruby_provider = 0  -- Disable Ruby provider (not used by any plugin)
+-- python3 is intentionally NOT disabled because molten-nvim needs it
+-- node is intentionally NOT disabled because some plugins may need it
 
--- Compatibility shim for plugins using deprecated vim.lsp.buf_get_clients()
--- This maps the old API to the new one for backward compatibility
+-- COMPATIBILITY SHIM
+-- WHAT: Some older plugins use vim.lsp.buf_get_clients() which was renamed to
+--        vim.lsp.get_clients(). This maps the old name to the new one.
+-- TO CHANGE: Remove this line if all your plugins are up to date
+-- EFFECT: Prevents breakage in plugins using the deprecated function
 vim.lsp.buf_get_clients = vim.lsp.get_clients
 
 -- ============================================================================
 -- SECTION 2: LEADER KEY CONFIGURATION
 -- ============================================================================
--- IMPORTANT: Must happen BEFORE plugins are loaded, otherwise wrong leader
--- key will be used. This is a Neovim requirement.
--- See `:help mapleader`
+-- WHAT: Sets your "leader" key - the prefix for custom keybindings.
+--        Your leader key is used constantly throughout this config.
+--
+-- IMPORTANT: This MUST happen BEFORE plugins are loaded.
+--
+-- TO CHANGE:
+--   Common alternatives to Space:
+--     vim.g.mapleader = ','      -- Comma (popular with Vim users)
+--     vim.g.mapleader = ';'      -- Semicolon
+--     vim.g.mapleader = '\\'     -- Backslash
+--
+-- EFFECT:
+--   All <leader>X keybindings will use your new leader key instead of Space.
+--   Example: If leader is ',', then <leader>sf becomes ,sf
+--
+-- SEE: `:help mapleader`
 -- ============================================================================
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
@@ -119,110 +109,193 @@ vim.g.maplocalleader = ' '
 -- ============================================================================
 -- SECTION 3: NEOVIM OPTIONS
 -- ============================================================================
--- These options control Neovim's behavior and UI.
--- See `:help vim.o` for more information.
+-- WHAT: Controls Neovim's behavior, appearance, and editing features.
+--        Each option is a setting that changes how Neovim works.
+--
+-- HOW TO CHANGE: Toggle by commenting/uncommenting (add or remove --)
+--                Change values by editing the right side of the =
+--                Test with `:source %` or restart Neovim
+--
+-- SEE: `:help vim.o` for all available options
 -- ============================================================================
 
--- Nerd Font support (set to true if you have a Nerd Font installed)
+-- NERD FONT SUPPORT
+-- WHAT: Enables special icons in the UI (file explorer, statusline, etc.)
+-- TO CHANGE: Set to false if you don't have a Nerd Font installed
+-- EFFECT: false = no icons (works with any terminal font)
+--         true = icons everywhere (requires a Nerd Font like JetBrainsMono Nerd Font)
 vim.g.have_nerd_font = true
 
--- Line numbers (absolute by default, uncomment relative if preferred)
+-- LINE NUMBERS
+-- WHAT: Shows line numbers in the left gutter
+-- TO CHANGE: Uncomment relative line numbers for a different experience
+-- EFFECT: true = absolute numbers (1, 2, 3, 4, 5...)
+--         relative = relative numbers (cursor line shows absolute, others show distance)
 vim.o.number = true
 -- vim.o.relativenumber = true  -- Uncomment for relative line numbers
 
--- Mouse support (useful for resizing splits)
+-- MOUSE SUPPORT
+-- WHAT: Allows using the mouse in Neovim
+-- TO CHANGE: Set to '' to disable mouse completely
+-- EFFECT: 'a' = all modes (normal, insert, visual, command)
+--         'n' = normal mode only
+--         '' = no mouse support
 vim.o.mouse = 'a'
 
--- Don't show mode in command line (statusline shows it instead)
+-- SHOW MODE
+-- WHAT: Shows current mode (INSERT, NORMAL, VISUAL) in the command line
+-- TO CHANGE: Set to true if you want to see the mode indicator
+-- EFFECT: false = cleaner command line (mode shown in statusline instead)
+--         true = mode shown in command line bottom-left
 vim.o.showmode = false
 
--- Clipboard sync with OS (scheduled to avoid startup delay)
--- See `:help 'clipboard'`
+-- CLIPBOARD
+-- WHAT: Syncs Neovim's clipboard with your system clipboard
+-- TO CHANGE: Set to 'unnamed' for primary selection (Linux) or 'unnamedplus' for clipboard
+-- EFFECT: You can paste system clipboard with p and copy to system clipboard with y
+-- NOTE: Scheduled to avoid startup delay
 vim.schedule(function() vim.o.clipboard = 'unnamedplus' end)
 
--- Enable break indent for wrapped lines
+-- BREAK INDENT
+-- WHAT: Indents wrapped lines to match the first line's indent
+-- TO CHANGE: Set to false to disable
+-- EFFECT: true = wrapped lines align with the start of the visual line
 vim.o.breakindent = true
 
--- Enable undo/redo persistence (survives file close/reopen)
+-- UNDO FILE
+-- WHAT: Saves undo history to a file, so you can undo even after closing
+-- TO CHANGE: Set to false if you don't want persistent undo
+-- EFFECT: true = undo history survives Neovim restart
 vim.o.undofile = true
 
--- Smart case-insensitive search (case-sensitive if uppercase present)
+-- SEARCH SETTINGS
+-- WHAT: Controls how search behaves (case sensitivity)
+-- TO CHANGE: Set ignorecase to false for case-sensitive search by default
+-- EFFECT: ignorecase + smartcase = case-insensitive unless you type uppercase
+--         Example: "foo" matches "FOO", "Foo", "foo"
+--                  "Foo" matches "Foo" but not "foo" or "FOO"
 vim.o.ignorecase = true
 vim.o.smartcase = true
 
--- Keep sign column always visible (prevents layout shifts)
+-- SIGN COLUMN
+-- WHAT: The column left of line numbers where git signs and diagnostics appear
+-- TO CHANGE: Set to 'auto' to only show when there are signs
+-- EFFECT: 'yes' = always visible (prevents layout shifting)
 vim.o.signcolumn = 'yes'
 
--- Faster update time (affects CursorHold events, swap file writes)
+-- UPDATE TIME
+-- WHAT: How often Neovim checks for changes (in milliseconds)
+-- TO CHANGE: Lower = more responsive but higher CPU
+-- EFFECT: Affects CursorHold timing, swap file writes, and some plugin behaviors
 vim.o.updatetime = 250
 
--- Faster key sequence timeout (affects which-key display)
+-- TIMEOUT LENGTH
+-- WHAT: How long to wait for a key sequence to complete (in milliseconds)
+-- TO CHANGE: Lower = faster timeout for multi-key sequences
+-- EFFECT: Affects which-key display timing and key sequence completion
 vim.o.timeoutlen = 300
 
--- Split behavior (open right/below instead of left/above)
+-- SPLIT BEHAVIOR
+-- WHAT: Controls where new windows open
+-- TO CHANGE: Set to false for opposite behavior (traditional Vim)
+-- EFFECT: splitright = true: vertical splits open to the right
+--         splitbelow = true: horizontal splits open below
 vim.o.splitright = true
 vim.o.splitbelow = true
 
--- Whitespace display configuration
--- See `:help 'list'` and `:help 'listchars'`
+-- WHITESPACE DISPLAY
+-- WHAT: Shows invisible characters (tabs, trailing spaces, etc.)
+-- TO CHANGE: Set list = false to hide all, or modify listchars
+-- EFFECT: Shows tabs as », trailing spaces as ·, nbsp as ␣
 vim.o.list = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 
--- Live preview of substitutions (show changes as you type)
+-- LIVE SUBSTITUTION PREVIEW
+-- WHAT: Shows a split preview when using :substitute (:%s/old/new/g)
+-- TO CHANGE: Set to 'nosplit' for inline preview, or 'false' to disable
+-- EFFECT: 'split' = shows preview in a split window below
 vim.o.inccommand = 'split'
 
--- Highlight the line where cursor is located
+-- CURSOR LINE
+-- WHAT: Highlights the line where your cursor is
+-- TO CHANGE: Set to false to disable
+-- EFFECT: true = current line has a subtle highlight (helps find cursor)
 vim.o.cursorline = true
 
--- Keep 10 lines of context above/below cursor when scrolling
+-- SCROLL OFFSET
+-- WHAT: Keeps this many lines visible above/below cursor when scrolling
+-- TO CHANGE: Increase for more context, decrease for less
+-- EFFECT: Higher values = more context visible (cursor stays centered-ish)
 vim.o.scrolloff = 10
 
--- Show confirmation dialog for unsaved changes (e.g., :q with changes)
+-- CONFIRM DIALOG
+-- WHAT: Shows a confirmation when trying to quit with unsaved changes
+-- TO CHANGE: Set to false for classic behavior (error message instead)
+-- EFFECT: true = asks "Save changes?" dialog instead of error
 vim.o.confirm = true
 
 -- ============================================================================
 -- SECTION 4: KEYMAPS
 -- ============================================================================
--- Key mappings are organized by category for easy reference.
--- See `:help vim.keymap.set()` for more information.
+-- WHAT: Defines custom keybindings for Neovim.
+--
+-- HOW TO ADD YOUR OWN:
+--   vim.keymap.set({mode}, {lhs}, {rhs}, {options})
+--   - mode: 'n' (normal), 'i' (insert), 'v' (visual), 't' (terminal)
+--   - lhs: the key sequence to press (e.g., '<leader>w')
+--   - rhs: what it does (a string command or a Lua function)
+--   - options: table with 'desc', 'silent', 'noremap', etc.
+--
+-- SEE: `:help vim.keymap.set()` for full documentation
 -- ============================================================================
 
--- Clear search highlighting when pressing <Esc> in normal mode
--- See `:help hlsearch`
+-- Clear search highlighting when pressing <Esc>
+-- WHAT: Removes the highlight from the last search
+-- TO CHANGE: Set to a different key like <C-l> (Ctrl+L)
+-- EFFECT: Pressing <Esc> in normal mode clears search highlights
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
--- Delete previous word with Ctrl+Backspace (standard editor behavior)
+-- Delete previous word with Ctrl+Backspace
+-- WHAT: Standard editor behavior - delete the word before cursor
+-- TO CHANGE: Remove this line if you prefer default behavior
+-- EFFECT: Works in both normal and insert mode
 vim.keymap.set({ 'n', 'i' }, '<C-BS>', '<C-w>', { desc = 'Delete previous word' })
 
 -- ============================================================================
 -- DIAGNOSTIC CONFIGURATION & KEYMAPS
 -- ============================================================================
--- See `:help vim.diagnostic.Opts`
+-- WHAT: Configures how Neovim shows errors, warnings, and hints
+-- TO CHANGE: Set virtual_text = false to hide inline error text
+-- EFFECT: Controls appearance of LSP/linter diagnostics
 vim.diagnostic.config {
-  update_in_insert = false,        -- Don't update diagnostics while in insert mode
-  severity_sort = true,            -- Sort diagnostics by severity
-  float = { border = 'rounded', source = 'if_many' },  -- Floating diagnostic window
+  update_in_insert = false,        -- Don't update diagnostics while typing
+  severity_sort = true,            -- Sort by severity (errors first)
+  float = { border = 'rounded', source = 'if_many' },  -- Floating window style
   underline = { severity = { min = vim.diagnostic.severity.WARN } },  -- Underline warnings+
   virtual_text = true,             -- Show diagnostic text at end of line
-  virtual_lines = false,           -- Alternative: show text below line
+  virtual_lines = false,           -- Alternative: show text below the line
   jump = { on_jump = true },       -- Auto-open float when jumping to diagnostic
 }
 
 -- Open diagnostic quickfix list
+-- WHAT: Opens a list of all diagnostics in the current buffer
+-- TO CHANGE: Map to a different key like <leader>x
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
 -- ============================================================================
 -- TERMINAL MODE KEYMAPS
 -- ============================================================================
--- Exit terminal mode with double <Esc> (single Esc is too easy to hit accidentally)
--- NOTE: This won't work in all terminal emulators/tmux/etc.
+-- WHAT: Exit terminal mode with double <Esc>
+-- TO CHANGE: Use a different escape sequence if needed
+-- EFFECT: Pressing <Esc><Esc> returns to normal mode from terminal
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- ============================================================================
 -- WINDOW NAVIGATION KEYMAPS
 -- ============================================================================
--- Use CTRL+<hjkl> to switch between windows (works in normal and terminal mode)
--- See `:help wincmd` for a list of all window commands
+-- WHAT: Switch between split windows using Ctrl+{h,j,k,l}
+-- TO CHANGE: Use different keys if you prefer
+-- EFFECT: Ctrl+H/J/K/L moves between windows in that direction
 vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
@@ -237,13 +310,26 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 -- ============================================================================
 -- SECTION 5: AUTOCOMMANDS
 -- ============================================================================
--- Autocommands are functions that run automatically on certain events.
--- See `:help lua-guide-autocommands`
+-- WHAT: Defines functions that run automatically on certain events.
+--        For example: "when I save a file, do X" or "when I open a Python file, do Y"
+--
+-- HOW TO ADD YOUR OWN:
+--   vim.api.nvim_create_autocmd({event}, {
+--     group = vim.api.nvim_create_augroup('name', { clear = true }),
+--     callback = function(args) -- your code here end,
+--   })
+--
+-- COMMON EVENTS:
+--   BufReadPost = after opening a file, BufWritePre = before saving,
+--   InsertEnter = entering insert mode, CursorHold = cursor idle
+--
+-- SEE: `:help lua-guide-autocommands`
 -- ============================================================================
 
--- Highlight yanked (copied) text briefly for visual feedback
--- Try it with `yap` in normal mode
--- See `:help vim.hl.on_yank()`
+-- Highlight yanked (copied) text briefly
+-- WHAT: Briefly highlights text when you copy it (yank)
+-- TO CHANGE: Remove this autocommand to disable, or change the highlight group
+-- EFFECT: When you press y (yank), the copied text flashes briefly
 vim.api.nvim_create_autocmd('TextYankPost', {
   desc = 'Highlight when yanking (copying) text',
   group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
@@ -253,8 +339,32 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 -- ============================================================================
 -- SECTION 6: LAZY.NVIM PLUGIN MANAGER
 -- ============================================================================
--- Lazy.nvim is a modern plugin manager for Neovim.
--- See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim
+-- WHAT: Lazy.nvim manages all your plugins. It handles downloading, updating,
+--        loading, and configuring them automatically.
+--
+-- HOW PLUGINS ARE LOADED:
+--   Plugins can be loaded in different ways for performance:
+--
+--   event = 'VeryLazy'          Load after UI is ready (non-critical plugins)
+--   event = 'InsertEnter'       Load only when entering insert mode
+--   event = 'BufReadPost'       Load only when opening a file
+--   ft = { 'python', 'lua' }    Load only for specific filetypes
+--   cmd = { 'Telescope' }       Load only when running specific commands
+--   keys = { '<leader>f' }      Load only when specific keymaps are pressed
+--   lazy = false                Load immediately at startup (use sparingly!)
+--
+-- HOW TO ADD A NEW PLUGIN:
+--   1. Find the plugin on GitHub (e.g., 'user/plugin-name')
+--   2. Add it to the list below with the appropriate loading strategy
+--   3. Run `:Lazy sync` to install it
+--
+-- USEFUL COMMANDS:
+--   :Lazy          Open the Lazy.nvim UI (see all plugins, update, clean)
+--   :Lazy sync     Update all plugins
+--   :Lazy clean    Remove unused plugins
+--   :Lazy profile  See plugin load times
+--
+-- SEE: `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim
 -- ============================================================================
 
 -- Bootstrap lazy.nvim (auto-install if not present)
@@ -270,31 +380,38 @@ local rtp = vim.opt.rtp
 rtp:prepend(lazypath)
 
 -- ============================================================================
--- PLUGIN CONFIGURATION
+-- PLUGIN LIST
 -- ============================================================================
--- Plugin loading strategies for optimal performance:
+-- All your plugins are listed below. Each plugin has:
+--   - Plugin name (GitHub shorthand)
+--   - Loading strategy (event, cmd, keys, ft, or lazy=false)
+--   - Configuration (opts, config, or setup)
+--   - Dependencies (other plugins needed)
 --
--- event = 'VeryLazy'     : Load after UI is ready (non-critical plugins)
--- event = 'InsertEnter'  : Load when entering insert mode (completion)
--- event = 'BufReadPost'  : Load when opening a file buffer
--- event = { 'BufReadPost', 'BufNewFile' } : Load for any buffer
--- ft = { ... }           : Load for specific filetypes only
--- cmd = { ... }          : Load when running specific commands
--- keys = { ... }         : Load when specific keymaps are pressed
--- lazy = false           : Load immediately at startup (use sparingly)
+-- TO DISABLE A PLUGIN: Set enabled = false
+-- TO CHANGE LOADING: Modify the event/cmd/keys/ft
+-- TO ADD CONFIGURATION: Add opts = {} or config = function() ... end
 -- ============================================================================
 require('lazy').setup({
   -- ============================================================================
   -- SECTION 6.1: UI & VISUAL ENHANCEMENTS
   -- ============================================================================
+  -- Plugins that change how Neovim looks and feels.
 
-  -- Guess Indent: Auto-detect indentation settings for files
-  -- PERFORMANCE: Tiny plugin, safe to load eagerly
+  -- GUESS INDENT
+  -- WHAT: Automatically detects indentation settings (tabs vs spaces, width)
+  -- TO CHANGE: Remove this plugin if you prefer manual settings
+  -- EFFECT: When you open a file, it detects if it uses 2-space, 4-space, or tabs
+  --         and sets your indent settings accordingly. Very small, safe to keep.
   { 'NMAC427/guess-indent.nvim', opts = {} },
 
-  -- Gitsigns: Git signs in the gutter for changes, adds, deletes
-  -- PERFORMANCE: Loaded on BufReadPost (after file is read)
-  -- See `:help gitsigns` for configuration options
+  -- GITSIGNS
+  -- WHAT: Shows git change indicators in the left gutter (next to line numbers)
+  -- TO CHANGE: Modify the sign characters in opts.signs, or set enabled = false
+  -- EFFECT: + = added line, ~ = changed line, _ = deleted line
+  --         Also provides git hunk navigation and staging
+  -- LOADING: BufReadPost = loads when you open a file (not at startup)
+  -- PERFORMANCE: Saves ~20-60ms by deferring load
   {
     'lewis6991/gitsigns.nvim',
     event = { 'BufReadPost', 'BufNewFile' },
@@ -312,9 +429,13 @@ require('lazy').setup({
     },
   },
 
-  -- Which-Key: Show keybind suggestions after pressing a key
-  -- PERFORMANCE: Loaded on VeryLazy (after UI is ready)
-  -- delay = 200ms balances responsiveness with performance
+  -- WHICH-KEY
+  -- WHAT: Shows a popup with available keybindings after you press a key
+  -- TO CHANGE: Add more groups in opts.spec, or change delay
+  -- EFFECT: After pressing <leader>, you'll see a list of available keys
+  --         and what they do. Helps discover and remember keybindings.
+  -- LOADING: VeryLazy = loads after UI is ready
+  -- PERFORMANCE: 200ms delay balances responsiveness with performance
   {
     'folke/which-key.nvim',
     event = 'VeryLazy',
@@ -326,6 +447,7 @@ require('lazy').setup({
       icons = { mappings = vim.g.have_nerd_font },
 
       -- Document existing key chains (groups of related keymaps)
+      -- Add your own groups here for better organization
       spec = {
         { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
         { '<leader>t', group = '[T]oggle' },
