@@ -539,6 +539,9 @@ require('lazy').setup({
           --  Most Language Servers support renaming across files, etc.
           map('grn', vim.lsp.buf.rename, '[R]e[n]ame')
 
+          -- Hover: show function signature, args, return type, docs
+          map('K', vim.lsp.buf.hover, '[H]over')
+
           -- Execute a code action, usually your cursor needs to be on top of an error
           -- or a suggestion from your LSP for this to activate.
           map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
