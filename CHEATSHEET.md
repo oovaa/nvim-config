@@ -135,6 +135,16 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
     * `gsr)'` - **S**urround **R**eplace **)** with **'**
     * Visual mode: select text, then `gsa` + character to surround
 
+## 🎬 Macros
+
+| Keybinding | Action |
+| :--- | :--- |
+| `q{letter}` | Start recording macro to register (e.g. `qa`) |
+| `q` | Stop recording |
+| `@{letter}` | Play macro from register (e.g. `@a`) |
+| `@@` | Repeat last played macro |
+| `{count}@{letter}` | Play macro N times (e.g. `10@a`) |
+
 ## 🐛 Python Debugging (DAP)
 
 | Keybinding | Action | Plugin |
