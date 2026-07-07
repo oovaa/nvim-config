@@ -87,6 +87,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `:%s/old/new/gi` | Find & replace (case-insensitive) | built-in |
 | `<Tab>` | Accept Autocompletion Suggestion | `blink.cmp` |
 | `<S-Tab>` | Previous Autocompletion Suggestion | `blink.cmp` |
+| `<C-space>` | Force show completion docs | `blink.cmp` |
 | `<C-BS>` | Delete previous word | built-in |
 | `mm` | Toggle bookmark on current line | `vim-bookmarks` |
 | `mi` | Annotate bookmark | `vim-bookmarks` |
@@ -113,6 +114,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 
 | Keybinding | Action |
 | :--- | :--- |
+| `K` | Hover (show function signature, args, return type, docs) |
 | `grd` | Go to Definition |
 | `grr` | Go to References |
 | `gri` | Go to Implementation |

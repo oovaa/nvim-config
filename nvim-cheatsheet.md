@@ -33,6 +33,7 @@
 
 | Keybinding | Action |
 |------------|--------|
+| `K` | Hover (show docs, signature, args) |
 | `grn` | Rename symbol |
 | `gra` | Code action |
 | `grd` | Go to definition |

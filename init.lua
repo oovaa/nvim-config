@@ -60,7 +60,7 @@ Key Mappings Reference:
   Terminal:    <leader>t{t,f,m,1,2,3,n}
   Git:         <leader>g{s,c,p,P,l}
   Debug:       <leader>d{b,c,i,o,O,r,l,t,n,f,s}
-  LSP:         gr{n,a,D}, grr, gri, grd, grt, gO, gW
+  LSP:         K(grn,a,D), grr, gri, grd, grt, gO, gW
   Bookmarks:   m{m,i,n,p}, <leader>mb
   Remote:      <leader>r{c,d,s,l}
   Molten:      <leader>m{i,l,v,r,h,d,n,p,o}
