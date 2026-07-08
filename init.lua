@@ -158,10 +158,15 @@ local function load_theme()
   return 'tokyonight-night' -- default fallback
 end
 
--- Persist every colorscheme change (manual :colorscheme or the Telescope picker).
+-- Persist colorscheme changes, but only AFTER the saved theme has been restored
+-- at startup. Otherwise the initial eager colorscheme apply overwrites the
+-- persisted file with the default before we ever read it (theme resets on boot).
+local theme_ready = false
 vim.api.nvim_create_autocmd('ColorScheme', {
   desc = 'Persist the active colorscheme to disk',
-  callback = function() save_theme(vim.g.colors_name) end,
+  callback = function()
+    if theme_ready then save_theme(vim.g.colors_name) end
+  end,
 })
 
 -- Restore the saved theme once the UI is ready (after all theme plugins load).
@@ -173,6 +178,7 @@ vim.api.nvim_create_autocmd('UIEnter', {
     if saved ~= 'tokyonight-night' then
       pcall(vim.cmd.colorscheme, saved)
     end
+    theme_ready = true -- begin persisting only after the restore
   end,
 })
 
