@@ -121,11 +121,26 @@ vim.api.nvim_create_user_command('StartupTime', function()
   vim.cmd('!nvim --startuptime ' .. log .. ' +q && sort -k2 ' .. log .. ' | tail -n 15')
 end, { desc = 'Profile Neovim startup time' })
 
+-- Compatibility shim for plugins using deprecated vim.lsp.buf_get_clients()
+-- This maps the old API to the new one for backward compatibility
+vim.lsp.buf_get_clients = vim.lsp.get_clients
+
+-- ============================================================================
+-- SECTION 2: LEADER KEY CONFIGURATION
+-- ============================================================================
+-- IMPORTANT: Must happen BEFORE plugins are loaded, otherwise wrong leader
+-- key will be used. This is a Neovim requirement.
+-- See `:help mapleader`
+-- ============================================================================
+vim.g.mapleader = ' '
+vim.g.maplocalleader = ' '
+
 -- ============================================================================
 -- THEME MANAGEMENT (persistent colorscheme)
 -- The active theme is stored in stdpath('data')/theme and restored on startup.
 -- Any :colorscheme change (manual or via :Telescope colorscheme) is saved
 -- automatically by the ColorScheme autocmd below.
+-- Defined AFTER mapleader so <leader> resolves to <Space>, not the default '\'.
 -- ============================================================================
 local theme_file = vim.fn.stdpath 'data' .. '/theme'
 local function save_theme(name)
@@ -163,20 +178,6 @@ vim.api.nvim_create_autocmd('UIEnter', {
 
 -- Switch themes with a live Telescope preview; selection is saved automatically.
 vim.keymap.set('n', '<leader>ty', '<cmd>Telescope colorscheme<cr>', { desc = 'Switch [T]heme' })
-
--- Compatibility shim for plugins using deprecated vim.lsp.buf_get_clients()
--- This maps the old API to the new one for backward compatibility
-vim.lsp.buf_get_clients = vim.lsp.get_clients
-
--- ============================================================================
--- SECTION 2: LEADER KEY CONFIGURATION
--- ============================================================================
--- IMPORTANT: Must happen BEFORE plugins are loaded, otherwise wrong leader
--- key will be used. This is a Neovim requirement.
--- See `:help mapleader`
--- ============================================================================
-vim.g.mapleader = ' '
-vim.g.maplocalleader = ' '
 
 -- ============================================================================
 -- SECTION 3: NEOVIM OPTIONS
