@@ -68,6 +68,8 @@ Key Mappings Reference:
   Bookmarks:   m{m,i,n,p}, <leader>mb
   Remote:      <leader>r{c,d,s,l}
   Molten:      <leader>m{i,l,v,r,h,d,n,p,o}
+  Theme:       <leader>ty  (Telescope colorscheme; choice persisted across restarts)
+  Profiling:   :StartupTime (boot profiling)
 
 SECTIONS:
   Section 1: Provider Disables
