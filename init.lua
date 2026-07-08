@@ -121,6 +121,49 @@ vim.api.nvim_create_user_command('StartupTime', function()
   vim.cmd('!nvim --startuptime ' .. log .. ' +q && sort -k2 ' .. log .. ' | tail -n 15')
 end, { desc = 'Profile Neovim startup time' })
 
+-- ============================================================================
+-- THEME MANAGEMENT (persistent colorscheme)
+-- The active theme is stored in stdpath('data')/theme and restored on startup.
+-- Any :colorscheme change (manual or via :Telescope colorscheme) is saved
+-- automatically by the ColorScheme autocmd below.
+-- ============================================================================
+local theme_file = vim.fn.stdpath 'data' .. '/theme'
+local function save_theme(name)
+  if name and name ~= '' then
+    vim.fn.writefile({ name }, theme_file)
+  end
+end
+local function load_theme()
+  if vim.fn.filereadable(theme_file) == 1 then
+    local ok, lines = pcall(vim.fn.readfile, theme_file)
+    if ok and lines[1] and lines[1] ~= '' then
+      return lines[1]
+    end
+  end
+  return 'tokyonight-night' -- default fallback
+end
+
+-- Persist every colorscheme change (manual :colorscheme or the Telescope picker).
+vim.api.nvim_create_autocmd('ColorScheme', {
+  desc = 'Persist the active colorscheme to disk',
+  callback = function() save_theme(vim.g.colors_name) end,
+})
+
+-- Restore the saved theme once the UI is ready (after all theme plugins load).
+vim.api.nvim_create_autocmd('UIEnter', {
+  once = true,
+  desc = 'Restore persisted colorscheme',
+  callback = function()
+    local saved = load_theme()
+    if saved ~= 'tokyonight-night' then
+      pcall(vim.cmd.colorscheme, saved)
+    end
+  end,
+})
+
+-- Switch themes with a live Telescope preview; selection is saved automatically.
+vim.keymap.set('n', '<leader>ut', '<cmd>Telescope colorscheme<cr>', { desc = 'Switch [T]heme' })
+
 -- Compatibility shim for plugins using deprecated vim.lsp.buf_get_clients()
 -- This maps the old API to the new one for backward compatibility
 vim.lsp.buf_get_clients = vim.lsp.get_clients
