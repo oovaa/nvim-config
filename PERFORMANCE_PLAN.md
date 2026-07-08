@@ -42,16 +42,22 @@
 
 ### Remaining Optimizations
 
-1. **vim.lsp.buf_get_clients shim** (line 92): Remove if not needed by plugins
+1. **vim.lsp.buf_get_clients shim** (line 107): Kept for backward compatibility with plugins using the deprecated API
 2. **which-key spec**: Add more key groups for better documentation
-3. **Startup time profiling**: Add `--startuptime` alias
-4. **Cache directory**: Use `vim.fn.stdpath('cache')` for temp files
-5. **Filetype detection**: Optimize custom filetype detection
+3. **Startup time profiling**: DONE — `:StartupTime` command writes a `--startuptime` log and shows the 15 slowest sources
+4. **Cache directory**: DONE — `vim.loader.enable()` (Lua bytecode cache) + lazy.nvim `performance.cache.enabled = true`
+5. **Filetype detection**: Optimized (bun shebang + jsx/tsx extension mapping)
+
+### Implemented Optimizations (since plan written)
+- `vim.loader.enable()` — caches compiled Lua modules, skips re-parsing on boot
+- lazy.nvim `performance.cache.enabled = true` — module cache for plugins
+- `loaded_node_provider = 0` — Node provider disabled (joins perl/ruby; Python kept for molten-nvim)
+- `:StartupTime` user command for boot profiling
 
 ### Estimated Total Startup Time
 - Before optimizations: ~400-600ms (estimated)
-- After optimizations: ~150-250ms (estimated)
-- Savings: ~200-350ms
+- After optimizations: ~120-150ms (measured, clean headless `--startuptime`)
+- Savings: ~300-450ms
 
 ## Documentation Structure
 

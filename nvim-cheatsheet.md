@@ -72,3 +72,5 @@
 | `<leader>tt` | Toggle terminal |
 | `<C-\>` | Open terminal (toggleterm) |
 | `<C-r>` | Open recent projects |
+| `<leader>ty` | Switch theme (persisted across restarts) |
+| `:StartupTime` | Profile Neovim startup time |

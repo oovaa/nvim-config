@@ -33,7 +33,7 @@ PERFORMANCE OPTIMIZATIONS APPLIED:
  9. Node provider disabled (joins perl/ruby)
 
 
-ESTIMATED STARTUP TIME: ~150-250ms (down from ~400-600ms)
+MEASURED STARTUP TIME: ~120ms (clean headless --startuptime; was ~400-600ms)
 
 What is Kickstart?
 

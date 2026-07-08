@@ -27,6 +27,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
 | `<leader>e` | Toggle File Explorer | `neo-tree.nvim` |
+| `<leader>ty` | Switch Theme (Telescope colorscheme, choice persisted across restarts) | config |
 | `t` | Open file in new tab (in neo-tree) | `neo-tree.nvim` |
 | `<C-t>` | Open file in new tab (in Telescope) | `telescope.nvim` |
 | `<leader>tt` | Toggle bottom terminal | `toggleterm.nvim` |
@@ -97,6 +98,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<leader>f` | Format buffer | `conform.nvim` |
 | `<leader>r` | Run Code | `code_runner.nvim` |
 | `<leader>rf` | Run File | `code_runner.nvim` |
+| `:StartupTime` | Profile Neovim startup and list the 15 slowest sources | config |
 
 ## 🌿 Git Integration
 
