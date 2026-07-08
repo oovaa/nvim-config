@@ -27,7 +27,11 @@ PERFORMANCE OPTIMIZATIONS APPLIED:
 3. Disabled 8 unused built-in Neovim plugins (saves 10-20ms)
 4. Telescope LspAttach merged into lspconfig (reduced autocmd overhead)
 5. blink.cmp loaded on InsertEnter (not VimEnter)
-6. treesitter loaded on BufReadPost (not at boot)
+ 6. treesitter loaded on BufReadPost (not at boot)
+ 7. vim.loader bytecode cache enabled (re-parse avoidance)
+ 8. lazy.nvim module cache enabled (enabled = true)
+ 9. Node provider disabled (joins perl/ruby)
+
 
 ESTIMATED STARTUP TIME: ~150-250ms (down from ~400-600ms)
 
@@ -93,6 +97,13 @@ SECTIONS:
 --]]
 
 -- ============================================================================
+-- BYTECODE CACHE (fastest, safest startup win)
+-- Caches compiled Lua modules so Neovim doesn't re-parse every file on boot.
+-- Requires Neovim >= 0.9. Pairs well with lazy.nvim's own module cache below.
+-- ============================================================================
+vim.loader.enable()
+
+-- ============================================================================
 -- SECTION 1: PROVIDER DISABLES
 -- ============================================================================
 -- Disable unused language providers to reduce startup time and suppress warnings.
@@ -101,6 +112,14 @@ SECTIONS:
 -- ============================================================================
 vim.g.loaded_perl_provider = 0  -- Disable Perl provider (not used)
 vim.g.loaded_ruby_provider = 0  -- Disable Ruby provider (not used)
+vim.g.loaded_node_provider = 0  -- Disable Node provider (no :Node remote plugins used)
+
+-- :StartupTime — profile boot time and show the 15 slowest sources.
+-- Writes a --startuptime log and prints the tail so you can spot regressions.
+vim.api.nvim_create_user_command('StartupTime', function()
+  local log = vim.fn.stdpath 'cache' .. '/startup.log'
+  vim.cmd('!nvim --startuptime ' .. log .. ' +q && sort -k2 ' .. log .. ' | tail -n 15')
+end, { desc = 'Profile Neovim startup time' })
 
 -- Compatibility shim for plugins using deprecated vim.lsp.buf_get_clients()
 -- This maps the old API to the new one for backward compatibility
@@ -1373,6 +1392,11 @@ require('lazy').setup({
 }, { ---@diagnostic disable-line: missing-fields
   rocks = { enabled = false },
   performance = {
+    -- Cache compiled plugin modules so lazy.nvim doesn't re-require them on
+    -- every startup. Works alongside vim.loader.enable() above.
+    cache = {
+      enabled = true,
+    },
     rtp = {
       -- Disable unused built-in Neovim plugins for faster startup (saves 10-20ms)
       disabled_plugins = {
