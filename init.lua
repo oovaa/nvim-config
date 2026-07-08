@@ -27,10 +27,11 @@ PERFORMANCE OPTIMIZATIONS APPLIED:
 3. Disabled 8 unused built-in Neovim plugins (saves 10-20ms)
 4. Telescope LspAttach merged into lspconfig (reduced autocmd overhead)
 5. blink.cmp loaded on InsertEnter (not VimEnter)
- 6. treesitter loaded on BufReadPost (not at boot)
- 7. vim.loader bytecode cache enabled (re-parse avoidance)
- 8. lazy.nvim module cache enabled (enabled = true)
- 9. Node provider disabled (joins perl/ruby)
+6. treesitter loaded on BufReadPost (not at boot)
+
+7. vim.loader bytecode cache enabled (re-parse avoidance)
+8. lazy.nvim module cache enabled (enabled = true)
+9. Node provider disabled (joins perl/ruby)
 
 
 MEASURED STARTUP TIME: ~120ms (clean headless --startuptime; was ~400-600ms)
@@ -68,8 +69,8 @@ Key Mappings Reference:
   Bookmarks:   m{m,i,n,p}, <leader>mb
   Remote:      <leader>r{c,d,s,l}
   Molten:      <leader>m{i,l,v,r,h,d,n,p,o}
-  Theme:       <leader>ty  (Telescope colorscheme; choice persisted across restarts)
-  Profiling:   :StartupTime (boot profiling)
+  Theme:       <leader>ty
+  Profiling:   :StartupTime
 
 SECTIONS:
   Section 1: Provider Disables
