@@ -162,7 +162,7 @@ vim.api.nvim_create_autocmd('UIEnter', {
 })
 
 -- Switch themes with a live Telescope preview; selection is saved automatically.
-vim.keymap.set('n', '<leader>ut', '<cmd>Telescope colorscheme<cr>', { desc = 'Switch [T]heme' })
+vim.keymap.set('n', '<leader>ty', '<cmd>Telescope colorscheme<cr>', { desc = 'Switch [T]heme' })
 
 -- Compatibility shim for plugins using deprecated vim.lsp.buf_get_clients()
 -- This maps the old API to the new one for backward compatibility
