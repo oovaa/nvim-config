@@ -1230,7 +1230,7 @@ require('lazy').setup({
   -- Project: Auto-detect project root directories
   -- PERFORMANCE: Loaded on VeryLazy (after UI is ready)
   {
-    "folke/project.nvim",
+    "ahmedkhalf/project.nvim",
     event = 'VeryLazy',
     config = function()
       require("project_nvim").setup({
