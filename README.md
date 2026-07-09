@@ -26,25 +26,55 @@ below the latest
 your chosen install method only gives you an outdated version of neovim, find
 alternative [installation methods below](#alternative-neovim-installation-methods).
 
-### Install External Dependencies
+### Prerequisites (this config)
 
-External Requirements:
-- Basic utils: `git`, `make`, `unzip`, C Compiler (`gcc`)
-- [ripgrep](https://github.com/BurntSushi/ripgrep#installation),
-  [fd-find](https://github.com/sharkdp/fd#installation)
+This configuration builds on kickstart.nvim with a few extra requirements.
+Make sure the following are installed and available on your `PATH` before
+running Neovim for the first time.
+
+**Required (checked by `:checkhealth`):**
+- [Neovim](https://github.com/neovim/neovim/releases) **>= 0.11** (this config's
+  health check rejects older versions)
+- `git`, `make`, `unzip` — basic build/utils used by plugins (e.g. telescope-fzf-native)
+- A C compiler (`gcc`/`clang`) — needed to compile `telescope-fzf-native.nvim`
+- [ripgrep](https://github.com/BurntSushi/ripgrep#installation) (`rg`) — fuzzy
+  finding / grep backend for Telescope
+- [fd](https://github.com/sharkdp/fd#installation) (`fd`) — file finder backend for Telescope
+
+**Strongly recommended:**
+- A [Nerd Font](https://www.nerdfonts.com/) **is required** for this config —
+  `vim.g.have_nerd_font` is set to `true` in `init.lua`, so icons will render as
+  missing glyphs without one. Install a Nerd Font and configure your terminal to
+  use it.
+- A clipboard tool: `xclip` (X11), `wl-clipboard` (Wayland), or `win32yank`
+  (Windows). The config sets `clipboard = 'unnamedplus'`.
 - [tree-sitter CLI](https://github.com/tree-sitter/tree-sitter/blob/master/crates/cli/README.md#installation)
-- Clipboard tool (xclip/xsel/win32yank or other depending on the platform)
-- A [Nerd Font](https://www.nerdfonts.com/): optional, provides various icons
-  - if you have it set `vim.g.have_nerd_font` in `init.lua` to true
-- Emoji fonts (Ubuntu only, and only if you want emoji!) `sudo apt install fonts-noto-color-emoji`
-- Language Setup:
-  - If you want to write Typescript, you need `npm`
-  - If you want to write Golang, you will need `go`
+  — handy for parsing/debugging; `:TSInstall` works without it but some flows use it.
+
+**For the bundled extra plugins:**
+- [`molten-nvim`](https://github.com/benlubas/molten-nvim) + interactive code
+  execution needs **Python 3** with `pynvim` and a Jupyter kernel, e.g.:
+  ```sh
+  pip install pynvim jupyter ipykernel
+  ```
+- [`image.nvim`](https://github.com/3rd/image.nvim) renders images and is
+  configured with the **`kitty` backend** — images only render in a
+  [kitty](https://sw.kovidgoyal.net/kitty/) (or compatible) terminal.
+
+**Language tooling (installed automatically via Mason on first run):**
+- [Mason](https://github.com/mason-org/mason.nvim) installs LSP servers,
+  linters and formatters for you. For the languages you use, have the matching
+  toolchain available:
+  - TypeScript/Web: `node` + `npm`
+  - Go: `go`
+  - Python: `python3` (+ `ruff` is used for formatting/linting)
+  - C/C++: `gcc`/`clang`
+  - Rust: `rustc`/`cargo`
   - etc.
 
 > [!NOTE]
-> See [Install Recipes](#Install-Recipes) for additional Windows and Linux specific notes
-> and quick install snippets
+> See [Install Recipes](#Install-Recipes) for copy-paste install snippets for
+> your OS (the Linux Homebrew block below matches the setup used to build this repo).
 
 ### Install Kickstart
 
@@ -67,22 +97,22 @@ fork to your machine using one of the commands below, depending on your OS.
 
 > [!NOTE]
 > Your fork's URL will be something like this:
-> `https://github.com/<your_github_username>/kickstart.nvim.git`
+> `https://github.com/<your_github_username>/nvim-config.git`
 
 You likely want to remove `lazy-lock.json` from your fork's `.gitignore` file
 too - it's ignored in the kickstart repo to make maintenance easier, but it's
 [recommended to track it in version control](https://lazy.folke.io/usage/lockfile).
 
-#### Clone kickstart.nvim
+#### Clone this repository
 
 > [!NOTE]
-> If following the recommended step above (i.e., forking the repo), replace
-> `nvim-lua` with `<your_github_username>` in the commands below
+> If you forked the repo, replace `oovaa` with `<your_github_username>` in the
+> commands below.
 
 <details><summary> Linux and Mac </summary>
 
 ```sh
-git clone https://github.com/nvim-lua/kickstart.nvim.git "${XDG_CONFIG_HOME:-$HOME/.config}"/nvim
+git clone https://github.com/oovaa/nvim-config.git "${XDG_CONFIG_HOME:-$HOME/.config}"/nvim
 ```
 
 </details>
@@ -92,13 +122,13 @@ git clone https://github.com/nvim-lua/kickstart.nvim.git "${XDG_CONFIG_HOME:-$HO
 If you're using `cmd.exe`:
 
 ```
-git clone https://github.com/nvim-lua/kickstart.nvim.git "%localappdata%\nvim"
+git clone https://github.com/oovaa/nvim-config.git "%localappdata%\nvim"
 ```
 
 If you're using `powershell.exe`
 
 ```
-git clone https://github.com/nvim-lua/kickstart.nvim.git "${env:LOCALAPPDATA}\nvim"
+git clone https://github.com/oovaa/nvim-config.git "${env:LOCALAPPDATA}\nvim"
 ```
 
 </details>
