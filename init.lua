@@ -106,6 +106,11 @@ SECTIONS:
 -- ============================================================================
 vim.loader.enable()
 
+-- Route node/npm to bun for typescript-tools.nvim (which hardcodes `node` and
+-- `npm root -g`). Shims live in a nvim-scoped dir so the real shell keeps using
+-- bun directly. Created alongside the global typescript install (bun install -g typescript@5).
+vim.env.PATH = vim.env.HOME .. "/.local/share/nvim/bin" .. ":" .. (vim.env.PATH or "")
+
 -- ============================================================================
 -- SECTION 1: PROVIDER DISABLES
 -- ============================================================================
@@ -1076,6 +1081,9 @@ require('lazy').setup({
       settings = {
         filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
       },
+      -- Point directly at the bun-installed global tsserver so the LSP never
+      -- has to resolve it via npm.
+      tsserver_path = vim.fn.expand("~/.bun/install/global/node_modules/typescript/lib/tsserver.js"),
     },
   },
 
@@ -1403,6 +1411,9 @@ require('lazy').setup({
       require('hlchunk').setup({
         chunk = {
           enable = true,
+          -- No treesitter parsers are installed, so use indentation-based
+          -- detection (works for any language without requiring parsers).
+          use_treesitter = false,
           style = {
             { fg = '#806d9c' },
             { fg = '#c21f30' },
