@@ -691,14 +691,12 @@ require('lazy').setup({
         end,
       })
 
-      -- Enable the following language servers
-      --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
+      -- Language servers managed by Mason (automatically installed via `:Mason`)
       --  See `:help lsp-config` for information about keys and how to configure
       ---@type table<string, vim.lsp.Config>
       local servers = {
         -- clangd = {},
         -- gopls = {},
-        pyright = {},
         -- rust_analyzer = {},
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -751,6 +749,8 @@ require('lazy').setup({
       --    :Mason
       --
       -- You can press `g?` for help in this menu.
+      --
+      -- NOTE: pyrefly is installed globally via `uv tool install pyrefly` (not managed by Mason)
       local ensure_installed = vim.tbl_keys(servers or {})
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -761,9 +761,12 @@ require('lazy').setup({
         vim.lsp.config(name, server)
       end
 
+      -- pyrefly: installed globally via uv, configured using lspconfig defaults
+      vim.lsp.config('pyrefly', {})
+
       -- Only enable LSP servers when their filetype is opened
       local lsp_filetypes = {
-        pyright = { 'python' },
+        pyrefly = { 'python' },
         lua_ls = { 'lua' },
         stylua = { 'lua' },
       }
