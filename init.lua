@@ -828,6 +828,15 @@ require('lazy').setup({
       default_format_opts = {
         lsp_format = 'fallback', -- Use external formatters if configured below, otherwise use LSP formatting. Set to `false` to disable LSP formatting entirely.
       },
+      -- Force a single unified Prettier config tracked in this repo (git-synced).
+      formatters = {
+        prettier = {
+          prepend_args = { '--config', vim.fn.expand '~/.config/nvim/prettier.config.json' },
+        },
+        prettierd = {
+          prepend_args = { '--config', vim.fn.expand '~/.config/nvim/prettier.config.json' },
+        },
+      },
       -- You can also specify external formatters in here.
       formatters_by_ft = {
         python = { 'ruff_organize_imports', 'ruff_format' },
