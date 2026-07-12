@@ -752,6 +752,9 @@ require('lazy').setup({
       --
       -- NOTE: pyrefly is installed globally via `uv tool install pyrefly` (not managed by Mason)
       local ensure_installed = vim.tbl_keys(servers or {})
+      vim.list_extend(ensure_installed, {
+        'prettier', -- unified JS/TS/JSON/HTML/CSS formatter (conform uses it via ~/.config/nvim/prettier.config.json)
+      })
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
