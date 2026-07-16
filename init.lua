@@ -745,7 +745,9 @@ require('lazy').setup({
       local servers = {
         -- clangd = {},
         -- gopls = {},
-        ruff = {}, -- LSP: lint + format Python (replaces pyright)
+        pyrefly = {
+          cmd = { 'pyrefly', 'lsp' },
+        }, -- LSP: fast type-checking for Python (installed via brew)
         -- rust_analyzer = {},
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -798,7 +800,8 @@ require('lazy').setup({
       --    :Mason
       --
       -- You can press `g?` for help in this menu.
-      local ensure_installed = vim.tbl_keys(servers or {})
+      -- pyrefly is brew-managed, not a mason package; skip it.
+      local ensure_installed = vim.tbl_filter(function(name) return name ~= 'pyrefly' end, vim.tbl_keys(servers or {}))
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -810,7 +813,7 @@ require('lazy').setup({
 
       -- Only enable LSP servers when their filetype is opened
       local lsp_filetypes = {
-        ruff = { 'python' },
+        pyrefly = { 'python' },
         lua_ls = { 'lua' },
         stylua = { 'lua' },
       }
@@ -1229,7 +1232,7 @@ require('lazy').setup({
   },
 
   -- LUALINE
-  -- WHAT: Statusline + winbar (mode-aware, tokyonight theme)
+  -- WHAT: Statusline (mode-aware, tokyonight theme)
   -- CONFIG: Tuning lives in lua/custom/ui/spec.lua setup_lualine
   {
     'nvim-lualine/lualine.nvim',

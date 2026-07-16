@@ -12,7 +12,7 @@ function M.setup_lualine()
       icons_enabled = true,
       component_separators = { left = '', right = '' },
       section_separators = { left = '', right = '' },
-      disabled_filetypes = { 'neo-tree', 'TelescopePrompt', 'alpha', 'lazy', 'starter' },
+      disabled_filetypes = { 'neo-tree', 'TelescopePrompt', 'alpha', 'lazy' },
       globalstatus = true,
     },
     sections = {
