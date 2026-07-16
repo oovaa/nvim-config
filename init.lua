@@ -281,6 +281,7 @@ vim.diagnostic.config {
 -- WHAT: Opens a list of all diagnostics in the current buffer
 -- TO CHANGE: Map to a different key like <leader>x
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+vim.keymap.set('n', '<leader>uc', '<cmd>ColorizerToggle<cr>', { desc = '[U]I [C]olorizer toggle' })
 
 -- ============================================================================
 -- TERMINAL MODE KEYMAPS
@@ -335,6 +336,9 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
   callback = function() vim.hl.on_yank() end,
 })
+
+-- NEON UI REFIT (SECTION 6.x modules): statusline, winbar, dashboard, glow
+pcall(function() require('custom.ui').setup() end)
 
 -- ============================================================================
 -- SECTION 6: LAZY.NVIM PLUGIN MANAGER
@@ -1213,25 +1217,21 @@ require('lazy').setup({
 
   -- BUFFERLINE
   -- WHAT: Shows open buffers as tabs at the top of the screen
-  -- TO CHANGE: Change mode to 'tabs' for tab-style, or modify options
+  -- TO CHANGE: See lua/custom/ui/spec.lua setup_bufferline
   -- EFFECT: Shift+H/L to switch buffers; <leader>bd to delete a buffer
   --         Shows LSP diagnostics indicators on buffer tabs
   -- LOADING: keys = only loads when you press the keybindings
+  -- CONFIG: Tuning lives in lua/custom/ui/spec.lua (diagnostics + icons)
   {
     'akinsho/bufferline.nvim',
     version = "*",
     dependencies = 'nvim-tree/nvim-web-devicons',
+    event = 'VeryLazy',
+    config = function() require('custom.ui.spec').setup_bufferline() end,
     keys = {
       { "<S-h>", "<cmd>BufferLineCyclePrev<cr>", desc = "Prev Buffer" },
       { "<S-l>", "<cmd>BufferLineCycleNext<cr>", desc = "Next Buffer" },
       { "<leader>bd", "<cmd>bdelete<cr>", desc = "[B]uffer [D]elete" },
-    },
-    opts = {
-      options = {
-        mode = "buffers",
-        diagnostics = "nvim_lsp",
-        always_show_bufferline = true,
-      },
     },
   },
 
@@ -1533,6 +1533,34 @@ require('lazy').setup({
     ft = 'markdown',
     dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' },
     opts = {},
+  },
+
+  -- COLORIZER
+  -- WHAT: Highlights hex (#ff00aa) and named colors inline
+  -- TO CHANGE: <leader>uc to toggle
+  -- EFFECT: Color swatches appear behind color codes in any buffer
+  -- LOADING: BufRead = loads when a file opens
+  {
+    'norcalli/nvim-colorizer.lua',
+    event = 'BufRead',
+    opts = {},
+  },
+
+  -- NEOSCROLL
+  -- WHAT: Smooth animated scrolling on wheel and Ctrl-u/d
+  -- TO CHANGE: Adjust lines/time in setup
+  -- EFFECT: Scrolling feels eased instead of jumping
+  -- LOADING: VeryLazy = loads after UI is ready
+  {
+    'karb94/neoscroll.nvim',
+    event = 'VeryLazy',
+    config = function()
+      require('neoscroll').setup {
+        -- ponytail: defaults are fine; tuned easing for feel
+        easing_function = 'quadratic',
+        hide_cursor = true,
+      }
+    end,
   },
 
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
