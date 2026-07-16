@@ -18,32 +18,33 @@ function M.setup_lualine()
     sections = {
       lualine_a = { 'mode' },
       lualine_b = { 'branch', 'diff', 'diagnostics' },
-      lualine_c = { { 'filename', path = 1 } },
-      lualine_x = { 'encoding', 'fileformat', 'filetype' },
+      lualine_c = {
+        {
+          'filename',
+          path = 1,
+          symbols = { modified = ' [+]', readonly = ' 󰌾', unnamed = '[No Name]' },
+        },
+      },
+      lualine_x = {
+        {
+          function()
+            local msg = vim.lsp.status and vim.lsp.status() or ''
+            if msg == '' then
+              local clients = vim.lsp.get_clients { bufnr = 0 }
+              if #clients == 0 then return '' end
+              msg = clients[1].name
+            end
+            return '󰄶 ' .. msg
+          end,
+          color = { fg = '#9ece6a' },
+        },
+        'encoding',
+        'fileformat',
+        'filetype',
+      },
       lualine_y = { 'progress' },
       lualine_z = { 'location' },
     },
-    winbar = {
-      lualine_c = {
-        {
-          function()
-            local fname = vim.fn.expand '%:t'
-            if fname == '' then return '' end
-            local icon, _ = require('nvim-web-devicons').get_icon(fname, vim.fn.expand '%:e', { default = true })
-            local mod = vim.bo.modified and ' [+]' or ''
-            local diag = ''
-            local count = #vim.diagnostic.get(0, { severity = vim.diagnostic.severity.ERROR })
-            if count > 0 then diag = '  ' .. count end
-            return icon .. ' ' .. fname .. mod .. diag
-          end,
-          color = { fg = '#7aa2f7' },
-        },
-      },
-      lualine_x = {},
-      lualine_y = {},
-      lualine_z = {},
-    },
-    inactive_winbar = { lualine_c = { { 'filename', path = 1 } } },
   }
 end
 
