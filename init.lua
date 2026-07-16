@@ -337,12 +337,11 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   callback = function() vim.hl.on_yank() end,
 })
 
--- NEON UI: theme + smooth cursor (no external plugins needed, safe to run now).
--- Plugin-dependent UI (lualine/bufferline/mini.starter) is wired via each
+-- NEON UI: theme (no external plugins needed, safe to run now).
+-- Plugin-dependent UI (lualine/bufferline/alpha) is wired via each
 -- plugin's lazy `config` below, since they aren't loaded this early.
 pcall(function()
   require('custom.ui.theme').setup()
-  require('custom.ui').setup_smooth_cursor()
 end)
 
 -- ============================================================================
