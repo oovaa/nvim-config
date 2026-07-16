@@ -337,8 +337,13 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   callback = function() vim.hl.on_yank() end,
 })
 
--- NEON UI REFIT (SECTION 6.x modules): statusline, winbar, dashboard, glow
-pcall(function() require('custom.ui').setup() end)
+-- NEON UI: theme + smooth cursor (no external plugins needed, safe to run now).
+-- Plugin-dependent UI (lualine/bufferline/mini.starter) is wired via each
+-- plugin's lazy `config` below, since they aren't loaded this early.
+pcall(function()
+  require('custom.ui.theme').setup()
+  require('custom.ui').setup_smooth_cursor()
+end)
 
 -- ============================================================================
 -- SECTION 6: LAZY.NVIM PLUGIN MANAGER
@@ -1092,6 +1097,9 @@ require('lazy').setup({
 
       -- ... and there is more!
       --  Check out: https://github.com/nvim-mini/mini.nvim
+
+      -- Dashboard / starter screen (recent sessions + quick actions)
+      require('custom.ui.spec').setup_starter()
     end,
   },
 
@@ -1233,6 +1241,16 @@ require('lazy').setup({
       { "<S-l>", "<cmd>BufferLineCycleNext<cr>", desc = "Next Buffer" },
       { "<leader>bd", "<cmd>bdelete<cr>", desc = "[B]uffer [D]elete" },
     },
+  },
+
+  -- LUALINE
+  -- WHAT: Statusline + winbar (mode-aware, tokyonight theme)
+  -- CONFIG: Tuning lives in lua/custom/ui/spec.lua setup_lualine
+  {
+    'nvim-lualine/lualine.nvim',
+    dependencies = 'nvim-tree/nvim-web-devicons',
+    event = 'VeryLazy',
+    config = function() require('custom.ui.spec').setup_lualine() end,
   },
 
   -- LAZYGIT

@@ -16,13 +16,8 @@ local function setup_smooth_cursor()
   })
 end
 
---- Entry point called from init.lua SECTION 5.
----@return nil
-function M.setup()
-  theme.setup()
-  spec.setup_lualine()
-  spec.setup_bufferline()
-  spec.setup_starter()
+--- Smooth-cursor highlight: brighten CursorLine briefly on movement.
+function M.setup_smooth_cursor()
   setup_smooth_cursor()
 end
 
