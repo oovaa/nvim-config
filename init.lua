@@ -1303,7 +1303,7 @@ require('lazy').setup({
   --         Helps plugins know where your project starts and ends
   -- LOADING: VeryLazy = loads after UI is ready
   {
-    "folke/project.nvim",
+    "ahmedkhalf/project.nvim",
     event = 'VeryLazy',
     config = function()
       require("project_nvim").setup({
