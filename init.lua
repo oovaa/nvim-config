@@ -490,10 +490,11 @@ require('lazy').setup({
         pickers = {
           find_files = {
             hidden = true,
-            no_ignore = true,
+            -- file_ignore_patterns below already filters junk; do NOT set
+            -- no_ignore=true or it bypasses those patterns (node_modules, .venv, ...).
           },
           live_grep = {
-            additional_args = { '--hidden', '--no-ignore' },
+            additional_args = { '--hidden' },
           },
         },
         extensions = {
@@ -1426,8 +1427,8 @@ require('lazy').setup({
       require('hlchunk').setup({
         chunk = {
           enable = true,
-          -- No treesitter parsers are installed, so use indentation-based
-          -- detection (works for any language without requiring parsers).
+          -- treesitter is available, but indentation-based detection is
+          -- lighter and works uniformly without parser-specific quirks.
           use_treesitter = false,
           style = {
             { fg = '#806d9c' },
@@ -1485,7 +1486,8 @@ require('lazy').setup({
         'tutor',      -- Vim tutorial (not needed)
         'netrwPlugin', -- Netrw file browser (replaced by neo-tree)
         'matchit',    -- Extended % matching (replaced by mini.ai)
-        'matchparen', -- Highlight matching parentheses (replaced by mini.ai)
+        -- matchparen is kept: mini.ai/mini.surround don't replicate its
+        -- matching-paren highlight under the cursor.
         '2html_plugin', -- Convert to HTML (not needed)
       },
     },
