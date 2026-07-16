@@ -993,14 +993,17 @@ require('lazy').setup({
         styles = {
           comments = { italic = false }, -- Disable italics in comments
         },
+        on_colors = function(colors)
+          colors.border = colors.blue -- brighter UI borders
+        end,
+        on_highlights = function(hl, c)
+          hl.WinSeparator = { fg = c.blue, bg = 'NONE' }
+          hl.CursorLineNr = { fg = c.orange, bold = true }
+          hl.CursorLine = { bg = '#1a1b2a' } -- subtle pop on the cursor line
+          hl.FloatBorder = { fg = c.blue, bg = 'NONE' }
+          hl.NormalFloat = { bg = '#16161e' } -- slightly lifted panel
+        end,
       }
-      vim.cmd.colorscheme 'tokyonight-night'
-    end,
-  },
-
-      -- Load the colorscheme here.
-      -- Like many other themes, this one has different styles, and you could load
-      -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
       vim.cmd.colorscheme 'tokyonight-night'
     end,
   },
