@@ -88,7 +88,7 @@ function M.setup_starter()
       if name:match '%.vim$' then
         recent[#recent + 1] = {
           name = name:gsub('%.vim$', ''):gsub('_', '/'),
-          action = ':Silent SessionRestore ' .. name,
+          action = ':SessionRestore ' .. name,
         }
       end
     end
