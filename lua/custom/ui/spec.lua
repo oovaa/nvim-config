@@ -58,10 +58,12 @@ function M.setup_bufferline()
       mode = 'buffers',
       diagnostics = 'nvim_lsp',
       diagnostics_indicator = function(_, _, diag)
-        local icons = { error = '', warn = '', info = '', hint = '' }
+        local icons = { [1] = '', [2] = '', [3] = '', [4] = '' }
+        local order = { 1, 2, 3, 4 }
         local s = {}
-        for severity, count in pairs(diag) do
-          if count > 0 then s[#s + 1] = icons[severity] .. count end
+        for _, severity in ipairs(order) do
+          local count = diag[severity]
+          if count and count > 0 then s[#s + 1] = icons[severity] .. count end
         end
         return table.concat(s, ' ')
       end,
