@@ -975,7 +975,7 @@ require('lazy').setup({
   -- CONFORM.NVIM
   -- WHAT: Auto-formats your code when you save (uses external formatters)
   -- TO CHANGE: Add/remove formatters in formatters_by_ft, or modify enabled_filetypes
-  -- EFFECT: When you save a Python file, it runs ruff; for JS/TS, it runs prettier
+  -- EFFECT: When you save a Python file, it runs ruff; for JS/TS it runs biome; markdown/yaml use prettier
   --         Press <leader>f to format manually at any time
   -- LOADING: BufWritePre = loads only when you're about to save a file
   {
@@ -1034,19 +1034,19 @@ require('lazy').setup({
       -- You can also specify external formatters in here.
       formatters_by_ft = {
         python = { 'ruff_organize_imports', 'ruff_format' },
-        javascript = { 'prettierd', 'prettier' },
-        typescript = { 'prettierd', 'prettier' },
-        javascriptreact = { 'prettierd', 'prettier' },
-        typescriptreact = { 'prettierd', 'prettier' },
-        vue = { 'prettierd', 'prettier' },
-        json = { 'prettierd', 'prettier' },
-        html = { 'prettierd', 'prettier' },
-        css = { 'prettierd', 'prettier' },
-        scss = { 'prettierd', 'prettier' },
-        less = { 'prettierd', 'prettier' },
+        javascript = { 'biome' },
+        typescript = { 'biome' },
+        javascriptreact = { 'biome' },
+        typescriptreact = { 'biome' },
+        vue = { 'biome' },
+        json = { 'biome' },
+        html = { 'biome' },
+        css = { 'biome' },
+        scss = { 'biome' },
+        less = { 'biome' },
+        graphql = { 'biome' },
         markdown = { 'prettierd', 'prettier' },
         yaml = { 'prettierd', 'prettier' },
-        graphql = { 'prettierd', 'prettier' },
       },
     },
   },
