@@ -745,7 +745,7 @@ require('lazy').setup({
       local servers = {
         -- clangd = {},
         -- gopls = {},
-        pyright = {},
+        ruff = {}, -- LSP: lint + format Python (replaces pyright)
         -- rust_analyzer = {},
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -810,7 +810,7 @@ require('lazy').setup({
 
       -- Only enable LSP servers when their filetype is opened
       local lsp_filetypes = {
-        pyright = { 'python' },
+        ruff = { 'python' },
         lua_ls = { 'lua' },
         stylua = { 'lua' },
       }
