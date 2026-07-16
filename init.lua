@@ -1082,24 +1082,10 @@ require('lazy').setup({
         },
       })
 
-      -- Simple and easy statusline.
-      --  You could remove this setup call if you don't like it,
-      --  and try some other statusline plugin
-      local statusline = require 'mini.statusline'
-      -- set use_icons to true if you have a Nerd Font
-      statusline.setup { use_icons = vim.g.have_nerd_font }
-
-      -- You can configure sections in the statusline by overriding their
-      -- default behavior. For example, here we set the section for
-      -- cursor location to LINE:COLUMN
-      ---@diagnostic disable-next-line: duplicate-set-field
-      statusline.section_location = function() return '%2l:%-2v' end
+      -- Statusline is handled by lualine.nvim (see LUALINE plugin entry below).
 
       -- ... and there is more!
       --  Check out: https://github.com/nvim-mini/mini.nvim
-
-      -- Dashboard / starter screen (recent sessions + quick actions)
-      require('custom.ui.spec').setup_starter()
     end,
   },
 
@@ -1251,6 +1237,16 @@ require('lazy').setup({
     dependencies = 'nvim-tree/nvim-web-devicons',
     event = 'VeryLazy',
     config = function() require('custom.ui.spec').setup_lualine() end,
+  },
+
+  -- ALPHA (DASHBOARD)
+  -- WHAT: Modern startup screen - banner, quick actions, recent files
+  -- CONFIG: Tuning lives in lua/custom/ui/spec.lua setup_starter
+  {
+    'goolord/alpha-nvim',
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    event = 'VimEnter',
+    config = function() require('custom.ui.spec').setup_starter() end,
   },
 
   -- LAZYGIT
