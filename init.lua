@@ -881,6 +881,7 @@ require('lazy').setup({
         -- gopls = {},
         pyrefly = {
           cmd = { 'pyrefly', 'lsp' },
+          settings = { python = { pyrefly = { typeCheckingMode = 'default' } } },
         }, -- LSP: fast type-checking for Python (installed via brew)
         -- rust_analyzer = {},
         --
