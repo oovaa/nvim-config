@@ -338,8 +338,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 })
 
 -- NEON UI: theme (no external plugins needed, safe to run now).
--- Plugin-dependent UI (lualine/bufferline/alpha) is wired via each
--- plugin's lazy `config` below, since they aren't loaded this early.
+-- lualine/bufferline/alpha are wired via each plugin's lazy `config` below.
 pcall(function()
   require('custom.ui.theme').setup()
 end)
@@ -1164,7 +1163,6 @@ require('lazy').setup({
   --         Enables features like incremental selection, text objects
   -- LOADING: BufReadPost = loads when you open a file
   {
-    'nvim-treesitter/nvim-treesitter',
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     event = { 'BufReadPost', 'BufNewFile' },
