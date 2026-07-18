@@ -498,9 +498,6 @@ require('lazy').setup({
         cond = function() return vim.fn.executable 'make' == 1 end,
       },
       { 'nvim-telescope/telescope-ui-select.nvim' },
-
-      -- Useful for getting pretty icons, but requires a Nerd Font.
-      { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
     },
     config = function()
       -- Telescope is a fuzzy finder that comes with a lot of different things that
@@ -903,6 +900,42 @@ require('lazy').setup({
   },
 
   -- ============================================================================
+  -- SECTION 6.4b: LINTING
+  -- ============================================================================
+  -- nvim-lint runs external linters and shows results as diagnostics.
+  -- Pairs with conform (format-on-save) so you see issues before saving.
+
+  -- NVIM-LINT
+  -- WHAT: Runs linters (ruff, eslint, etc.) and reports them as diagnostics
+  -- TO CHANGE: Add linters per filetype in the linters_by_ft table
+  -- EFFECT: Shows lint errors/warnings inline; runs on save and when idle
+  -- LOADING: VeryLazy = loads after UI is ready
+  {
+    'mfussenegger/nvim-lint',
+    event = 'VeryLazy',
+    config = function()
+      local lint = require 'lint'
+      lint.linters_by_ft = {
+        python = { 'ruff' },
+        javascript = { 'eslint_d' },
+        typescript = { 'eslint_d' },
+        javascriptreact = { 'eslint_d' },
+        typescriptreact = { 'eslint_d' },
+        markdown = { 'markdownlint' },
+      }
+
+      -- Run on save and after leaving insert mode (debounced via updatetime).
+      vim.api.nvim_create_autocmd({ 'BufWritePost', 'InsertLeave', 'TextChanged' }, {
+        group = vim.api.nvim_create_augroup('nvim-lint-autorun', { clear = true }),
+        callback = function() lint.try_lint() end,
+      })
+    end,
+    keys = {
+      { '<leader>l', function() require('lint').try_lint() end, desc = '[L]int buffer' },
+    },
+  },
+
+  -- ============================================================================
   -- SECTION 6.5: AUTOCOMPLETION
   -- ============================================================================
   -- Plugins that provide code completion as you type.
@@ -1037,6 +1070,20 @@ require('lazy').setup({
     ---@type TodoOptions
     ---@diagnostic disable-next-line: missing-fields
     opts = { signs = false },
+  },
+
+  -- MINI.ICONS
+  -- WHAT: Fast drop-in replacement for nvim-web-devicons (no JS/CSS, pure Lua)
+  -- TO CHANGE: Keep nvim-web-devicons if a plugin needs it specifically
+  -- EFFECT: Provides filetype icons for neo-tree/bufferline/lualine/alpha/telescope.
+  --         Auto-detected by those plugins once loaded (VeryLazy).
+  -- LOADING: VeryLazy = loads after UI is ready
+  {
+    'nvim-mini/mini.icons',
+    version = false,
+    lazy = true,
+    init = function() package.preload['nvim-web-devicons'] = require 'mini.icons' end,
+    config = function() require('mini.icons').setup() end,
   },
 
   -- MINI.NVIM
@@ -1196,7 +1243,7 @@ require('lazy').setup({
     branch = "v3.x",
     dependencies = {
       "nvim-lua/plenary.nvim",
-      "nvim-tree/nvim-web-devicons",
+      "nvim-mini/mini.icons",
       "MunifTanjim/nui.nvim",
     },
     keys = {
@@ -1219,7 +1266,7 @@ require('lazy').setup({
   {
     'akinsho/bufferline.nvim',
     version = "*",
-    dependencies = 'nvim-tree/nvim-web-devicons',
+    dependencies = 'nvim-mini/mini.icons',
     event = 'VeryLazy',
     config = function() require('custom.ui.spec').setup_bufferline() end,
     keys = {
@@ -1234,7 +1281,7 @@ require('lazy').setup({
   -- CONFIG: Tuning lives in lua/custom/ui/spec.lua setup_lualine
   {
     'nvim-lualine/lualine.nvim',
-    dependencies = 'nvim-tree/nvim-web-devicons',
+    dependencies = 'nvim-mini/mini.icons',
     event = 'VeryLazy',
     config = function() require('custom.ui.spec').setup_lualine() end,
   },
@@ -1244,7 +1291,7 @@ require('lazy').setup({
   -- CONFIG: Tuning lives in lua/custom/ui/spec.lua setup_starter
   {
     'goolord/alpha-nvim',
-    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    dependencies = { 'nvim-mini/mini.icons' },
     event = 'VimEnter',
     config = function() require('custom.ui.spec').setup_starter() end,
   },
@@ -1545,7 +1592,7 @@ require('lazy').setup({
   {
     'MeanderingProgrammer/render-markdown.nvim',
     ft = 'markdown',
-    dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' },
+    dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.icons' },
     opts = {},
   },
 
@@ -1593,7 +1640,6 @@ require('lazy').setup({
         'tutor',      -- Vim tutorial (not needed)
         'netrwPlugin', -- Netrw file browser (replaced by neo-tree)
         'matchit',    -- Extended % matching (replaced by mini.ai)
-        'matchparen', -- Highlight matching parentheses (replaced by mini.ai)
         '2html_plugin', -- Convert to HTML (not needed)
       },
     },
