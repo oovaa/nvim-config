@@ -1729,7 +1729,9 @@ require('lazy').setup({
   -- EFFECT: Color swatches appear behind color codes in any buffer
   -- LOADING: BufRead = loads when a file opens
   {
-    'norcalli/nvim-colorizer.lua',
+    -- Maintained drop-in fork of norcalli/nvim-colorizer.lua (the original is
+    -- unmaintained and uses vim.tbl_flatten, removed in Nvim 0.13).
+    'catgoose/nvim-colorizer.lua',
     event = 'BufRead',
     opts = {},
   },
