@@ -1130,6 +1130,9 @@ require('lazy').setup({
         },
       })
 
+      -- Auto-pair brackets, parens, quotes: when you type ( it adds ), etc.
+      require('mini.pairs').setup {}
+
       -- Statusline is handled by lualine.nvim (see LUALINE plugin entry below).
 
       -- ... and there is more!
