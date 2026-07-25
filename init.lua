@@ -399,6 +399,9 @@ vim.diagnostic.config {
 -- TO CHANGE: Map to a different key like <leader>x
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 vim.keymap.set('n', '<leader>uc', '<cmd>ColorizerToggle<cr>', { desc = '[U]I [C]olorizer toggle' })
+-- COMMENT TOGGLE: Ctrl+/ (or Ctrl+_ in most terminals) to comment/uncomment
+vim.keymap.set('n', '<C-_>', 'gcc', { desc = 'Toggle comment line' })
+vim.keymap.set('v', '<C-_>', 'gc', { desc = 'Toggle comment selection' })
 
 -- ============================================================================
 -- TERMINAL MODE KEYMAPS
@@ -1245,6 +1248,9 @@ require('lazy').setup({
 
       -- Auto-pair brackets, parens, quotes: when you type ( it adds ), etc.
       require('mini.pairs').setup {}
+
+      -- Comment toggling: gcc for line, gc for selection
+      require('mini.comment').setup {}
 
       -- Statusline is handled by lualine.nvim (see LUALINE plugin entry below).
 
