@@ -15,7 +15,6 @@ return {
     "benlubas/molten-nvim",
     version = "^1",
     build = ":UpdateRemotePlugins",
-    dependencies = { "3rd/image.nvim" },
     event = { "BufReadPre", "BufNewFile" },
     config = function()
       vim.g.molten_output_win_max_height = 20

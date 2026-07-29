@@ -143,13 +143,6 @@ vim.api.nvim_create_user_command('StartupTime', function()
   vim.cmd('!nvim --startuptime ' .. log .. ' +q && sort -k2 ' .. log .. ' | tail -n 15')
 end, { desc = 'Profile Neovim startup time' })
 
--- COMPATIBILITY SHIM
--- WHAT: Some older plugins use vim.lsp.buf_get_clients() which was renamed to
---        vim.lsp.get_clients(). This maps the old name to the new one.
--- TO CHANGE: Remove this line if all your plugins are up to date
--- EFFECT: Prevents breakage in plugins using the deprecated function
-vim.lsp.buf_get_clients = vim.lsp.get_clients
-
 -- ============================================================================
 -- SECTION 2: LEADER KEY CONFIGURATION
 -- ============================================================================
@@ -857,7 +850,7 @@ require('lazy').setup({
           --
           -- This may be unwanted, since they displace some of your code
           if client and client:supports_method('textDocument/inlayHint', event.buf) then
-            map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
+            map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = event.buf })) end, '[T]oggle Inlay [H]ints')
           end
 
           -- Telescope LSP keymaps (moved from telescope-lsp-attach autocmd)
@@ -890,8 +883,6 @@ require('lazy').setup({
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
-
-        stylua = {}, -- Used to format Lua code
 
         -- Special Lua Config, as recommended by neovim help docs
         lua_ls = {
@@ -954,7 +945,6 @@ require('lazy').setup({
       local lsp_filetypes = {
         pyrefly = { 'python' },
         lua_ls = { 'lua' },
-        stylua = { 'lua' },
       }
       for server, filetypes in pairs(lsp_filetypes) do
         vim.api.nvim_create_autocmd('FileType', {
@@ -1330,7 +1320,7 @@ require('lazy').setup({
   -- LOADING: BufReadPost = loads when you open a file
   {
     'nvim-treesitter/nvim-treesitter',
-    'nvim-treesitter/nvim-treesitter',
+    branch = 'main',
     build = ':TSUpdate',
     event = { 'BufReadPost', 'BufNewFile' },
     config = function()
@@ -1736,7 +1726,6 @@ require('lazy').setup({
     -- unmaintained and uses vim.tbl_flatten, removed in Nvim 0.13).
     'catgoose/nvim-colorizer.lua',
     event = 'BufRead',
-    opts = {},
   },
 
   -- NEOSCROLL
