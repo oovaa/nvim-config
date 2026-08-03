@@ -36,14 +36,14 @@ SECTION INDEX:
      6.5  Completion          - Autocompletion (blink.cmp)
      6.6  Colorscheme         - TokyoNight theme
      6.7  Editing Utilities   - Todo, mini.nvim, auto-save
-     6.8  Language Tools      - TypeScript, code runner
-     6.9  Syntax              - Treesitter highlighting
-     6.10 UI Components       - File explorer, tabs, terminal
-     6.11 Git Integration     - Neogit, sessions
-     6.12 Navigation          - Flash, projects, bookmarks
-     6.13 Visual              - Indent lines, markdown
-     6.14 Python Dev          - Debugger (DAP)
-     6.15 Remote Dev          - SSH into remote machines
+      6.8  Syntax              - Treesitter highlighting
+      6.9  UI Components       - File explorer, tabs, terminal
+      6.10 Sessions           - Session save/restore
+      6.11 Navigation         - Flash jumps
+      6.12 Custom Plugins     - lua/custom/plugins/*.lua
+      6.13 Python Dev         - Debugger (DAP)
+      6.14 Bookmarks         - Mark & jump to lines
+      6.15 Visual            - Indent lines, markdown, colorizer
   7.  Terminal Keymaps         - Better terminal navigation
   8.  Project Switching        - Quick project switching
   9.  Filetype Detection       - Custom filetype rules
@@ -65,13 +65,12 @@ Key Mappings Reference:
 -----------------------
   Leader key: <Space>
 
-  Search:      <leader>s{f,g,w,/,n,r,.,c,d,k}
+  Search:      <leader>s{f,g,p,w,/,n,r,.,c,d,k}
   Terminal:    <leader>t{t,f,m,1,2,3,n}
-  Git:         <leader>g{s,c,p,P,l}
+  Git:         <leader>fg (LazyGit)
   Debug:       <leader>d{b,c,i,o,O,r,l,t,n,f,s}
   LSP:         K(grn,a,D), grr, gri, grd, grt, gO, gW
   Bookmarks:   m{m,i,n,p}, <leader>mb
-  Remote:      <leader>r{c,d,s,l}
   Molten:      <leader>m{i,l,v,r,h,d,n,p,o}
   Theme:       <leader>ty
   Profiling:   :StartupTime
@@ -263,8 +262,7 @@ vim.o.showmode = false
 -- WHAT: Syncs Neovim's clipboard with your system clipboard
 -- TO CHANGE: Set to 'unnamed' for primary selection (Linux) or 'unnamedplus' for clipboard
 -- EFFECT: You can paste system clipboard with p and copy to system clipboard with y
--- NOTE: Scheduled to avoid startup delay
-vim.schedule(function() vim.o.clipboard = 'unnamedplus' end)
+vim.o.clipboard = 'unnamedplus'
 
 -- BREAK INDENT
 -- WHAT: Indents wrapped lines to match the first line's indent
@@ -569,7 +567,6 @@ require('lazy').setup({
       spec = {
         { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
         { '<leader>t', group = '[T]oggle' },
-        { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
         { 'gr', group = 'LSP Actions', mode = { 'n' } },
       },
     },
@@ -926,12 +923,12 @@ require('lazy').setup({
       --    :Mason
       --
       -- You can press `g?` for help in this menu.
-    --
-    -- NOTE: pyrefly is installed globally via brew (not managed by Mason); skip it.
-    local ensure_installed = vim.tbl_filter(function(name) return name ~= 'pyrefly' end, vim.tbl_keys(servers or {}))
-    vim.list_extend(ensure_installed, {
-      'prettier', -- unified JS/TS/JSON/HTML/CSS formatter (conform uses it via ~/.config/nvim/prettier.config.json)
-    })
+      -- NOTE: pyrefly is installed globally via brew (not managed by Mason); skip it.
+      local ensure_installed = vim.tbl_filter(function(name) return name ~= 'pyrefly' end, vim.tbl_keys(servers))
+      vim.list_extend(ensure_installed, {
+        'prettier', -- unified JS/TS/JSON/HTML/CSS formatter (conform uses it via ~/.config/nvim/prettier.config.json)
+        'debugpy', -- Python debugger used by nvim-dap
+      })
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -1479,30 +1476,9 @@ require('lazy').setup({
   },
 
   -- ============================================================================
-  -- SECTION 6.10: GIT INTEGRATION
+  -- SECTION 6.10: SESSIONS
   -- ============================================================================
-  -- Plugins for working with git inside Neovim.
-
-  -- NEOGIT
-  -- WHAT: A full git interface inside Neovim (like Magit for Emacs)
-  -- TO CHANGE: Remove if you prefer LazyGit or command-line git
-  -- EFFECT: Press <leader>gs to open git status; <leader>gc to commit
-  --         Press <leader>gp to push; provides staging, diffing, and more
-  -- LOADING: keys = only loads when you press the keybindings
-  {
-    "NeogitOrg/neogit",
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-      "sindrets/diffview.nvim",
-      "nvim-telescope/telescope.nvim",
-    },
-    config = true,
-    keys = {
-      { "<leader>gs", "<cmd>Neogit<cr>", desc = "[G]it [S]tatus (Neogit)" },
-      { "<leader>gc", "<cmd>Neogit commit<cr>", desc = "[G]it [C]ommit" },
-      { "<leader>gp", "<cmd>Neogit push<cr>", desc = "[G]it [P]ush" },
-    },
-  },
+  -- Plugins for saving and restoring editor state.
 
   -- AUTO-SESSION
   -- WHAT: Automatically saves and restores Neovim sessions
@@ -1586,56 +1562,22 @@ require('lazy').setup({
       { '<leader>ds', function() require('dap-python').debug_selection() end, mode = 'v', desc = '[D]ebug [S]election' },
     },
     config = function()
-      local ok_dap, dap = pcall(require, 'dap')
-      if not ok_dap then return end
+      local dap = require 'dap'
+      local dapui = require 'dapui'
 
-      local ok_dapui, dapui = pcall(require, 'dapui')
-      if ok_dapui then
-        dapui.setup()
-        dap.listeners.after.event_initialized['dapui_config'] = function() dapui.open() end
-        dap.listeners.before.event_terminated['dapui_config'] = function() dapui.close() end
-        dap.listeners.before.event_exited['dapui_config'] = function() dapui.close() end
-      end
+      dapui.setup()
+      dap.listeners.after.event_initialized['dapui_config'] = function() dapui.open() end
+      dap.listeners.before.event_terminated['dapui_config'] = function() dapui.close() end
+      dap.listeners.before.event_exited['dapui_config'] = function() dapui.close() end
 
       -- Python debugging with debugpy
       local debugpy_path = vim.fn.stdpath('data') .. '/mason/packages/debugpy/venv/bin/python'
-      local ok_dap_python, dap_python = pcall(require, 'dap-python')
-      if ok_dap_python then
-        dap_python.setup(debugpy_path)
-      end
+      require('dap-python').setup(debugpy_path)
     end,
   },
 
   -- ============================================================================
-  -- SECTION 6.14: REMOTE DEVELOPMENT
-  -- ============================================================================
-  -- Plugins for working on remote machines.
-
-  -- REMOTE-NVIM
-  -- WHAT: SSH into remote machines and develop there with full Neovim features
-  -- TO CHANGE: Remove if you don't do remote development
-  -- EFFECT: <leader>rc to connect to a remote machine; <leader>rd to disconnect
-  --         You get LSP, debugging, and all your plugins on the remote machine
-  -- LOADING: keys = only loads when you press the keybindings
-  {
-    'amitds1997/remote-nvim.nvim',
-    version = '0.*',
-    dependencies = {
-      'nvim-lua/plenary.nvim',
-      'MunifTanjim/nui.nvim',
-      'mfussenegger/nvim-dap',
-    },
-    opts = {},
-    keys = {
-      { '<leader>rc', '<cmd>RemoteConnect<cr>', desc = '[R]emote [C]onnect' },
-      { '<leader>rd', '<cmd>RemoteDisconnect<cr>', desc = '[R]emote [D]isconnect' },
-      { '<leader>rs', '<cmd>RemoteStop<cr>', desc = '[R]emote [S]top' },
-      { '<leader>rl', '<cmd>RemoteLog<cr>', desc = '[R]emote [L]og' },
-    },
-  },
-
-  -- ============================================================================
-  -- SECTION 6.15: BOOKMARKS
+  -- SECTION 6.14: BOOKMARKS
   -- ============================================================================
   -- Plugins for marking and navigating to important lines.
 
@@ -1821,9 +1763,11 @@ vim.api.nvim_create_autocmd('TermOpen', {
 -- SECTION 8: PROJECT SWITCHING
 -- ============================================================================
 -- WHAT: Quick project switching via Telescope (like VS Code's Ctrl+R)
--- TO CHANGE: Change <C-r> to your preferred key
+-- TO CHANGE: <leader>sp is the mapped shortcut
 -- EFFECT: Opens a list of recently used projects; select one to switch to
-vim.keymap.set('n', '<C-r>', '<cmd>Telescope projects<cr>', { desc = 'Open [R]ecent Projects' })
+-- NOTE: Mapped under <leader>sp (defined in the Telescope section); native
+--       <C-r> redo is intentionally left untouched.
+-- ============================================================================
 
 -- ============================================================================
 -- SECTION 9: FILETYPE DETECTION

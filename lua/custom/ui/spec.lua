@@ -4,9 +4,7 @@ local M = {}
 --- Lualine statusline config (tokyonight theme, mode-aware).
 ---@return nil
 function M.setup_lualine()
-  local ok, lualine = pcall(require, 'lualine')
-  if not ok then return end
-  lualine.setup {
+  require('lualine').setup {
     options = {
       theme = 'tokyonight',
       icons_enabled = true,
@@ -51,9 +49,7 @@ end
 --- Tune bufferline with diagnostic + filetype icons.
 ---@return nil
 function M.setup_bufferline()
-  local ok, bufferline = pcall(require, 'bufferline')
-  if not ok then return end
-  bufferline.setup {
+  require('bufferline').setup {
     options = {
       mode = 'buffers',
       diagnostics = 'nvim_lsp',
@@ -79,8 +75,6 @@ end
 --- alpha-nvim dashboard: ASCII banner + recent files + quick actions.
 ---@return nil
 function M.setup_starter()
-  local ok, alpha = pcall(require, 'alpha')
-  if not ok then return end
   local dashboard = require 'alpha.themes.dashboard'
   local config_dir = vim.fn.stdpath 'config'
 
@@ -126,7 +120,7 @@ function M.setup_starter()
 
   dashboard.section.footer.val = 'neon-ui · ' .. vim.version().major .. '.' .. vim.version().minor .. '.' .. vim.version().patch
 
-  alpha.setup {
+  require('alpha').setup {
     layout = {
       { type = 'padding', val = 2 },
       dashboard.section.header,
