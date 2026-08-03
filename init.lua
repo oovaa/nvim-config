@@ -114,6 +114,9 @@ vim.loader.enable()
 -- bun directly. Created alongside the global typescript install (bun install -g typescript@5).
 vim.env.PATH = vim.env.HOME .. "/.local/share/nvim/bin" .. ":" .. (vim.env.PATH or "")
 
+-- project.nvim still calls vim.lsp.buf_get_clients() (removed in 0.12); alias it.
+vim.lsp.buf_get_clients = vim.lsp.get_clients
+
 -- ============================================================================
 -- SECTION 1: PROVIDER DISABLES
 -- ============================================================================
