@@ -891,6 +891,7 @@ require('lazy').setup({
       ---@type table<string, vim.lsp.Config>
       local servers = {
         -- clangd = {},
+        eslint = {},
         -- gopls = {},
         pyrefly = {
           cmd = { 'pyrefly', 'lsp' },
@@ -1003,7 +1004,7 @@ require('lazy').setup({
     ---@module 'conform'
     ---@type conform.setupOpts
     opts = {
-      notify_on_error = false,
+      notify_on_error = true,
       format_on_save = function(bufnr)
         -- TO CHANGE: Add or remove filetypes from this table
         -- EFFECT: Only files matching these types will auto-format on save
@@ -1295,6 +1296,8 @@ require('lazy').setup({
       -- Point directly at the bun-installed global tsserver so the LSP never
       -- has to resolve it via npm.
       tsserver_path = vim.fn.expand("~/.bun/install/global/node_modules/typescript/lib/tsserver.js"),
+      -- Cap tsserver memory (default "auto" can GC-thrash on big repos).
+      tsserver_max_memory = 4096,
     },
   },
 
