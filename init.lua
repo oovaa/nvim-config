@@ -383,8 +383,7 @@ vim.diagnostic.config {
   severity_sort = true,            -- Sort by severity (errors first)
   float = { border = 'rounded', source = 'if_many' },  -- Floating window style
   underline = { severity = { min = vim.diagnostic.severity.WARN } },  -- Underline warnings+
-  virtual_lines = true,            -- Show text on its own lines below; wraps within the window
-  virtual_text = false,            -- virt_text truncates at the right edge (long errors get cut off)
+  virtual_text = true,             -- Inline error text at end of line
   jump = { on_jump = true },       -- Auto-open float when jumping to diagnostic
 }
 
@@ -756,6 +755,10 @@ require('lazy').setup({
   -- PERFORMANCE: FileType autocmds save ~50-150ms startup time
   {
     'neovim/nvim-lspconfig',
+    -- Load on first file open (not at startup) to keep the LSP stack out of
+    -- the startup path; BufReadPre fires before FileType so the on-demand
+    -- enable-autocmds below still win.
+    event = { 'BufReadPre', 'BufNewFile' },
     dependencies = {
       -- Mason: auto-installs LSP servers and tools
       -- TO CHANGE: Add tools to ensure_installed to auto-install them

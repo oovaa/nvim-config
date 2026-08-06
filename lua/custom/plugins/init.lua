@@ -15,6 +15,7 @@ return {
     "benlubas/molten-nvim",
     version = "^1",
     build = ":UpdateRemotePlugins",
+    dependencies = { "3rd/image.nvim" },
     config = function()
       vim.g.molten_output_win_max_height = 20
       vim.g.molten_auto_open_output = false
@@ -40,6 +41,9 @@ return {
   {
     "3rd/image.nvim",
     build = false,
+    -- Lazy-load on file open; also a molten dependency so it's available when
+    -- MoltenInit runs.
+    event = { "BufReadPre", "BufNewFile" },
     opts = {
       backend = "kitty",
       integrations = {
