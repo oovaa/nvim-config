@@ -70,7 +70,7 @@ Key Mappings Reference:
   Git:         <leader>fg (LazyGit)
   Debug:       <leader>d{b,c,i,o,O,r,l,t,n,f,s}
   LSP:         K(grn,a,D), grr, gri, grd, grt, gO, gW
-  Bookmarks:   m{m,i,n,p}, <leader>mb
+  Bookmarks:   <leader>mt/mc/mj/mk/mb
   Molten:      <leader>m{i,l,v,r,h,d,n,p,o}
   Theme:       <leader>ty
   Profiling:   :StartupTime
@@ -383,10 +383,23 @@ vim.diagnostic.config {
   severity_sort = true,            -- Sort by severity (errors first)
   float = { border = 'rounded', source = 'if_many' },  -- Floating window style
   underline = { severity = { min = vim.diagnostic.severity.WARN } },  -- Underline warnings+
-  virtual_text = true,             -- Show diagnostic text at end of line
-  virtual_lines = false,           -- Alternative: show text below the line
+  virtual_lines = true,            -- Show text on its own lines below; wraps within the window
+  virtual_text = false,            -- virt_text truncates at the right edge (long errors get cut off)
   jump = { on_jump = true },       -- Auto-open float when jumping to diagnostic
 }
+
+-- Inline diagnostic text cannot wrap in nvim, so long errors get cut at the
+-- window edge. Resting the cursor on an error opens a float with the full
+-- message, which wraps to fit the window. Close it by moving the cursor.
+vim.api.nvim_create_autocmd('CursorHold', {
+  desc = 'Show diagnostic in a wrapping float',
+  callback = function()
+    vim.diagnostic.open_float(nil, {
+      focusable = false,
+      close_events = { 'CursorMoved', 'BufLeave', 'InsertEnter' },
+    })
+  end,
+})
 
 -- Open diagnostic quickfix list
 -- WHAT: Opens a list of all diagnostics in the current buffer
@@ -569,7 +582,11 @@ require('lazy').setup({
       -- Add your own groups here for better organization
       spec = {
         { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
-        { '<leader>t', group = '[T]oggle' },
+        { '<leader>t', group = '[T]oggle & [T]erminal' },
+        { '<leader>m', group = '[B]ookmarks & [M]olten' },
+        { '<leader>d', group = '[D]ebug' },
+        { '<leader>f', group = '[F]ormat / [F]ind' },
+        { '<leader>r', group = '[R]un' },
         { 'gr', group = 'LSP Actions', mode = { 'n' } },
       },
     },
@@ -1587,17 +1604,17 @@ require('lazy').setup({
   -- TELESCOPE-VIM-BOOKMARKS
   -- WHAT: Toggle bookmarks and list them with Telescope
   -- TO CHANGE: Remove if you don't use bookmarks
-  -- EFFECT: mm to toggle bookmark; mn/mp to jump between bookmarks
-  --         <leader>mb to list all bookmarks in Telescope
+  -- EFFECT: <leader>mt to toggle bookmark; <leader>mj/mk to jump between bookmarks
+  --         <leader>mc to annotate; <leader>mb to list all bookmarks in Telescope
   -- LOADING: keys = only loads when you press the keybindings
   {
     'tom-anders/telescope-vim-bookmarks.nvim',
     dependencies = { 'MattesGroeger/vim-bookmarks' },
     keys = {
-      { 'mm', '<cmd>BookmarkToggle<cr>', desc = '[B]ookmark [T]oggle' },
-      { 'mi', '<cmd>BookmarkAnnotate<cr>', desc = '[B]ookmark [A]nnotate' },
-      { 'mn', '<cmd>BookmarkNext<cr>', desc = '[B]ookmark [N]ext' },
-      { 'mp', '<cmd>BookmarkPrev<cr>', desc = '[B]ookmark [P]revious' },
+      { '<leader>mt', '<cmd>BookmarkToggle<cr>', desc = '[B]ookmark [T]oggle' },
+      { '<leader>mc', '<cmd>BookmarkAnnotate<cr>', desc = '[B]ookmark [A]nnotate' },
+      { '<leader>mj', '<cmd>BookmarkNext<cr>', desc = '[B]ookmark [N]ext' },
+      { '<leader>mk', '<cmd>BookmarkPrev<cr>', desc = '[B]ookmark [P]revious' },
       { '<leader>mb', '<cmd>Telescope vim_bookmarks<cr>', desc = '[B]ookmark [L]ist' },
     },
     config = function()
