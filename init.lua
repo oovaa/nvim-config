@@ -1623,7 +1623,7 @@ require('lazy').setup({
   },
 
   -- ============================================================================
-  -- SECTION 6.16: VISUAL ENHANCEMENTS
+  -- SECTION 6.15: VISUAL ENHANCEMENTS
   -- ============================================================================
   -- Plugins that enhance the visual appearance of code.
 
@@ -1730,7 +1730,7 @@ require('lazy').setup({
         'matchit',    -- Extended % matching (replaced by mini.ai)
         -- matchparen is kept: mini.ai/mini.surround don't replicate its
         -- matching-paren highlight under the cursor.
-        '2html_plugin', -- Convert to HTML (not needed)
+        'zip',        -- Zip archive reading/writing (not needed)
       },
     },
   },
@@ -1808,7 +1808,7 @@ vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
     if first_line:match('^#!.*bin.*[ /]bun%s*$') or first_line:match('^#!.*bin.*[ /]bun ') then
       -- FIX: Index vim.bo like a table instead of calling it
       vim.bo[args.buf].filetype = 'typescript'
-      
+
       -- Trigger FileType autocommands so LSPs attach after filetype is set
       vim.api.nvim_exec_autocmds('FileType', { buffer = args.buf })
     end

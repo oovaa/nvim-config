@@ -8,19 +8,18 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 
 | Tool | Purpose |
 | :--- | :--- |
-| `pyright` | LSP (autocomplete, type checking, goto definition, etc.) |
+| `pyrefly` | LSP (autocomplete, type checking, goto definition, etc.) |
 | `ruff` | Linting + formatting (replaces flake8, isort, black) |
 | Treesitter | Syntax highlighting for Python |
 
 - **Autoformat on save** is enabled for Python (ruff).
-- LSP and formatters are auto-installed via Mason.
+- LSP and formatters are auto-installed via Mason (pyrefly is installed globally via brew).
 - Works with virtualenvs automatically.
 
 ## 🚀 Session Management
 
-| Keybinding | Action | Plugin |
-| :--- | :--- | :--- |
-| `<C-r>` | Open Recent Projects | `project.nvim` + `auto-session` |
+- Sessions are saved/restored automatically via `auto-session.nvim` (excluded in `~/`, `~/Downloads`, `/etc`).
+- Switch projects with `<leader>sp`.
 
 ## 🗂️ UI & File Navigation
 
@@ -53,7 +52,6 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<leader>sg` | Search by Grep (Search across entire codebase) |
 | `<leader>sw` | Grep word under cursor |
 | `<leader>s/` | Grep in currently open files |
-| `<C-r>` | Open Recent Projects (VS Code style) |
 | `<leader>sh` | Search Help tags |
 | `<leader>sk` | Search Keymaps |
 | `<leader>sd` | Search Diagnostics |
@@ -80,8 +78,6 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | Keybinding / Command | Action | Plugin/Feature |
 | :--- | :--- | :--- |
 | `:e <file>` | Open / create a file | built-in |
-| `:tabnew <file>` | Open file in new tab | built-in |
-| `<leader>w` | Save current file | built-in |
 | `:wa` | Save all files | built-in |
 | `:%s/old/new/g` | Find & replace all in file | built-in |
 | `:%s/old/new/gc` | Find & replace with confirmation | built-in |
@@ -90,14 +86,16 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<S-Tab>` | Previous Autocompletion Suggestion | `blink.cmp` |
 | `<C-space>` | Force show completion docs | `blink.cmp` |
 | `<C-BS>` | Delete previous word | built-in |
-| `mm` | Toggle bookmark on current line | `vim-bookmarks` |
-| `mi` | Annotate bookmark | `vim-bookmarks` |
-| `mn` | Jump to next bookmark | `vim-bookmarks` |
-| `mp` | Jump to previous bookmark | `vim-bookmarks` |
+| `<leader>q` | Open diagnostic quickfix list | built-in |
+| `<leader>uc` | Toggle colorizer (inline color previews) | `colorizer` |
+| `<leader>mt` | Toggle bookmark on current line | `vim-bookmarks` |
+| `<leader>mc` | Annotate bookmark | `vim-bookmarks` |
+| `<leader>mj` | Jump to next bookmark | `vim-bookmarks` |
+| `<leader>mk` | Jump to previous bookmark | `vim-bookmarks` |
 | `<leader>mb` | List all bookmarks | `telescope-vim-bookmarks` |
 | `<leader>f` | Format buffer | `conform.nvim` |
-| `<leader>r` | Run Code | `code_runner.nvim` |
-| `<leader>rf` | Run File | `code_runner.nvim` |
+| `<leader>fe` | File browser (Telescope) | `telescope-file-browser` |
+| `<leader>fE` | File browser in current dir | `telescope-file-browser` |
 | `:StartupTime` | Profile Neovim startup and list the 15 slowest sources | config |
 
 ## 🌿 Git Integration
@@ -180,15 +178,6 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 ## 📝 Markdown Preview
 
 `render-markdown.nvim` renders Markdown directly in the buffer — no keybinding needed, it just works when you open a `.md` file. Headings, bold, code blocks, etc. are displayed with proper formatting and colors.
-
-## 🌐 Remote SSH Development
-
-| Keybinding | Action | Plugin |
-| :--- | :--- | :--- |
-| `<leader>rc` | Connect to Remote Host | `remote-nvim.nvim` |
-| `<leader>rd` | Disconnect | `remote-nvim.nvim` |
-| `<leader>rs` | Stop Remote Session | `remote-nvim.nvim` |
-| `<leader>rl` | View Remote Log | `remote-nvim.nvim` |
 
 ## 🐚 Terminal Navigation
 
