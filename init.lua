@@ -134,9 +134,13 @@ vim.lsp.buf_get_clients = vim.lsp.get_clients
 --   Setting a provider to 0 = disabled (faster startup, but plugins needing it break)
 --   Removing the line = provider enabled (slower startup, but plugins can use it)
 -- ============================================================================
-vim.g.loaded_perl_provider = 0  -- Disable Perl provider (not used)
-vim.g.loaded_ruby_provider = 0  -- Disable Ruby provider (not used)
-vim.g.loaded_node_provider = 0  -- Disable Node provider (no :Node remote plugins used)
+-- Core config lives in lua/config/:
+--   config/options.lua  — provider disables, leader key, editor options, diagnostics
+--   config/keymaps.lua  — global keymaps (plugin keymaps stay with their specs)
+--   config/autocmds.lua — global autocommands
+require('config.options')
+require('config.keymaps')
+require('config.autocmds')
 
 -- :StartupTime — profile boot time and show the 15 slowest sources.
 -- Writes a --startuptime log and prints the tail so you can spot regressions.
@@ -144,29 +148,6 @@ vim.api.nvim_create_user_command('StartupTime', function()
   local log = vim.fn.stdpath 'cache' .. '/startup.log'
   vim.cmd('!nvim --startuptime ' .. log .. ' +q && sort -k2 ' .. log .. ' | tail -n 15')
 end, { desc = 'Profile Neovim startup time' })
-
--- ============================================================================
--- SECTION 2: LEADER KEY CONFIGURATION
--- ============================================================================
--- WHAT: Sets your "leader" key - the prefix for custom keybindings.
---        Your leader key is used constantly throughout this config.
---
--- IMPORTANT: This MUST happen BEFORE plugins are loaded.
---
--- TO CHANGE:
---   Common alternatives to Space:
---     vim.g.mapleader = ','      -- Comma (popular with Vim users)
---     vim.g.mapleader = ';'      -- Semicolon
---     vim.g.mapleader = '\\'     -- Backslash
---
--- EFFECT:
---   All <leader>X keybindings will use your new leader key instead of Space.
---   Example: If leader is ',', then <leader>sf becomes ,sf
---
--- SEE: `:help mapleader`
--- ============================================================================
-vim.g.mapleader = ' '
-vim.g.maplocalleader = ' '
 
 -- ============================================================================
 -- THEME MANAGEMENT (persistent colorscheme)
@@ -213,251 +194,6 @@ vim.api.nvim_create_autocmd('UIEnter', {
     end
     theme_ready = true -- begin persisting only after the restore
   end,
-})
-
--- Switch themes with a live Telescope preview; selection is saved automatically.
-vim.keymap.set('n', '<leader>ty', '<cmd>Telescope colorscheme<cr>', { desc = 'Switch [T]heme' })
-
--- ============================================================================
--- SECTION 3: NEOVIM OPTIONS
--- ============================================================================
--- WHAT: Controls Neovim's behavior, appearance, and editing features.
---        Each option is a setting that changes how Neovim works.
---
--- HOW TO CHANGE: Toggle by commenting/uncommenting (add or remove --)
---                Change values by editing the right side of the =
---                Test with `:source %` or restart Neovim
---
--- SEE: `:help vim.o` for all available options
--- ============================================================================
-
--- NERD FONT SUPPORT
--- WHAT: Enables special icons in the UI (file explorer, statusline, etc.)
--- TO CHANGE: Set to false if you don't have a Nerd Font installed
--- EFFECT: false = no icons (works with any terminal font)
---         true = icons everywhere (requires a Nerd Font like JetBrainsMono Nerd Font)
-vim.g.have_nerd_font = true
-
--- LINE NUMBERS
--- WHAT: Shows line numbers in the left gutter
--- TO CHANGE: Uncomment relative line numbers for a different experience
--- EFFECT: true = absolute numbers (1, 2, 3, 4, 5...)
---         relative = relative numbers (cursor line shows absolute, others show distance)
-vim.o.number = true
--- vim.o.relativenumber = true  -- Uncomment for relative line numbers
-
--- MOUSE SUPPORT
--- WHAT: Allows using the mouse in Neovim
--- TO CHANGE: Set to '' to disable mouse completely
--- EFFECT: 'a' = all modes (normal, insert, visual, command)
---         'n' = normal mode only
---         '' = no mouse support
-vim.o.mouse = 'a'
-
--- SHOW MODE
--- WHAT: Shows current mode (INSERT, NORMAL, VISUAL) in the command line
--- TO CHANGE: Set to true if you want to see the mode indicator
--- EFFECT: false = cleaner command line (mode shown in statusline instead)
---         true = mode shown in command line bottom-left
-vim.o.showmode = false
-
--- CLIPBOARD
--- WHAT: Syncs Neovim's clipboard with your system clipboard
--- TO CHANGE: Set to 'unnamed' for primary selection (Linux) or 'unnamedplus' for clipboard
--- EFFECT: You can paste system clipboard with p and copy to system clipboard with y
-vim.o.clipboard = 'unnamedplus'
-
--- BREAK INDENT
--- WHAT: Indents wrapped lines to match the first line's indent
--- TO CHANGE: Set to false to disable
--- EFFECT: true = wrapped lines align with the start of the visual line
-vim.o.breakindent = true
-
--- UNDO FILE
--- WHAT: Saves undo history to a file, so you can undo even after closing
--- TO CHANGE: Set to false if you don't want persistent undo
--- EFFECT: true = undo history survives Neovim restart
-vim.o.undofile = true
-
--- SEARCH SETTINGS
--- WHAT: Controls how search behaves (case sensitivity)
--- TO CHANGE: Set ignorecase to false for case-sensitive search by default
--- EFFECT: ignorecase + smartcase = case-insensitive unless you type uppercase
---         Example: "foo" matches "FOO", "Foo", "foo"
---                  "Foo" matches "Foo" but not "foo" or "FOO"
-vim.o.ignorecase = true
-vim.o.smartcase = true
-
--- SIGN COLUMN
--- WHAT: The column left of line numbers where git signs and diagnostics appear
--- TO CHANGE: Set to 'auto' to only show when there are signs
--- EFFECT: 'yes' = always visible (prevents layout shifting)
-vim.o.signcolumn = 'yes'
-
--- UPDATE TIME
--- WHAT: How often Neovim checks for changes (in milliseconds)
--- TO CHANGE: Lower = more responsive but higher CPU
--- EFFECT: Affects CursorHold timing, swap file writes, and some plugin behaviors
-vim.o.updatetime = 250
-
--- TIMEOUT LENGTH
--- WHAT: How long to wait for a key sequence to complete (in milliseconds)
--- TO CHANGE: Lower = faster timeout for multi-key sequences
--- EFFECT: Affects which-key display timing and key sequence completion
-vim.o.timeoutlen = 300
-
--- SPLIT BEHAVIOR
--- WHAT: Controls where new windows open
--- TO CHANGE: Set to false for opposite behavior (traditional Vim)
--- EFFECT: splitright = true: vertical splits open to the right
---         splitbelow = true: horizontal splits open below
-vim.o.splitright = true
-vim.o.splitbelow = true
-
--- WHITESPACE DISPLAY
--- WHAT: Shows invisible characters (tabs, trailing spaces, etc.)
--- TO CHANGE: Set list = false to hide all, or modify listchars
--- EFFECT: Shows tabs as », trailing spaces as ·, nbsp as ␣
-vim.o.list = true
-vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
-
--- LIVE SUBSTITUTION PREVIEW
--- WHAT: Shows a split preview when using :substitute (:%s/old/new/g)
--- TO CHANGE: Set to 'nosplit' for inline preview, or 'false' to disable
--- EFFECT: 'split' = shows preview in a split window below
-vim.o.inccommand = 'split'
-
--- CURSOR LINE
--- WHAT: Highlights the line where your cursor is
--- TO CHANGE: Set to false to disable
--- EFFECT: true = current line has a subtle highlight (helps find cursor)
-vim.o.cursorline = true
-
--- SCROLL OFFSET
--- WHAT: Keeps this many lines visible above/below cursor when scrolling
--- TO CHANGE: Increase for more context, decrease for less
--- EFFECT: Higher values = more context visible (cursor stays centered-ish)
-vim.o.scrolloff = 10
-
--- CONFIRM DIALOG
--- WHAT: Shows a confirmation when trying to quit with unsaved changes
--- TO CHANGE: Set to false for classic behavior (error message instead)
--- EFFECT: true = asks "Save changes?" dialog instead of error
-vim.o.confirm = true
-
--- ============================================================================
--- SECTION 4: KEYMAPS
--- ============================================================================
--- WHAT: Defines custom keybindings for Neovim.
---
--- HOW TO ADD YOUR OWN:
---   vim.keymap.set({mode}, {lhs}, {rhs}, {options})
---   - mode: 'n' (normal), 'i' (insert), 'v' (visual), 't' (terminal)
---   - lhs: the key sequence to press (e.g., '<leader>w')
---   - rhs: what it does (a string command or a Lua function)
---   - options: table with 'desc', 'silent', 'noremap', etc.
---
--- SEE: `:help vim.keymap.set()` for full documentation
--- ============================================================================
-
--- Clear search highlighting when pressing <Esc>
--- WHAT: Removes the highlight from the last search
--- TO CHANGE: Set to a different key like <C-l> (Ctrl+L)
--- EFFECT: Pressing <Esc> in normal mode clears search highlights
-vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
-
--- Delete previous word with Ctrl+Backspace
--- WHAT: Standard editor behavior - delete the word before cursor
--- TO CHANGE: Remove this line if you prefer default behavior
--- EFFECT: Works in both normal and insert mode
-vim.keymap.set({ 'n', 'i' }, '<C-BS>', '<C-w>', { desc = 'Delete previous word' })
-
--- ============================================================================
--- DIAGNOSTIC CONFIGURATION & KEYMAPS
--- ============================================================================
--- WHAT: Configures how Neovim shows errors, warnings, and hints
--- TO CHANGE: Set virtual_text = false to hide inline error text
--- EFFECT: Controls appearance of LSP/linter diagnostics
-vim.diagnostic.config {
-  update_in_insert = false,        -- Don't update diagnostics while typing
-  severity_sort = true,            -- Sort by severity (errors first)
-  float = { border = 'rounded', source = 'if_many' },  -- Floating window style
-  underline = { severity = { min = vim.diagnostic.severity.WARN } },  -- Underline warnings+
-  virtual_text = true,             -- Inline error text at end of line
-  jump = { on_jump = true },       -- Auto-open float when jumping to diagnostic
-}
-
--- Inline diagnostic text cannot wrap in nvim, so long errors get cut at the
--- window edge. Resting the cursor on an error opens a float with the full
--- message, which wraps to fit the window. Close it by moving the cursor.
-vim.api.nvim_create_autocmd('CursorHold', {
-  desc = 'Show diagnostic in a wrapping float',
-  callback = function()
-    vim.diagnostic.open_float(nil, {
-      focusable = false,
-      close_events = { 'CursorMoved', 'BufLeave', 'InsertEnter' },
-    })
-  end,
-})
-
--- Open diagnostic quickfix list
--- WHAT: Opens a list of all diagnostics in the current buffer
--- TO CHANGE: Map to a different key like <leader>x
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
-vim.keymap.set('n', '<leader>uc', '<cmd>ColorizerToggle<cr>', { desc = '[U]I [C]olorizer toggle' })
-
--- ============================================================================
--- TERMINAL MODE KEYMAPS
--- ============================================================================
--- WHAT: Exit terminal mode with double <Esc>
--- TO CHANGE: Use a different escape sequence if needed
--- EFFECT: Pressing <Esc><Esc> returns to normal mode from terminal
-vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
-
--- ============================================================================
--- WINDOW NAVIGATION KEYMAPS
--- ============================================================================
--- WHAT: Switch between split windows using Ctrl+{h,j,k,l}
--- TO CHANGE: Use different keys if you prefer
--- EFFECT: Ctrl+H/J/K/L moves between windows in that direction
-vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
-vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
-vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
-vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
-
--- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
--- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
--- vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
--- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
--- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
-
--- ============================================================================
--- SECTION 5: AUTOCOMMANDS
--- ============================================================================
--- WHAT: Defines functions that run automatically on certain events.
---        For example: "when I save a file, do X" or "when I open a Python file, do Y"
---
--- HOW TO ADD YOUR OWN:
---   vim.api.nvim_create_autocmd({event}, {
---     group = vim.api.nvim_create_augroup('name', { clear = true }),
---     callback = function(args) -- your code here end,
---   })
---
--- COMMON EVENTS:
---   BufReadPost = after opening a file, BufWritePre = before saving,
---   InsertEnter = entering insert mode, CursorHold = cursor idle
---
--- SEE: `:help lua-guide-autocommands`
--- ============================================================================
-
--- Highlight yanked (copied) text briefly
--- WHAT: Briefly highlights text when you copy it (yank)
--- TO CHANGE: Remove this autocommand to disable, or change the highlight group
--- EFFECT: When you press y (yank), the copied text flashes briefly
-vim.api.nvim_create_autocmd('TextYankPost', {
-  desc = 'Highlight when yanking (copying) text',
-  group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
-  callback = function() vim.hl.on_yank() end,
 })
 
 -- NEON UI: theme (no external plugins needed, safe to run now).
@@ -509,6 +245,14 @@ end
 ---@type vim.Option
 local rtp = vim.opt.rtp
 rtp:prepend(lazypath)
+
+-- Shared values for plugin specs below.
+-- conform fallback chain for all web languages (prettierd first, prettier second)
+local prettier = { 'prettierd', 'prettier' }
+-- Pin typescript-tools to the bun-installed global tsserver when it exists;
+-- otherwise let it resolve via npm (no hardcoded path on machines without bun).
+local bun_tsserver = vim.fn.expand '~/.bun/install/global/node_modules/typescript/lib/tsserver.js'
+local tsserver_path = vim.fn.filereadable(bun_tsserver) == 1 and bun_tsserver or nil
 
 -- ============================================================================
 -- PLUGIN LIST
@@ -950,7 +694,7 @@ require('lazy').setup({
       -- NOTE: pyrefly is installed globally via brew (not managed by Mason); skip it.
       local ensure_installed = vim.tbl_filter(function(name) return name ~= 'pyrefly' end, vim.tbl_keys(servers))
       vim.list_extend(ensure_installed, {
-        'prettier', -- unified JS/TS/JSON/HTML/CSS formatter (conform uses it via ~/.config/nvim/prettier.config.json)
+        'prettier', -- unified JS/TS/JSON/HTML/CSS formatter used by conform
         'debugpy', -- Python debugger used by nvim-dap
       })
 
@@ -966,6 +710,7 @@ require('lazy').setup({
       local lsp_filetypes = {
         pyrefly = { 'python' },
         lua_ls = { 'lua' },
+        eslint = { 'javascript', 'typescript', 'javascriptreact', 'typescriptreact' },
       }
       for server, filetypes in pairs(lsp_filetypes) do
         vim.api.nvim_create_autocmd('FileType', {
@@ -986,7 +731,8 @@ require('lazy').setup({
   -- CONFORM.NVIM
   -- WHAT: Auto-formats your code when you save (uses external formatters)
   -- TO CHANGE: Add/remove formatters in formatters_by_ft, or modify enabled_filetypes
-  -- EFFECT: When you save a Python file, it runs ruff; for JS/TS it runs biome; markdown/yaml use prettier
+  -- EFFECT: When you save a Python file, it runs ruff; JS/TS/JSON/HTML/CSS
+  --         use prettier; markdown/yaml use prettier
   --         Press <leader>f to format manually at any time
   -- LOADING: BufWritePre = loads only when you're about to save a file
   {
@@ -1033,33 +779,25 @@ require('lazy').setup({
       default_format_opts = {
         lsp_format = 'fallback', -- Use external formatters if configured below, otherwise use LSP formatting. Set to `false` to disable LSP formatting entirely.
       },
-      -- Force a single unified Prettier config tracked in this repo (git-synced).
-      formatters = {
-        prettier = {
-          prepend_args = { '--config', vim.fn.expand '~/.config/nvim/prettier.config.json' },
-        },
-        prettierd = {
-          prepend_args = { '--config', vim.fn.expand '~/.config/nvim/prettier.config.json' },
-        },
-      },
+      -- Let prettier auto-discover each project's own .prettierrc / prettier.config.
+      formatters = {},
       -- You can also specify external formatters in here.
       formatters_by_ft = {
         python = { 'ruff_organize_imports', 'ruff_format' },
-        -- Prefer biome (fast, Rust) when installed; fall back to prettierd/prettier.
-        -- ponytail: ordered fallback by availability, not just on error.
-        javascript = vim.fn.executable 'biome' == 1 and { 'biome' } or { 'prettierd', 'prettier' },
-        typescript = vim.fn.executable 'biome' == 1 and { 'biome' } or { 'prettierd', 'prettier' },
-        javascriptreact = vim.fn.executable 'biome' == 1 and { 'biome' } or { 'prettierd', 'prettier' },
-        typescriptreact = vim.fn.executable 'biome' == 1 and { 'biome' } or { 'prettierd', 'prettier' },
-        vue = vim.fn.executable 'biome' == 1 and { 'biome' } or { 'prettierd', 'prettier' },
-        json = vim.fn.executable 'biome' == 1 and { 'biome' } or { 'prettierd', 'prettier' },
-        html = vim.fn.executable 'biome' == 1 and { 'biome' } or { 'prettierd', 'prettier' },
-        css = vim.fn.executable 'biome' == 1 and { 'biome' } or { 'prettierd', 'prettier' },
-        scss = vim.fn.executable 'biome' == 1 and { 'biome' } or { 'prettierd', 'prettier' },
-        less = vim.fn.executable 'biome' == 1 and { 'biome' } or { 'prettierd', 'prettier' },
-        graphql = vim.fn.executable 'biome' == 1 and { 'biome' } or { 'prettierd', 'prettier' },
-        markdown = { 'prettierd', 'prettier' },
-        yaml = { 'prettierd', 'prettier' },
+        -- Prefer prettier (matches .prettierrc in projects; biome ignores it)
+        javascript = prettier,
+        typescript = prettier,
+        javascriptreact = prettier,
+        typescriptreact = prettier,
+        vue = prettier,
+        json = prettier,
+        html = prettier,
+        css = prettier,
+        scss = prettier,
+        less = prettier,
+        graphql = prettier,
+        markdown = prettier,
+        yaml = prettier,
       },
     },
   },
@@ -1293,9 +1031,9 @@ require('lazy').setup({
       settings = {
         filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
       },
-      -- Point directly at the bun-installed global tsserver so the LSP never
-      -- has to resolve it via npm.
-      tsserver_path = vim.fn.expand("~/.bun/install/global/node_modules/typescript/lib/tsserver.js"),
+      -- Point directly at the bun-installed global tsserver when present,
+      -- otherwise let typescript-tools resolve via npm.
+      tsserver_path = tsserver_path,
       -- Cap tsserver memory (default "auto" can GC-thrash on big repos).
       tsserver_max_memory = 4096,
     },
@@ -1596,9 +1334,12 @@ require('lazy').setup({
       dap.listeners.before.event_terminated['dapui_config'] = function() dapui.close() end
       dap.listeners.before.event_exited['dapui_config'] = function() dapui.close() end
 
-      -- Python debugging with debugpy
+      -- Python debugging with debugpy (Mason-installed venv). If debugpy isn't
+      -- installed yet, skip setup so dap-python falls back to python3.
       local debugpy_path = vim.fn.stdpath('data') .. '/mason/packages/debugpy/venv/bin/python'
-      require('dap-python').setup(debugpy_path)
+      if vim.fn.filereadable(debugpy_path) == 1 then
+        require('dap-python').setup(debugpy_path)
+      end
     end,
   },
 
@@ -1764,59 +1505,3 @@ require('lazy').setup({
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
-
--- ============================================================================
--- SECTION 7: TERMINAL KEYMAPS
--- ============================================================================
--- WHAT: Adds better navigation keybindings when inside a terminal buffer
--- TO CHANGE: Remove this autocmd if you don't use terminal mode
--- EFFECT: In terminal mode: jk exits to normal mode, Ctrl+H/J/K/L switches windows
---         Ctrl+W works normally (passes through to window commands)
-vim.api.nvim_create_autocmd('TermOpen', {
-  group = vim.api.nvim_create_augroup('terminal-keymaps', { clear = true }),
-  callback = function(args)
-    local opts = { buffer = args.buf }
-    vim.keymap.set('t', 'jk', [[<C-\><C-n>]], opts)
-    vim.keymap.set('t', '<C-h>', [[<Cmd>wincmd h<CR>]], opts)
-    vim.keymap.set('t', '<C-j>', [[<Cmd>wincmd j<CR>]], opts)
-    vim.keymap.set('t', '<C-k>', [[<Cmd>wincmd k<CR>]], opts)
-    vim.keymap.set('t', '<C-l>', [[<Cmd>wincmd l<CR>]], opts)
-    vim.keymap.set('t', '<C-w>', [[<C-\><C-n><C-w>]], opts)
-  end,
-})
-
--- ============================================================================
--- SECTION 8: PROJECT SWITCHING
--- ============================================================================
--- WHAT: Quick project switching via Telescope (like VS Code's Ctrl+R)
--- TO CHANGE: <leader>sp is the mapped shortcut
--- EFFECT: Opens a list of recently used projects; select one to switch to
--- NOTE: Mapped under <leader>sp (defined in the Telescope section); native
---       <C-r> redo is intentionally left untouched.
--- ============================================================================
-
--- ============================================================================
--- SECTION 9: FILETYPE DETECTION
--- ============================================================================
--- WHAT: Custom rules for detecting file types based on file content
--- TO CHANGE: Add more patterns for your specific file types
--- EFFECT: Files matching the pattern get the correct filetype and LSP
-
--- BUN SHEBANG DETECTION
--- WHAT: Detects Bun runtime in shebang lines and sets filetype to typescript
--- TO CHANGE: Modify the pattern to match different shebangs
--- EFFECT: Files with #!/usr/bin/env bun become TypeScript files,
---         so TypeScript LSP and formatting work correctly
-vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
-  group = vim.api.nvim_create_augroup('bun-shebang-detection', { clear = true }),
-  callback = function(args)
-    local first_line = vim.api.nvim_buf_get_lines(args.buf, 0, 1, false)[1] or ""
-    if first_line:match('^#!.*bin.*[ /]bun%s*$') or first_line:match('^#!.*bin.*[ /]bun ') then
-      -- FIX: Index vim.bo like a table instead of calling it
-      vim.bo[args.buf].filetype = 'typescript'
-
-      -- Trigger FileType autocommands so LSPs attach after filetype is set
-      vim.api.nvim_exec_autocmds('FileType', { buffer = args.buf })
-    end
-  end,
-})
