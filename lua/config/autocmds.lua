@@ -15,6 +15,10 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 vim.api.nvim_create_autocmd('CursorHold', {
   desc = 'Show diagnostic in a wrapping float',
   callback = function()
+    -- Skip clean buffers: get(0) with a position costs little, the float
+    -- render does not.
+    local diag = vim.diagnostic.get(0, { lnum = vim.fn.line('.') - 1, col = vim.fn.col('.') - 1 })
+    if #diag == 0 then return end
     vim.diagnostic.open_float(nil, {
       focusable = false,
       close_events = { 'CursorMoved', 'BufLeave', 'InsertEnter' },

@@ -26,13 +26,9 @@ function M.setup_lualine()
       lualine_x = {
         {
           function()
-            local msg = vim.lsp.status and vim.lsp.status() or ''
-            if msg == '' then
-              local clients = vim.lsp.get_clients { bufnr = 0 }
-              if #clients == 0 then return '' end
-              msg = clients[1].name
-            end
-            return '󰄶 ' .. msg
+            local clients = vim.lsp.get_clients { bufnr = 0 }
+            if #clients == 0 then return '' end
+            return '󰄶 ' .. clients[1].name
           end,
           color = { fg = '#9ece6a' },
         },

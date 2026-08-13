@@ -863,7 +863,7 @@ require('lazy').setup({
       completion = {
         documentation = {
           auto_show = true,
-          auto_show_delay_ms = 0,
+          auto_show_delay_ms = 300,
           window = {
             border = 'rounded',
             max_width = 60,
@@ -1011,7 +1011,15 @@ require('lazy').setup({
     "okuuva/auto-save.nvim",
     cmd = "ASToggle", 
     event = { "InsertLeave", "TextChanged" }, 
-    opts = {},
+    opts = {
+      -- Save once per edit session, not per text change: TextChanged queues a
+      -- write per keystroke burst, then BufWritePre -> prettier -> tsserver
+      -- recheck thrashes the whole file.
+      trigger_events = {
+        defer_save = { "InsertLeave" },
+        immediate_save = {},
+      },
+    },
   },
 
   -- TYPESCRIPT-TOOLS
@@ -1404,7 +1412,7 @@ require('lazy').setup({
         },
         indent = {
           enable = true,
-          delay = 0,
+          delay = 300,
           chars = { '│' },
           style = { { fg = '#4a4560' } },
         },

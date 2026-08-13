@@ -41,8 +41,8 @@ return {
   {
     "3rd/image.nvim",
     build = false,
-    -- Lazy-load on file open; also a molten dependency so it's available when
-    -- MoltenInit runs.
+    -- Load on first file open; also a molten dependency so it's available
+    -- when MoltenInit runs. (No trigger at all would load it at startup.)
     event = { "BufReadPre", "BufNewFile" },
     opts = {
       backend = "kitty",
