@@ -109,9 +109,7 @@ SECTIONS:
 -- ============================================================================
 vim.loader.enable()
 
--- Route node/npm to bun for typescript-tools.nvim (which hardcodes `node` and
--- `npm root -g`). Shims live in a nvim-scoped dir so the real shell keeps using
--- bun directly. Created alongside the global typescript install (bun install -g typescript@5).
+-- Ensure bun shims are on PATH for any bun-managed tooling (LSP, formatters, etc.)
 vim.env.PATH = vim.env.HOME .. "/.local/share/nvim/bin" .. ":" .. (vim.env.PATH or "")
 
 -- project.nvim still calls vim.lsp.buf_get_clients() (removed in 0.12); alias it.
@@ -249,10 +247,6 @@ rtp:prepend(lazypath)
 -- Shared values for plugin specs below.
 -- conform fallback chain for all web languages (prettierd first, prettier second)
 local prettier = { 'prettierd', 'prettier' }
--- Pin typescript-tools to the bun-installed global tsserver when it exists;
--- otherwise let it resolve via npm (no hardcoded path on machines without bun).
-local bun_tsserver = vim.fn.expand '~/.bun/install/global/node_modules/typescript/lib/tsserver.js'
-local tsserver_path = vim.fn.filereadable(bun_tsserver) == 1 and bun_tsserver or nil
 
 -- ============================================================================
 -- PLUGIN LIST
@@ -643,8 +637,8 @@ require('lazy').setup({
         }, -- LSP: fast type-checking for Python (installed via brew)
         -- rust_analyzer = {},
         --
-        -- Some languages (like typescript) have entire language plugins that can be useful:
-        --    https://github.com/pmizio/typescript-tools.nvim
+        -- Some languages (like typescript) have enhanced LSP plugins:
+        --    https://github.com/yioneko/nvim-vtsls (faster TS LSP)
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
@@ -1022,29 +1016,39 @@ require('lazy').setup({
     },
   },
 
-  -- TYPESCRIPT-TOOLS
-  -- WHAT: Enhanced TypeScript/JavaScript LSP features (better than ts_ls)
-  -- TO CHANGE: Remove if you prefer the built-in ts_ls
-  -- EFFECT: Adds better type checking, refactoring, and code actions for TS/JS
+  -- VTSLS (fast TypeScript LSP via @vtsls/language-server)
+  -- WHAT: Replaces ts_ls/typescript-tools with direct IPC, optimized memory
+  -- TO CHANGE: Remove if you prefer built-in ts_ls
+  -- EFFECT: Faster completions, better Drizzle/NestJS inference, lower CPU
   -- LOADING: ft = only loads for JavaScript/TypeScript files
   {
-    "pmizio/typescript-tools.nvim",
+    "yioneko/nvim-vtsls",
     dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
     ft = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
-    init = function()
-      vim.filetype.add({ extension = { ["jsx"] = "javascript.jsx" } })
-      vim.filetype.add({ extension = { ["tsx"] = "typescript.tsx" } })
+    config = function()
+      require("lspconfig.configs").vtsls = require("vtsls").lspconfig
+      local lspconfig = require("lspconfig")
+      local capabilities = require("blink.cmp").get_lsp_capabilities()
+      lspconfig.vtsls.setup({
+        capabilities = capabilities,
+        settings = {
+          vtsls = {
+            autoUseWorkspaceTsdk = true,
+            experimental = {
+              completion = {
+                enableServerSideFuzzyMatch = true,
+                entriesLimit = 30,
+              },
+            },
+          },
+          typescript = {
+            suggest = { completeFunctionCalls = true },
+            preferences = { includePackageJsonAutoImports = "on" },
+            tsserver = { maxTsServerMemory = 4096 },
+          },
+        },
+      })
     end,
-    opts = {
-      settings = {
-        filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
-      },
-      -- Point directly at the bun-installed global tsserver when present,
-      -- otherwise let typescript-tools resolve via npm.
-      tsserver_path = tsserver_path,
-      -- Cap tsserver memory (default "auto" can GC-thrash on big repos).
-      tsserver_max_memory = 4096,
-    },
   },
 
   -- CODE RUNNER
