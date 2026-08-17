@@ -33,9 +33,9 @@ Make sure the following are installed and available on your `PATH` before
 running Neovim for the first time.
 
 **Required (checked by `:checkhealth`):**
-- [Neovim](https://github.com/neovim/neovim/releases) **>= 0.11** (this config's
-  health check rejects older versions)
-- `git`, `make`, `unzip` — basic build/utils used by plugins (e.g. telescope-fzf-native)
+- [Neovim](https://github.com/neovim/neovim/releases) **>= 0.12** (health check
+  enforces >= 0.11, but this config relies on 0.12 APIs)
+- `git`, `make`, `unzip`, `curl` — basic build/utils used by plugins (e.g. telescope-fzf-native)
 - A C compiler (`gcc`/`clang`) — needed to compile `telescope-fzf-native.nvim`
 - [ripgrep](https://github.com/BurntSushi/ripgrep#installation) (`rg`) — fuzzy
   finding / grep backend for Telescope
@@ -62,15 +62,30 @@ running Neovim for the first time.
   [kitty](https://sw.kovidgoyal.net/kitty/) (or compatible) terminal.
 
 **Language tooling (installed automatically via Mason on first run):**
-- [Mason](https://github.com/mason-org/mason.nvim) installs LSP servers,
-  linters and formatters for you. For the languages you use, have the matching
-  toolchain available:
-  - TypeScript/Web: `node` + `npm`
+- [Mason](https://github.com/mason-org/mason.nvim) installs most LSP servers,
+  linters and formatters for you (lua_ls, ruff, eslint, prettier, debugpy, ...).
+  For the languages you use, have the matching toolchain available:
   - Go: `go`
-  - Python: `python3` (+ `ruff` is used for formatting/linting)
+  - Python: `python3`
   - C/C++: `gcc`/`clang`
   - Rust: `rustc`/`cargo`
   - etc.
+
+**Installed manually (NOT managed by Mason):**
+- [`@vtsls/language-server`](https://github.com/yioneko/vtsls) — the
+  TypeScript/JavaScript LSP. This config's `nvim-vtsls` plugin invokes `vtsls`
+  directly, so it must be on your `PATH`:
+  ```sh
+  npm install -g @vtsls/language-server
+  ```
+- [`pyrefly`](https://github.com/facebook/pyrefly) — Python LSP, installed via
+  Homebrew/Linuxbrew (Mason's auto-install skips it):
+  ```sh
+  brew install pyrefly
+  ```
+
+**Recommended:**
+- [bun](https://bun.sh) — `<leader>r` (code_runner) executes JS/TS with `bun`.
 
 > [!NOTE]
 > See [Install Recipes](#Install-Recipes) for copy-paste install snippets for
