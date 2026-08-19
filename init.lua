@@ -194,6 +194,14 @@ vim.api.nvim_create_autocmd('UIEnter', {
   end,
 })
 
+-- docker-compose files get the docker-compose LSP (docker_compose_language_service)
+vim.filetype.add {
+  pattern = {
+    ['docker%-compose.*%.ya?ml'] = 'yaml.docker-compose',
+    ['compose.*%.ya?ml'] = 'yaml.docker-compose',
+  },
+}
+
 -- NEON UI: theme (no external plugins needed, safe to run now).
 -- Plugin-dependent UI (lualine/bufferline/alpha) is wired via each
 -- plugin's lazy `config` below, since they aren't loaded this early.
@@ -629,6 +637,8 @@ require('lazy').setup({
       ---@type table<string, vim.lsp.Config>
       local servers = {
         -- clangd = {},
+        docker_compose_language_service = {},
+        dockerls = {},
         eslint = {},
         -- gopls = {},
         pyrefly = {
@@ -705,6 +715,8 @@ require('lazy').setup({
         pyrefly = { 'python' },
         lua_ls = { 'lua' },
         eslint = { 'javascript', 'typescript', 'javascriptreact', 'typescriptreact' },
+        docker_compose_language_service = { 'yaml.docker-compose' },
+        dockerls = { 'dockerfile' },
       }
       for server, filetypes in pairs(lsp_filetypes) do
         vim.api.nvim_create_autocmd('FileType', {
@@ -1099,6 +1111,13 @@ require('lazy').setup({
     config = function()
       -- main branch of nvim-treesitter only handles parser install dir
       require('nvim-treesitter').setup({})
+      -- Install missing parsers on load (ensure_installed is unsupported in the rewrite)
+      for _, lang in ipairs({ 'dockerfile', 'yaml' }) do
+        local parser = vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser', lang .. '.so')
+        if vim.fn.filereadable(parser) ~= 1 then
+          vim.cmd('TSInstall ' .. lang)
+        end
+      end
 
       -- Enable treesitter highlighting via Neovim built-in APIs (main branch doesn't support old config)
       vim.api.nvim_create_autocmd('FileType', {
