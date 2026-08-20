@@ -1015,13 +1015,7 @@ require('lazy').setup({
     config = function()
       require("lspconfig.configs").vtsls = require("vtsls").lspconfig
       local lspconfig = require("lspconfig")
-      -- ponytail: don't force-load blink.cmp on every TS file open; fall back
-      -- to vanilla capabilities if it isn't loaded yet (first open pre-InsertEnter)
-      local capabilities = vim.lsp.protocol.make_client_capabilities()
-      local ok, blink = pcall(require, "blink.cmp")
-      if ok then
-        capabilities = blink.get_lsp_capabilities()
-      end
+      local capabilities = require("blink.cmp").get_lsp_capabilities()
       lspconfig.vtsls.setup({
         capabilities = capabilities,
         settings = {
