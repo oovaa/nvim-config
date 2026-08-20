@@ -1135,9 +1135,9 @@ require('lazy').setup({
   -- Plugins that add visual UI elements to Neovim.
 
   -- NEO-TREE
-  -- WHAT: A file explorer sidebar that shows your project's file tree
+  -- WHAT: A file explorer that shows your project's file tree
   -- TO CHANGE: Modify filesystem.hijack_netrw_behavior or keybindings
-  -- EFFECT: Press <leader>e to toggle the file explorer on the left
+  -- EFFECT: Press <leader>e to toggle a floating file explorer
   --         Replaces netrw (the built-in file browser)
   -- LOADING: keys = only loads when you press <leader>e
   {
@@ -1149,7 +1149,7 @@ require('lazy').setup({
       "MunifTanjim/nui.nvim",
     },
     keys = {
-      { "<leader>e", "<cmd>Neotree toggle<cr>", desc = "Toggle File [E]xplorer" },
+      { "<leader>e", "<cmd>Neotree float toggle<cr>", desc = "Toggle File [E]xplorer (float)" },
     },
     opts = {
       filesystem = {

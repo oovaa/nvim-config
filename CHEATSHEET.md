@@ -25,7 +25,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
-| `<leader>e` | Toggle File Explorer | `neo-tree.nvim` |
+| `<leader>e` | Toggle Floating File Explorer | `neo-tree.nvim` |
 | `<leader>ty` | Switch Theme (Telescope colorscheme, choice persisted across restarts) | config |
 | `t` | Open file in new tab (in neo-tree) | `neo-tree.nvim` |
 | `<C-t>` | Open file in new tab (in Telescope) | `telescope.nvim` |
@@ -42,6 +42,25 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `s` | Fast Jump (Flash) | `flash.nvim` |
 | `S` | Fast Jump Treesitter Mode | `flash.nvim` |
 | `<C-h/j/k/l>` | Switch focus between windows (editor, terminal, explorer) | built-in |
+
+### 🗂️ neo-tree (Floating Explorer) Tricks
+
+Press `<leader>e` to toggle the floating file explorer. Inside it:
+
+| Key | Action |
+| :--- | :--- |
+| `?` | Show neo-tree help |
+| `<CR>` / `o` | Open file (or expand/collapse folder) |
+| `h` / `l` | Collapse / expand folder |
+| `<C-v>` | Open file in vertical split |
+| `s` | Open file in horizontal split |
+| `t` | Open file in new tab |
+| `a` | Create file/folder |
+| `d` | Delete file/folder |
+| `r` | Rename |
+| `R` | Refresh tree |
+| `x` / `y` / `p` | Cut / copy / paste |
+| `q` | Close the explorer |
 
 ## 🔍 Searching (Telescope)
 
