@@ -77,6 +77,8 @@ Press `<leader>e` to toggle the floating file explorer. Inside it:
 | `<leader>sr` | Search Resume (resume last search) |
 | `<leader>s.` | Search Recent Files |
 | `<leader>sc` | Search Commands |
+| `<leader>ls` | List functions/symbols in current file (Telescope, needs LSP) |
+| `<leader>lS` | List symbols in workspace (Telescope, needs LSP) |
 | `<leader>sn` | Search Neovim config files |
 | `<leader>s/` | Search in Open Files |
 | `<leader>fr` | Search & replace (VS Code style) | `nvim-spectre` |
