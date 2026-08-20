@@ -17,21 +17,22 @@
 | todo-comments.nvim | VeryLazy | VeryLazy | DONE |
 | mini.nvim | VeryLazy | VeryLazy | DONE |
 | auto-save.nvim | InsertLeave | InsertLeave | DONE |
-| typescript-tools.nvim | ft filter | ft filter | DONE |
+| vtsls (nvim-vtsls) | ft filter | ft filter | DONE |
 | code_runner.nvim | keys only | keys only | DONE |
 | nvim-treesitter | BufReadPost | BufReadPost | DONE |
 | neo-tree.nvim | keys only | keys only | DONE |
-| bufferline.nvim | keys only | keys only | DONE |
+| bufferline.nvim | VeryLazy + keys | VeryLazy + keys | DONE |
+| alpha.nvim | VimEnter | VimEnter | DONE |
 | toggleterm.nvim | VeryLazy | VeryLazy | DONE |
 | project.nvim | VeryLazy | VeryLazy | DONE |
-| neogit | keys only | keys only | DONE |
 | auto-session | lazy=false | lazy=false | OK |
 | flash.nvim | VeryLazy | VeryLazy | DONE |
 | nvim-dap | keys only | keys only | DONE |
-| remote-nvim.nvim | keys only | keys only | DONE |
 | hlchunk.nvim | VeryLazy | VeryLazy | DONE |
+| neoscroll.nvim | VeryLazy | VeryLazy | DONE |
 | render-markdown.nvim | ft=markdown | ft=markdown | DONE |
-| molten-nvim | BufReadPre | BufReadPre | DONE |
+| molten-nvim | keys only | keys only | DONE |
+| dockerls / compose LSP | Mason install | Mason install | DONE |
 
 ### Key Findings
 

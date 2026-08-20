@@ -46,8 +46,8 @@ function M.setup_mode_line_colors()
   local function swap(mode)
     local color_name = mode_colors[mode]
     if color_name then
-      -- tokyonight is a lazy plugin; palette is only needed once the first
-      -- mode change happens (long after it loaded). Match the ACTIVE style
+      -- tokyonight loads eagerly (priority=1000); palette is only needed
+      -- once the first mode change happens. Match the ACTIVE style
       -- (night/moon/storm/day) — colors.setup() defaults to moon otherwise.
       colors = colors or require('tokyonight.colors').setup {
         style = vim.g.colors_name and vim.g.colors_name:match('%-(.+)$') or 'night',

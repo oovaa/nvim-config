@@ -24,29 +24,25 @@ LEADER KEY: <Space> (Section 2)
 
 SECTION INDEX:
   1.  Provider Disables        - Disable unused language providers
-  2.  Leader Key               - Set your leader key (MUST be before plugins)
-  3.  Options                  - Core Neovim settings
-  4.  Keymaps                  - Custom keybindings
-  5.  Autocommands             - Auto-run code on events
+  2.  Core Options             - lua/config/options.lua (leader key, editor settings)
+  3.  Keymaps                  - lua/config/keymaps.lua (global mappings)
+  4.  Autocommands             - lua/config/autocmds.lua (global autocmds)
+  5.  Theme & Filetypes        - Theme persistence, docker-compose filetype
   6.  Plugins (lazy.nvim)      - All plugin configurations
-     6.1  UI & Visual         - Indent, git signs, which-key
-     6.2  Fuzzy Finding       - Telescope, spectre
-     6.3  LSP                 - Language servers, Mason
+     6.1  UI & Visual         - Indent, git signs, which-key, telescope
+     6.3  LSP                 - Language servers, Mason, vtsls
      6.4  Formatting          - Auto-format on save
      6.5  Completion          - Autocompletion (blink.cmp)
      6.6  Colorscheme         - TokyoNight theme
      6.7  Editing Utilities   - Todo, mini.nvim, auto-save
-      6.8  Syntax              - Treesitter highlighting
-      6.9  UI Components       - File explorer, tabs, terminal
-      6.10 Sessions           - Session save/restore
-      6.11 Navigation         - Flash jumps
-      6.12 Custom Plugins     - lua/custom/plugins/*.lua
-      6.13 Python Dev         - Debugger (DAP)
-      6.14 Bookmarks         - Mark & jump to lines
-      6.15 Visual            - Indent lines, markdown, colorizer
-  7.  Terminal Keymaps         - Better terminal navigation
-  8.  Project Switching        - Quick project switching
-  9.  Filetype Detection       - Custom filetype rules
+     6.8  Syntax              - Treesitter highlighting
+     6.9  UI Components       - File explorer, tabs, terminal
+     6.10 Sessions           - Session save/restore
+     6.11 Navigation         - Flash jumps
+     6.12 Custom Plugins     - lua/custom/plugins/init.lua
+     6.13 Python Dev         - Debugger (DAP)
+     6.14 Bookmarks         - Mark & jump to lines
+     6.15 Visual            - Indent lines, markdown, colorizer
 
     Once you've done that, you can start exploring, configuring and tinkering to
     make Neovim your own! That might mean leaving Kickstart just the way it is for a while
@@ -62,7 +58,7 @@ SECTION INDEX:
     - (or HTML version): https://neovim.io/doc/user/lua-guide.html
 
 Key Mappings Reference:
------------------------
+----------------------
   Leader key: <Space>
 
   Search:      <leader>s{f,g,p,w,/,n,r,.,c,d,k}
@@ -70,35 +66,11 @@ Key Mappings Reference:
   Git:         <leader>fg (LazyGit)
   Debug:       <leader>d{b,c,i,o,O,r,l,t,n,f,s}
   LSP:         K(grn,a,D), grr, gri, grd, grt, gO, gW
+  Symbols:     <leader>ls, <leader>lS
   Bookmarks:   <leader>mt/mc/mj/mk/mb
   Molten:      <leader>m{i,l,v,r,h,d,n,p,o}
   Theme:       <leader>ty
   Profiling:   :StartupTime
-
-SECTIONS:
-  Section 1: Provider Disables
-  Section 2: Leader Key Configuration
-  Section 3: Neovim Options
-  Section 4: Keymaps & Diagnostics
-  Section 5: Autocommands
-  Section 6: Lazy.nvim Plugin Manager
-    6.1: UI & Visual Enhancements
-    6.2: Fuzzy Finding & File Management
-    6.3: Formatting & Completion
-    6.4: Autocompletion
-    6.5: Colorscheme & Highlighting
-    6.6: UI & Editing Utilities
-    6.7: Syntax & Code Intelligence
-    6.8: UI Components
-    6.9: Git Integration
-    6.10: Custom Plugins
-    6.11: Python Development
-    6.12: Remote Development
-    6.13: Bookmarks & Navigation
-    6.14: Visual Enhancements
-  Section 7: Terminal Keymaps
-  Section 8: Project Switching
-  Section 9: Filetype Detection
 
 --]]
 
@@ -1043,7 +1015,13 @@ require('lazy').setup({
     config = function()
       require("lspconfig.configs").vtsls = require("vtsls").lspconfig
       local lspconfig = require("lspconfig")
-      local capabilities = require("blink.cmp").get_lsp_capabilities()
+      -- ponytail: don't force-load blink.cmp on every TS file open; fall back
+      -- to vanilla capabilities if it isn't loaded yet (first open pre-InsertEnter)
+      local capabilities = vim.lsp.protocol.make_client_capabilities()
+      local ok, blink = pcall(require, "blink.cmp")
+      if ok then
+        capabilities = blink.get_lsp_capabilities()
+      end
       lspconfig.vtsls.setup({
         capabilities = capabilities,
         settings = {
