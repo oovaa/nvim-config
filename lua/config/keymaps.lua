@@ -19,6 +19,25 @@ vim.keymap.set({ 'n', 'i' }, '<C-BS>', '<C-w>', { desc = 'Delete previous word' 
 -- TO CHANGE: Map to a different key like <leader>x
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
+-- Copy the full diagnostic message under the cursor to the system clipboard
+-- WHAT: Yanks the LSP/linter message at the cursor so you can paste it elsewhere
+-- TO CHANGE: Use 'y' instead of '+' to copy into the default register
+vim.keymap.set('n', 'gy', function()
+  local lnum = vim.fn.line('.') - 1
+  local col = vim.fn.col('.') - 1
+  local diag = vim.diagnostic.get(0, { lnum = lnum })
+  if #diag == 0 then
+    vim.notify('No diagnostic on this line', vim.log.levels.INFO)
+    return
+  end
+  table.sort(diag, function(a, b)
+    return math.abs(a.col - col) < math.abs(b.col - col)
+  end)
+  local msg = diag[1].message
+  vim.fn.setreg('+', msg)
+  vim.notify('Copied diagnostic: ' .. msg:gsub('\n', ' '):sub(1, 60), vim.log.levels.INFO)
+end, { desc = '[G]ank diagnostic [Y]ank to clipboard' })
+
 -- Toggle inline color previews (colorizer plugin)
 vim.keymap.set('n', '<leader>uc', '<cmd>ColorizerToggle<cr>', { desc = '[U]I [C]olorizer toggle' })
 

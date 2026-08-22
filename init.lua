@@ -414,7 +414,24 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set({ 'n', 'v' }, '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
-      vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
+      vim.keymap.set('n', '<leader>sd', function()
+        builtin.diagnostics {
+          layout_strategy = 'vertical',
+          layout_config = { height = 0.9, width = 0.9, preview_height = 0.6 },
+          attach_mappings = function(_, map)
+            -- <C-y> copies the full message of the diagnostic under the selection.
+            -- Bound in insert mode too, since the picker starts in insert mode.
+            map({ 'i', 'n' }, '<C-y>', function(prompt_bufnr)
+              local entry = require('telescope.actions.state').get_selected_entry()
+              require('telescope.actions').close(prompt_bufnr)
+              if not entry then return end
+              vim.fn.setreg('+', entry.text)
+              vim.notify('Copied diagnostic: ' .. entry.text:gsub('\n', ' '):sub(1, 60), vim.log.levels.INFO)
+            end)
+            return true
+          end,
+        }
+      end, { desc = '[S]earch [D]iagnostics (navigate + <C-y> copy)' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader>sc', builtin.commands, { desc = '[S]earch [C]ommands' })
