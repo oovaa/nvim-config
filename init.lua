@@ -936,6 +936,8 @@ require('lazy').setup({
           suffix_next = 'n',
         },
       }
+      -- gss<surrounding> to surround current line (e.g. gss" -> "line")
+      vim.keymap.set('n', 'gss', 'gsa_', { remap = true })
 
       -- Auto-pair brackets, parens, quotes: when you type ( it adds ), etc.
       require('mini.pairs').setup {}
