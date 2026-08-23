@@ -42,7 +42,7 @@ vim.g.have_nerd_font = true
 -- EFFECT: true = absolute numbers (1, 2, 3, 4, 5...)
 --         relative = relative numbers (cursor line shows absolute, others show distance)
 vim.o.number = true
-vim.o.relativenumber = true -- relative numbers (cursor line still shows absolute)
+-- vim.o.relativenumber = true  -- Uncomment for relative line numbers
 
 -- MOUSE SUPPORT
 -- WHAT: Allows using the mouse in Neovim
