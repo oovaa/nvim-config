@@ -994,8 +994,19 @@ require('lazy').setup({
           },
           typescript = {
             suggest = { completeFunctionCalls = true },
-            preferences = { includePackageJsonAutoImports = 'on' },
-            tsserver = { maxTsServerMemory = 4096 },
+            -- 'on' forces a package.json dependency scan on every completion;
+            -- 'auto' only when an import statement needs it (much cheaper).
+            preferences = { includePackageJsonAutoImports = 'auto' },
+            tsserver = {
+              maxTsServerMemory = 4096,
+              -- inotify-based watching instead of polling node_modules:
+              -- keeps tsserver CPU flat in large repos.
+              watchOptions = {
+                watchFile = 'useFsEvents',
+                watchDirectory = 'useFsEvents',
+                fallbackPolling = 'dynamicPriority',
+              },
+            },
           },
         },
       }
@@ -1059,7 +1070,15 @@ require('lazy').setup({
       -- Enable treesitter highlighting via Neovim built-in APIs (main branch doesn't support old config)
       vim.api.nvim_create_autocmd('FileType', {
         group = vim.api.nvim_create_augroup('treesitter-start', { clear = true }),
-        callback = function(args) pcall(vim.treesitter.start, args.buf) end,
+        callback = function(args)
+          -- ponytail: skip treesitter on minified bundles / huge files (>200KB);
+          -- the parser chokes on them. Legacy regex highlighting covers it.
+          -- Raise/lower the size cap here if you want treesitter everywhere.
+          local name = vim.api.nvim_buf_get_name(args.buf)
+          local ok_stat, stat = pcall(vim.uv.fs_stat, name)
+          if name:match '%.min%.' or (ok_stat and stat and stat.size > 200 * 1024) then return end
+          pcall(vim.treesitter.start, args.buf)
+        end,
       })
     end,
   },
