@@ -82,7 +82,7 @@ Key Mappings Reference:
 vim.loader.enable()
 
 -- Ensure bun shims are on PATH for any bun-managed tooling (LSP, formatters, etc.)
-vim.env.PATH = vim.env.HOME .. "/.local/share/nvim/bin" .. ":" .. (vim.env.PATH or "")
+vim.env.PATH = vim.env.HOME .. '/.local/share/nvim/bin' .. ':' .. (vim.env.PATH or '')
 
 -- project.nvim still calls vim.lsp.buf_get_clients() (removed in 0.12); alias it.
 vim.lsp.buf_get_clients = vim.lsp.get_clients
@@ -108,9 +108,9 @@ vim.lsp.buf_get_clients = vim.lsp.get_clients
 --   config/options.lua  — provider disables, leader key, editor options, diagnostics
 --   config/keymaps.lua  — global keymaps (plugin keymaps stay with their specs)
 --   config/autocmds.lua — global autocommands
-require('config.options')
-require('config.keymaps')
-require('config.autocmds')
+require 'config.options'
+require 'config.keymaps'
+require 'config.autocmds'
 
 -- :StartupTime — profile boot time and show the 15 slowest sources.
 -- Writes a --startuptime log and prints the tail so you can spot regressions.
@@ -118,53 +118,6 @@ vim.api.nvim_create_user_command('StartupTime', function()
   local log = vim.fn.stdpath 'cache' .. '/startup.log'
   vim.cmd('!nvim --startuptime ' .. log .. ' +q && sort -k2 ' .. log .. ' | tail -n 15')
 end, { desc = 'Profile Neovim startup time' })
-
--- ============================================================================
--- THEME MANAGEMENT (persistent colorscheme)
--- The active theme is stored in stdpath('data')/theme and restored on startup.
--- Any :colorscheme change (manual or via :Telescope colorscheme) is saved
--- automatically by the ColorScheme autocmd below.
--- Defined AFTER mapleader so <leader> resolves to <Space>, not the default '\'.
--- ============================================================================
-local theme_file = vim.fn.stdpath 'data' .. '/theme'
-local function save_theme(name)
-  if name and name ~= '' then
-    vim.fn.writefile({ name }, theme_file)
-  end
-end
-local function load_theme()
-  if vim.fn.filereadable(theme_file) == 1 then
-    local ok, lines = pcall(vim.fn.readfile, theme_file)
-    if ok and lines[1] and lines[1] ~= '' then
-      return lines[1]
-    end
-  end
-  return 'tokyonight-night' -- default fallback
-end
-
--- Persist colorscheme changes, but only AFTER the saved theme has been restored
--- at startup. Otherwise the initial eager colorscheme apply overwrites the
--- persisted file with the default before we ever read it (theme resets on boot).
-local theme_ready = false
-vim.api.nvim_create_autocmd('ColorScheme', {
-  desc = 'Persist the active colorscheme to disk',
-  callback = function()
-    if theme_ready then save_theme(vim.g.colors_name) end
-  end,
-})
-
--- Restore the saved theme once the UI is ready (after all theme plugins load).
-vim.api.nvim_create_autocmd('UIEnter', {
-  once = true,
-  desc = 'Restore persisted colorscheme',
-  callback = function()
-    local saved = load_theme()
-    if saved ~= 'tokyonight-night' then
-      pcall(vim.cmd.colorscheme, saved)
-    end
-    theme_ready = true -- begin persisting only after the restore
-  end,
-})
 
 -- docker-compose files get the docker-compose LSP (docker_compose_language_service)
 vim.filetype.add {
@@ -174,12 +127,8 @@ vim.filetype.add {
   },
 }
 
--- NEON UI: theme (no external plugins needed, safe to run now).
--- Plugin-dependent UI (lualine/bufferline/alpha) is wired via each
--- plugin's lazy `config` below, since they aren't loaded this early.
-pcall(function()
-  require('custom.ui.theme').setup()
-end)
+-- THEME: persistence + mode-colored line numbers live in custom/ui/theme.lua.
+pcall(function() require('custom.ui.theme').setup() end)
 
 -- ============================================================================
 -- SECTION 6: LAZY.NVIM PLUGIN MANAGER
@@ -292,7 +241,7 @@ require('lazy').setup({
     ---@type wk.Opts
     ---@diagnostic disable-next-line: missing-fields
     opts = {
-      delay = 200,  -- Delay before showing which-key (ms)
+      delay = 200, -- Delay before showing which-key (ms)
       icons = { mappings = vim.g.have_nerd_font },
 
       -- Document existing key chains (groups of related keymaps)
@@ -608,7 +557,7 @@ require('lazy').setup({
           --
           -- This may be unwanted, since they displace some of your code
           if client and client:supports_method('textDocument/inlayHint', event.buf) then
-            map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = event.buf })) end, '[T]oggle Inlay [H]ints')
+            map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
           end
 
           -- Telescope LSP keymaps (moved from telescope-lsp-attach autocmd)
@@ -828,9 +777,7 @@ require('lazy').setup({
           -- Pre-made snippets for many languages/frameworks
           {
             'rafamadriz/friendly-snippets',
-            config = function()
-              require('luasnip.loaders.from_vscode').lazy_load()
-            end,
+            config = function() require('luasnip.loaders.from_vscode').lazy_load() end,
           },
         },
         opts = {},
@@ -976,7 +923,7 @@ require('lazy').setup({
       -- - gsaiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
       -- - gsd'   - [S]urround [D]elete [']quotes
       -- - gsr)'  - [S]urround [R]eplace [)] [']
-      require('mini.surround').setup({
+      require('mini.surround').setup {
         mappings = {
           add = 'gsa',
           delete = 'gsd',
@@ -988,7 +935,7 @@ require('lazy').setup({
           suffix_last = 'l',
           suffix_next = 'n',
         },
-      })
+      }
 
       -- Auto-pair brackets, parens, quotes: when you type ( it adds ), etc.
       require('mini.pairs').setup {}
@@ -1006,15 +953,15 @@ require('lazy').setup({
   -- EFFECT: Your work is saved automatically - no need to press :w constantly
   -- LOADING: InsertLeave/TextChanged = loads when you type or leave insert mode
   {
-    "okuuva/auto-save.nvim",
-    cmd = "ASToggle", 
-    event = { "InsertLeave", "TextChanged" }, 
+    'okuuva/auto-save.nvim',
+    cmd = 'ASToggle',
+    event = { 'InsertLeave', 'TextChanged' },
     opts = {
       -- Save once per edit session, not per text change: TextChanged queues a
       -- write per keystroke burst, then BufWritePre -> prettier -> tsserver
       -- recheck thrashes the whole file.
       trigger_events = {
-        defer_save = { "InsertLeave" },
+        defer_save = { 'InsertLeave' },
         immediate_save = {},
       },
     },
@@ -1026,14 +973,14 @@ require('lazy').setup({
   -- EFFECT: Faster completions, better Drizzle/NestJS inference, lower CPU
   -- LOADING: ft = only loads for JavaScript/TypeScript files
   {
-    "yioneko/nvim-vtsls",
-    dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
-    ft = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
+    'yioneko/nvim-vtsls',
+    dependencies = { 'nvim-lua/plenary.nvim', 'neovim/nvim-lspconfig' },
+    ft = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
     config = function()
-      require("lspconfig.configs").vtsls = require("vtsls").lspconfig
-      local lspconfig = require("lspconfig")
-      local capabilities = require("blink.cmp").get_lsp_capabilities()
-      lspconfig.vtsls.setup({
+      require('lspconfig.configs').vtsls = require('vtsls').lspconfig
+      local lspconfig = require 'lspconfig'
+      local capabilities = require('blink.cmp').get_lsp_capabilities()
+      lspconfig.vtsls.setup {
         capabilities = capabilities,
         settings = {
           vtsls = {
@@ -1047,11 +994,11 @@ require('lazy').setup({
           },
           typescript = {
             suggest = { completeFunctionCalls = true },
-            preferences = { includePackageJsonAutoImports = "on" },
+            preferences = { includePackageJsonAutoImports = 'on' },
             tsserver = { maxTsServerMemory = 4096 },
           },
         },
-      })
+      }
     end,
   },
 
@@ -1062,25 +1009,25 @@ require('lazy').setup({
   --         Output appears in a terminal split below
   -- LOADING: keys = only loads when you press the keybindings
   {
-    "CRAG666/code_runner.nvim",
+    'CRAG666/code_runner.nvim',
     config = function()
-      require('code_runner').setup({
-        mode = "term",
+      require('code_runner').setup {
+        mode = 'term',
         focus = true,
         startinsert = true,
         filetype = {
-          javascript = "bun",
-          python = "python3 -u",
-          typescript = "bun",
-          typescriptreact = "bun",
-          cpp = { "cd $dir && g++ $fileName -o $fileNameWithoutExt && ./$fileNameWithoutExt" },
-          c = { "cd $dir && gcc $fileName -o $fileNameWithoutExt && ./$fileNameWithoutExt" },
+          javascript = 'bun',
+          python = 'python3 -u',
+          typescript = 'bun',
+          typescriptreact = 'bun',
+          cpp = { 'cd $dir && g++ $fileName -o $fileNameWithoutExt && ./$fileNameWithoutExt' },
+          c = { 'cd $dir && gcc $fileName -o $fileNameWithoutExt && ./$fileNameWithoutExt' },
         },
-      })
+      }
     end,
     keys = {
-      { "<leader>r", ":RunCode<CR>", desc = "[R]un [C]ode" },
-      { "<leader>rf", ":RunFile<CR>", desc = "[R]un [F]ile" },
+      { '<leader>r', ':RunCode<CR>', desc = '[R]un [C]ode' },
+      { '<leader>rf', ':RunFile<CR>', desc = '[R]un [F]ile' },
     },
   },
 
@@ -1102,21 +1049,17 @@ require('lazy').setup({
     event = { 'BufReadPost', 'BufNewFile' },
     config = function()
       -- main branch of nvim-treesitter only handles parser install dir
-      require('nvim-treesitter').setup({})
+      require('nvim-treesitter').setup {}
       -- Install missing parsers on load (ensure_installed is unsupported in the rewrite)
-      for _, lang in ipairs({ 'dockerfile', 'yaml' }) do
+      for _, lang in ipairs { 'dockerfile', 'yaml' } do
         local parser = vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser', lang .. '.so')
-        if vim.fn.filereadable(parser) ~= 1 then
-          vim.cmd('TSInstall ' .. lang)
-        end
+        if vim.fn.filereadable(parser) ~= 1 then vim.cmd('TSInstall ' .. lang) end
       end
 
       -- Enable treesitter highlighting via Neovim built-in APIs (main branch doesn't support old config)
       vim.api.nvim_create_autocmd('FileType', {
         group = vim.api.nvim_create_augroup('treesitter-start', { clear = true }),
-        callback = function(args)
-          pcall(vim.treesitter.start, args.buf)
-        end,
+        callback = function(args) pcall(vim.treesitter.start, args.buf) end,
       })
     end,
   },
@@ -1133,19 +1076,19 @@ require('lazy').setup({
   --         Replaces netrw (the built-in file browser)
   -- LOADING: keys = only loads when you press <leader>e
   {
-    "nvim-neo-tree/neo-tree.nvim",
-    branch = "v3.x",
+    'nvim-neo-tree/neo-tree.nvim',
+    branch = 'v3.x',
     dependencies = {
-      "nvim-lua/plenary.nvim",
-      "nvim-tree/nvim-web-devicons",
-      "MunifTanjim/nui.nvim",
+      'nvim-lua/plenary.nvim',
+      'nvim-tree/nvim-web-devicons',
+      'MunifTanjim/nui.nvim',
     },
     keys = {
-      { "<leader>e", "<cmd>Neotree float toggle<cr>", desc = "Toggle File [E]xplorer (float)" },
+      { '<leader>e', '<cmd>Neotree float toggle<cr>', desc = 'Toggle File [E]xplorer (float)' },
     },
     opts = {
       filesystem = {
-        hijack_netrw_behavior = "open_default",
+        hijack_netrw_behavior = 'open_default',
         filtered_items = {
           visible = false,
           hide_dotfiles = false,
@@ -1166,14 +1109,14 @@ require('lazy').setup({
   -- CONFIG: Tuning lives in lua/custom/ui/spec.lua (diagnostics + icons)
   {
     'akinsho/bufferline.nvim',
-    version = "*",
+    version = '*',
     dependencies = 'nvim-tree/nvim-web-devicons',
     event = 'VeryLazy',
     config = function() require('custom.ui.spec').setup_bufferline() end,
     keys = {
-      { "<S-h>", "<cmd>BufferLineCyclePrev<cr>", desc = "Prev Buffer" },
-      { "<S-l>", "<cmd>BufferLineCycleNext<cr>", desc = "Next Buffer" },
-      { "<leader>bd", "<cmd>bdelete<cr>", desc = "[B]uffer [D]elete" },
+      { '<S-h>', '<cmd>BufferLineCyclePrev<cr>', desc = 'Prev Buffer' },
+      { '<S-l>', '<cmd>BufferLineCycleNext<cr>', desc = 'Next Buffer' },
+      { '<leader>bd', '<cmd>bdelete<cr>', desc = '[B]uffer [D]elete' },
     },
   },
 
@@ -1208,7 +1151,7 @@ require('lazy').setup({
     dependencies = { 'nvim-lua/plenary.nvim' },
     cmd = { 'LazyGit', 'LazyGitConfig' },
     keys = {
-      { "<leader>fg", "<cmd>LazyGit<cr>", desc = "[F]ile [G]it (LazyGit)" },
+      { '<leader>fg', '<cmd>LazyGit<cr>', desc = '[F]ile [G]it (LazyGit)' },
     },
   },
 
@@ -1220,7 +1163,7 @@ require('lazy').setup({
   -- LOADING: VeryLazy = loads after UI is ready
   {
     'akinsho/toggleterm.nvim',
-    version = "*",
+    version = '*',
     event = 'VeryLazy',
     opts = {
       open_mapping = [[<c-\>]],
@@ -1234,14 +1177,14 @@ require('lazy').setup({
       close_on_exit = true,
     },
     keys = {
-      { "<leader>tt", "<cmd>ToggleTerm<cr>", desc = "[T]oggle [T]erminal" },
-      { "<leader>tf", "<cmd>ToggleTerm direction=float<cr>", desc = "[T]erminal [F]loat" },
-      { "<leader>tm", "<cmd>TermExec cmd='tmux new -s float 2>/dev/null || tmux attach -t float' direction=float<cr>", desc = "[T]erminal t[M]ux" },
-      { "<leader>ht", "<cmd>TermExec cmd='herdr' direction=float<cr>", desc = "[H]erdr [T]erminal" },
-      { "<leader>t1", "<cmd>1ToggleTerm<cr>", desc = "Terminal [1]" },
-      { "<leader>t2", "<cmd>2ToggleTerm<cr>", desc = "Terminal [2]" },
-      { "<leader>t3", "<cmd>3ToggleTerm<cr>", desc = "Terminal [3]" },
-      { "<leader>tn", "<cmd>TermExec cmd=''<cr>", desc = "[T]erminal [N]ew" },
+      { '<leader>tt', '<cmd>ToggleTerm<cr>', desc = '[T]oggle [T]erminal' },
+      { '<leader>tf', '<cmd>ToggleTerm direction=float<cr>', desc = '[T]erminal [F]loat' },
+      { '<leader>tm', "<cmd>TermExec cmd='tmux new -s float 2>/dev/null || tmux attach -t float' direction=float<cr>", desc = '[T]erminal t[M]ux' },
+      { '<leader>ht', "<cmd>TermExec cmd='herdr' direction=float<cr>", desc = '[H]erdr [T]erminal' },
+      { '<leader>t1', '<cmd>1ToggleTerm<cr>', desc = 'Terminal [1]' },
+      { '<leader>t2', '<cmd>2ToggleTerm<cr>', desc = 'Terminal [2]' },
+      { '<leader>t3', '<cmd>3ToggleTerm<cr>', desc = 'Terminal [3]' },
+      { '<leader>tn', "<cmd>TermExec cmd=''<cr>", desc = '[T]erminal [N]ew' },
     },
   },
 
@@ -1252,13 +1195,13 @@ require('lazy').setup({
   --         Helps plugins know where your project starts and ends
   -- LOADING: VeryLazy = loads after UI is ready
   {
-    "ahmedkhalf/project.nvim",
+    'ahmedkhalf/project.nvim',
     event = 'VeryLazy',
     config = function()
-      require("project_nvim").setup({
-        detection_methods = { "lsp", "pattern" },
-        patterns = { ".git", "_darcs", ".hg", ".bzr", ".svn", "Makefile", "package.json" },
-      })
+      require('project_nvim').setup {
+        detection_methods = { 'lsp', 'pattern' },
+        patterns = { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' },
+      }
     end,
   },
 
@@ -1274,19 +1217,17 @@ require('lazy').setup({
   --         (open files, window layout, cursor positions)
   -- IMPORTANT: Must load at startup (lazy=false) for auto-restore to work
   {
-    "rmagatti/auto-session",
+    'rmagatti/auto-session',
     lazy = false,
     config = function()
-      vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
-      require("auto-session").setup({
-        log_level = "error",
-        suppressed_dirs = { "~/", "~/Downloads", "/etc" },
+      vim.o.sessionoptions = 'blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions'
+      require('auto-session').setup {
+        log_level = 'error',
+        suppressed_dirs = { '~/', '~/Downloads', '/etc' },
         pre_save_cmds = {
-          function()
-            pcall(vim.cmd, 'Neotree close')
-          end,
+          function() pcall(vim.cmd, 'Neotree close') end,
         },
-      })
+      }
     end,
   },
 
@@ -1302,12 +1243,12 @@ require('lazy').setup({
   --         Press S for treesitter-aware jumps (jumps to function/class boundaries)
   -- LOADING: VeryLazy = loads after UI is ready
   {
-    "folke/flash.nvim",
-    event = "VeryLazy",
+    'folke/flash.nvim',
+    event = 'VeryLazy',
     opts = {},
     keys = {
-      { "s", mode = { "n", "x", "o" }, function() require("flash").jump() end, desc = "Flash Jump" },
-      { "S", mode = { "n", "x", "o" }, function() require("flash").treesitter() end, desc = "Flash Treesitter" },
+      { 's', mode = { 'n', 'x', 'o' }, function() require('flash').jump() end, desc = 'Flash Jump' },
+      { 'S', mode = { 'n', 'x', 'o' }, function() require('flash').treesitter() end, desc = 'Flash Treesitter' },
     },
   },
 
@@ -1331,8 +1272,8 @@ require('lazy').setup({
   {
     'mfussenegger/nvim-dap',
     dependencies = {
-      'rcarriga/nvim-dap-ui',      -- Visual UI for the debugger
-      'nvim-neotest/nvim-nio',     -- Required by dap-ui
+      'rcarriga/nvim-dap-ui', -- Visual UI for the debugger
+      'nvim-neotest/nvim-nio', -- Required by dap-ui
       'mfussenegger/nvim-dap-python', -- Python-specific debugging
     },
     keys = {
@@ -1359,10 +1300,8 @@ require('lazy').setup({
 
       -- Python debugging with debugpy (Mason-installed venv). If debugpy isn't
       -- installed yet, skip setup so dap-python falls back to python3.
-      local debugpy_path = vim.fn.stdpath('data') .. '/mason/packages/debugpy/venv/bin/python'
-      if vim.fn.filereadable(debugpy_path) == 1 then
-        require('dap-python').setup(debugpy_path)
-      end
+      local debugpy_path = vim.fn.stdpath 'data' .. '/mason/packages/debugpy/venv/bin/python'
+      if vim.fn.filereadable(debugpy_path) == 1 then require('dap-python').setup(debugpy_path) end
     end,
   },
 
@@ -1387,9 +1326,7 @@ require('lazy').setup({
       { '<leader>mk', '<cmd>BookmarkPrev<cr>', desc = '[B]ookmark [P]revious' },
       { '<leader>mb', '<cmd>Telescope vim_bookmarks<cr>', desc = '[B]ookmark [L]ist' },
     },
-    config = function()
-      require('telescope').load_extension('vim_bookmarks')
-    end,
+    config = function() require('telescope').load_extension 'vim_bookmarks' end,
   },
 
   -- ============================================================================
@@ -1407,7 +1344,7 @@ require('lazy').setup({
     'shellRaining/hlchunk.nvim',
     event = { 'VeryLazy' },
     config = function()
-      require('hlchunk').setup({
+      require('hlchunk').setup {
         chunk = {
           enable = true,
           -- treesitter is available, but indentation-based detection is
@@ -1431,7 +1368,7 @@ require('lazy').setup({
           chars = { '│' },
           style = { { fg = '#4a4560' } },
         },
-      })
+      }
     end,
   },
 
@@ -1492,15 +1429,15 @@ require('lazy').setup({
     rtp = {
       -- Disable unused built-in Neovim plugins for faster startup (saves 10-20ms)
       disabled_plugins = {
-        'gzip',       -- Gzip file reading/writing (not needed)
-        'tar',        -- Tar file reading/writing (not needed)
-        'tohtml',     -- Convert to HTML (not needed)
-        'tutor',      -- Vim tutorial (not needed)
+        'gzip', -- Gzip file reading/writing (not needed)
+        'tar', -- Tar file reading/writing (not needed)
+        'tohtml', -- Convert to HTML (not needed)
+        'tutor', -- Vim tutorial (not needed)
         'netrwPlugin', -- Netrw file browser (replaced by neo-tree)
-        'matchit',    -- Extended % matching (replaced by mini.ai)
+        'matchit', -- Extended % matching (replaced by mini.ai)
         -- matchparen is kept: mini.ai/mini.surround don't replicate its
         -- matching-paren highlight under the cursor.
-        'zip',        -- Zip archive reading/writing (not needed)
+        'zip', -- Zip archive reading/writing (not needed)
       },
     },
   },

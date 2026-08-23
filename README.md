@@ -10,6 +10,19 @@ A starting point for Neovim that is:
 
 **NOT** a Neovim distribution, but instead a starting point for your configuration.
 
+## Features
+
+* **LSP**: vtsls (fast TypeScript), pyrefly (Python), lua_ls, ESLint, Dockerfile + docker-compose servers — all with completions via [blink.cmp](https://github.com/Saghen/blink.cmp)
+* **Formatting**: [conform.nvim](https://github.com/stevearc/conform.nvim) on save (prettier, stylua, ruff, gofmt)
+* **Fuzzy finding**: Telescope — files, grep, symbols (`<leader>ls` document / `<leader>lS` workspace), projects
+* **Explorer**: neo-tree as a floating drawer on `<leader>e`
+* **UI**: tokyonight theme (persisted across restarts), lualine, bufferline, alpha dashboard, mode-colored line numbers
+* **Git**: gitsigns, LazyGit on `<leader>fg`
+* **Debugging**: nvim-dap for Python; molten-nvim + image.nvim for Jupyter-style notebooks
+* **Performance**: ~110ms startup — everything lazy-loaded except the colorscheme and session restore; `:StartupTime` command to profile regressions
+
+See `CHEATSHEET.md` for the full keybinding reference and `PERFORMANCE_PLAN.md` for loading strategy details.
+
 ## Installation
 
 ### Install Neovim

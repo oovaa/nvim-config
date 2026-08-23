@@ -17,7 +17,7 @@ vim.api.nvim_create_autocmd('CursorHold', {
   callback = function()
     -- Skip clean buffers: get(0) with a position costs little, the float
     -- render does not.
-    local diag = vim.diagnostic.get(0, { lnum = vim.fn.line('.') - 1, col = vim.fn.col('.') - 1 })
+    local diag = vim.diagnostic.get(0, { lnum = vim.fn.line '.' - 1, col = vim.fn.col '.' - 1 })
     if #diag == 0 then return end
     vim.diagnostic.open_float(nil, {
       focusable = false,
@@ -47,7 +47,7 @@ vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
   group = vim.api.nvim_create_augroup('bun-shebang-detection', { clear = true }),
   callback = function(args)
     local first_line = vim.api.nvim_buf_get_lines(args.buf, 0, 1, false)[1] or ''
-    if first_line:match('^#!.*bin.*[ /]bun%s*$') or first_line:match('^#!.*bin.*[ /]bun ') then
+    if first_line:match '^#!.*bin.*[ /]bun%s*$' or first_line:match '^#!.*bin.*[ /]bun ' then
       vim.bo[args.buf].filetype = 'typescript'
 
       -- Trigger FileType autocommands so LSPs attach after filetype is set

@@ -23,16 +23,14 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 -- WHAT: Yanks the LSP/linter message at the cursor so you can paste it elsewhere
 -- TO CHANGE: Use 'y' instead of '+' to copy into the default register
 vim.keymap.set('n', 'gy', function()
-  local lnum = vim.fn.line('.') - 1
-  local col = vim.fn.col('.') - 1
+  local lnum = vim.fn.line '.' - 1
+  local col = vim.fn.col '.' - 1
   local diag = vim.diagnostic.get(0, { lnum = lnum })
   if #diag == 0 then
     vim.notify('No diagnostic on this line', vim.log.levels.INFO)
     return
   end
-  table.sort(diag, function(a, b)
-    return math.abs(a.col - col) < math.abs(b.col - col)
-  end)
+  table.sort(diag, function(a, b) return math.abs(a.col - col) < math.abs(b.col - col) end)
   local msg = diag[1].message
   vim.fn.setreg('+', msg)
   vim.notify('Copied diagnostic: ' .. msg:gsub('\n', ' '):sub(1, 60), vim.log.levels.INFO)

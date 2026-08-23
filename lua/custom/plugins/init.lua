@@ -7,15 +7,15 @@
 ---@type LazySpec
 return {
   {
-    "nvim-telescope/telescope-file-browser.nvim",
-    dependencies = { "nvim-telescope/telescope.nvim" },
+    'nvim-telescope/telescope-file-browser.nvim',
+    dependencies = { 'nvim-telescope/telescope.nvim' },
   },
 
   {
-    "benlubas/molten-nvim",
-    version = "^1",
-    build = ":UpdateRemotePlugins",
-    dependencies = { "3rd/image.nvim" },
+    'benlubas/molten-nvim',
+    version = '^1',
+    build = ':UpdateRemotePlugins',
+    dependencies = { '3rd/image.nvim' },
     config = function()
       vim.g.molten_output_win_max_height = 20
       vim.g.molten_auto_open_output = false
@@ -23,36 +23,36 @@ return {
       vim.g.molten_use_virtual_text = true
       vim.g.molten_virt_lines_off_by_1 = true
       vim.g.molten_virt_text_output = true
-      vim.g.molten_image_provider = "image.nvim"
+      vim.g.molten_image_provider = 'image.nvim'
     end,
     keys = {
-      { "<leader>mi", "<cmd>MoltenInit<cr>", desc = "[M]olten [I]nit" },
-      { "<leader>ml", "<cmd>MoltenEvaluateLine<cr>", desc = "[M]olten [L]ine" },
-      { "<leader>mv", "<cmd>MoltenEvaluateVisual<cr>", mode = "v", desc = "[M]olten [V]isual" },
-      { "<leader>mr", "<cmd>MoltenReevaluateCell<cr>", desc = "[M]olten [R]e-evaluate" },
-      { "<leader>mh", "<cmd>MoltenHide<cr>", desc = "[M]olten [H]ide output" },
-      { "<leader>md", "<cmd>MoltenDelete<cr>", desc = "[M]olten [D]elete cell" },
-      { "<leader>mn", "<cmd>MoltenNext<cr>", desc = "[M]olten [N]ext cell" },
-      { "<leader>mp", "<cmd>MoltenPrev<cr>", desc = "[M]olten [P]rev cell" },
-      { "<leader>mo", "<cmd>MoltenOpenInBrowser<cr>", desc = "[M]olten [O]pen in browser" },
+      { '<leader>mi', '<cmd>MoltenInit<cr>', desc = '[M]olten [I]nit' },
+      { '<leader>ml', '<cmd>MoltenEvaluateLine<cr>', desc = '[M]olten [L]ine' },
+      { '<leader>mv', '<cmd>MoltenEvaluateVisual<cr>', mode = 'v', desc = '[M]olten [V]isual' },
+      { '<leader>mr', '<cmd>MoltenReevaluateCell<cr>', desc = '[M]olten [R]e-evaluate' },
+      { '<leader>mh', '<cmd>MoltenHide<cr>', desc = '[M]olten [H]ide output' },
+      { '<leader>md', '<cmd>MoltenDelete<cr>', desc = '[M]olten [D]elete cell' },
+      { '<leader>mn', '<cmd>MoltenNext<cr>', desc = '[M]olten [N]ext cell' },
+      { '<leader>mp', '<cmd>MoltenPrev<cr>', desc = '[M]olten [P]rev cell' },
+      { '<leader>mo', '<cmd>MoltenOpenInBrowser<cr>', desc = '[M]olten [O]pen in browser' },
     },
   },
 
   {
-    "3rd/image.nvim",
+    '3rd/image.nvim',
     build = false,
     -- Load on first file open; also a molten dependency so it's available
     -- when MoltenInit runs. (No trigger at all would load it at startup.)
-    event = { "BufReadPre", "BufNewFile" },
+    event = { 'BufReadPre', 'BufNewFile' },
     opts = {
-      backend = "kitty",
+      backend = 'kitty',
       integrations = {
         markdown = {
           enabled = true,
           clear_in_insert_mode = false,
           download_remote_images = true,
           only_render_image_at_cursor = false,
-          filetypes = { "markdown", "vimwiki" },
+          filetypes = { 'markdown', 'vimwiki' },
         },
         html = { enabled = false },
         css = { enabled = false },
@@ -62,10 +62,10 @@ return {
       max_width_window_width = nil,
       max_height_window_height = nil,
       window_overlap_clear_enabled = false,
-      window_overlap_clear_ft_ignore = { "cmp_menu", "cmp_docs" },
+      window_overlap_clear_ft_ignore = { 'cmp_menu', 'cmp_docs' },
       editor_only_render_when_focused = true,
       tmux_show_only_in_active_window = false,
-      hijack_filetype_patterns = { "rendermarkdown.*" },
+      hijack_filetype_patterns = { 'rendermarkdown.*' },
     },
   },
 }

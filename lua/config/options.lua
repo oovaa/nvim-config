@@ -19,9 +19,26 @@
 --   Setting a provider to 0 = disabled (faster startup, but plugins needing it break)
 --   Removing the line = provider enabled (slower startup, but plugins can use it)
 -- ============================================================================
-vim.g.loaded_perl_provider = 0  -- Disable Perl provider (not used)
-vim.g.loaded_ruby_provider = 0  -- Disable Ruby provider (not used)
-vim.g.loaded_node_provider = 0  -- Disable Node provider (no :Node remote plugins used)
+vim.g.loaded_perl_provider = 0 -- Disable Perl provider (not used)
+vim.g.loaded_ruby_provider = 0 -- Disable Ruby provider (not used)
+vim.g.loaded_node_provider = 0 -- Disable Node provider (no :Node remote plugins used)
+
+-- ============================================================================
+-- BUILT-IN PLUGIN DISABLES
+-- ============================================================================
+-- WHAT: Neovim ships legacy Vimscript plugins that load on their trigger.
+--        neo-tree replaces netrw; the rest are unused. Skipping them saves
+--        a few ms and avoids netrw/neo-tree explorer conflicts.
+-- TO CHANGE: Remove any line if you want that built-in back.
+-- EFFECT: 0 = never sourced. Check with `:checkhealth vim` or :scriptnames.
+-- ============================================================================
+vim.g.loaded_netrw = 1 -- File explorer (replaced by neo-tree)
+vim.g.loaded_netrwPlugin = 1 -- netrw remote reading (curl/wget wrappers)
+vim.g.loaded_2html_plugin = 1 -- :TOhtml export
+vim.g.loaded_gzip = 1 -- Transparent .gz editing
+vim.g.loaded_tarPlugin = 1 -- Transparent .tar browsing
+vim.g.loaded_zipPlugin = 1 -- Transparent .zip browsing
+vim.g.loaded_tutor_mode_plugin = 1 -- :Tutor
 
 -- ============================================================================
 -- LEADER KEY
@@ -150,10 +167,10 @@ vim.o.confirm = true
 -- TO CHANGE: Set virtual_text = false to hide inline error text
 -- EFFECT: Controls appearance of LSP/linter diagnostics
 vim.diagnostic.config {
-  update_in_insert = false,        -- Don't update diagnostics while typing
-  severity_sort = true,            -- Sort by severity (errors first)
-  float = { border = 'rounded', source = 'if_many' },  -- Floating window style
-  underline = { severity = { min = vim.diagnostic.severity.WARN } },  -- Underline warnings+
-  virtual_text = true,             -- Inline error text at end of line
-  jump = { on_jump = true },       -- Auto-open float when jumping to diagnostic
+  update_in_insert = false, -- Don't update diagnostics while typing
+  severity_sort = true, -- Sort by severity (errors first)
+  float = { border = 'rounded', source = 'if_many' }, -- Floating window style
+  underline = { severity = { min = vim.diagnostic.severity.WARN } }, -- Underline warnings+
+  virtual_text = true, -- Inline error text at end of line
+  jump = { on_jump = true }, -- Auto-open float when jumping to diagnostic
 }

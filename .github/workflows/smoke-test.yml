@@ -1,0 +1,22 @@
+# Headless boot smoke test: fails loudly if the config breaks
+name: Smoke Test
+on:
+  push:
+  pull_request:
+
+jobs:
+  boot:
+    name: Nvim headless boot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Install Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: v0.11.3
+
+      - name: Boot headless
+        run: nvim --headless "+lua print('BOOT OK')" +q 2>&1
