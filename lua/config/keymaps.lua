@@ -40,8 +40,8 @@ end, { desc = '[G]ank diagnostic [Y]ank to clipboard' })
 vim.keymap.set('n', '<leader>uc', '<cmd>ColorizerToggle<cr>', { desc = '[U]I [C]olorizer toggle' })
 
 -- Switch themes with a live Telescope preview; the selection persists via the
--- theme-management block in init.lua.
-vim.keymap.set('n', '<leader>ty', '<cmd>Telescope colorscheme<cr>', { desc = 'Switch [T]heme' })
+-- theme-management in custom/ui/theme.lua.
+vim.keymap.set('n', '<leader>ty', function() require('telescope.builtin').colorscheme { enable_preview = true } end, { desc = 'Switch [T]heme (preview)' })
 
 -- Terminal mode: exit with double <Esc>
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
