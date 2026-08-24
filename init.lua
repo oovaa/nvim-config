@@ -61,7 +61,7 @@ Key Mappings Reference:
 ----------------------
   Leader key: <Space>
 
-  Search:      <leader>s{f,g,p,w,/,n,r,.,c,d,k}
+  Search:      <leader>s{f,g,p,w,/,n,r,.,c,d,k}  (<leader><leader> = find files)
   Terminal:    <leader>t{t,f,m,1,2,3,n}
   Git:         <leader>fg (LazyGit)
   Debug:       <leader>d{b,c,i,o,O,r,l,t,n,f,s}
@@ -381,6 +381,8 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      -- double-space alias: fastest way to find files
+      vim.keymap.set('n', '<leader><leader>', builtin.find_files, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>sp', function() require('telescope').extensions.projects.projects {} end, { desc = '[S]earch [P]rojects' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set({ 'n', 'v' }, '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
@@ -406,7 +408,6 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader>sc', builtin.commands, { desc = '[S]earch [C]ommands' })
-      vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
       -- Override default behavior and theme when searching
       vim.keymap.set('n', '<leader>/', function()

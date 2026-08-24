@@ -66,7 +66,7 @@ Press `<leader>e` to toggle the floating file explorer. Inside it:
 
 | Keybinding | Action |
 | :--- | :--- |
-| `<leader>sf` | Search Files |
+| `<leader>sf` | Search Files (also `<leader><leader>`) |
 | `<leader>sp` | Search Projects (Switch project) |
 | `<leader>sg` | Search by Grep (Search across entire codebase) |
 | `<leader>sw` | Grep word under cursor |
