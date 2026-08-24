@@ -600,7 +600,9 @@ require('lazy').setup({
         -- clangd = {},
         docker_compose_language_service = {},
         dockerls = {},
-        eslint = {},
+        -- run='onSave': lint on save instead of every keystroke (pairs with
+        -- auto-save on InsertLeave); big CPU cut in large TS repos
+        eslint = { settings = { eslint = { run = 'onSave' } } },
         -- gopls = {},
         pyrefly = {
           cmd = { 'pyrefly', 'lsp' },
