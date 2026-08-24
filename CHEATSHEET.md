@@ -119,6 +119,14 @@ Press `<leader>e` to toggle the floating file explorer. Inside it:
 | `<leader>fE` | File browser in current dir | `telescope-file-browser` |
 | `:StartupTime` | Profile Neovim startup and list the 15 slowest sources | config |
 
+### 💬 Messages & Cmdline (noice.nvim)
+
+| Keybinding | Action | Plugin |
+| :--- | :--- | :--- |
+| `:Noice` | Message history in a scrollable popup | `noice.nvim` |
+| `:Noice errors` | Recent error messages only | `noice.nvim` |
+| `:Noice dismiss` | Close all message windows | `noice.nvim` |
+
 ## 🌿 Git Integration
 
 | Keybinding | Action | Plugin |

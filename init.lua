@@ -227,6 +227,28 @@ require('lazy').setup({
     },
   },
 
+  -- NOICE
+  -- WHAT: Replaces the default UI for messages, cmdline and popupmenu.
+  --       :messages become a scrollable popup, search/cmdline get floating
+  --       boxes, LSP hover/docs render as markdown with a rounded border.
+  -- TO CHANGE: `:Noice` opens the message history; :Noice errors for errors.
+  -- EFFECT: Nicer message UX. If anything looks off, `:Noice disable`
+  --         temporarily reverts to stock UI without uninstalling.
+  -- LOADING: VeryLazy = after UI is ready (recommended by upstream)
+  {
+    'folke/noice.nvim',
+    event = 'VeryLazy',
+    dependencies = { 'MunifTanjim/nui.nvim' },
+    opts = {
+      presets = {
+        -- keep search at the bottom like classic vim (floating search box off)
+        bottom_search = true,
+        -- rounded border on hover/signature docs (matches diagnostic floats)
+        lsp_doc_border = true,
+      },
+    },
+  },
+
   -- WHICH-KEY
   -- WHAT: Shows a popup with available keybindings after you press a key
   -- TO CHANGE: Add more groups in opts.spec, or change delay
