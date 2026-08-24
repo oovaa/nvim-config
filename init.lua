@@ -84,9 +84,6 @@ vim.loader.enable()
 -- Ensure bun shims are on PATH for any bun-managed tooling (LSP, formatters, etc.)
 vim.env.PATH = vim.env.HOME .. '/.local/share/nvim/bin' .. ':' .. (vim.env.PATH or '')
 
--- project.nvim still calls vim.lsp.buf_get_clients() (removed in 0.12); alias it.
-vim.lsp.buf_get_clients = vim.lsp.get_clients
-
 -- ============================================================================
 -- SECTION 1: PROVIDER DISABLES
 -- ============================================================================
@@ -1248,7 +1245,10 @@ require('lazy').setup({
     event = 'VeryLazy',
     config = function()
       require('project_nvim').setup {
-        detection_methods = { 'lsp', 'pattern' },
+        -- pattern only: 'lsp' detection calls the removed
+        -- vim.lsp.buf_get_clients() API (crash on 0.12+), and every project
+        -- here is already covered by .git / package.json patterns.
+        detection_methods = { 'pattern' },
         patterns = { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' },
       }
     end,
