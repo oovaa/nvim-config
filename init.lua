@@ -984,9 +984,14 @@ require('lazy').setup({
       -- Save once per edit session, not per text change: TextChanged queues a
       -- write per keystroke burst, then BufWritePre -> prettier -> tsserver
       -- recheck thrashes the whole file.
+      --
+      -- immediate_save restores the stock safety net (esp. QuitPre): without
+      -- it, edits made <1s before quitting hit the debounce timer and are
+      -- silently lost.
       trigger_events = {
+        immediate_save = { 'QuitPre', 'FocusLost', 'BufLeave', 'VimSuspend' },
         defer_save = { 'InsertLeave' },
-        immediate_save = {},
+        cancel_deferred_save = { 'InsertEnter' },
       },
     },
   },
