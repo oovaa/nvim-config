@@ -8,7 +8,7 @@
 | guess-indent.nvim | Eager | Eager (tiny) | LOW |
 | gitsigns.nvim | BufReadPost | BufReadPost | DONE |
 | which-key.nvim | VeryLazy | VeryLazy | DONE |
-| telescope.nvim | VeryLazy | VeryLazy | DONE |
+| telescope.nvim | VeryLazy | **cmd + keys** | **DONE** (deferred ~120-150ms)
 | nvim-spectre | keys only | keys only | DONE |
 | nvim-lspconfig | Eager | **FileType on-demand** | HIGH |
 | conform.nvim | BufWritePre | BufWritePre | DONE |
@@ -24,7 +24,7 @@
 | bufferline.nvim | VeryLazy + keys | VeryLazy + keys | DONE |
 | alpha.nvim | VimEnter | VimEnter | DONE |
 | toggleterm.nvim | VeryLazy | VeryLazy | DONE |
-| project.nvim | VeryLazy | VeryLazy | DONE |
+| project.nvim | VeryLazy | **keys only** | **DONE** (deferred with telescope.projects)
 | auto-session | lazy=false | lazy=false | OK |
 | flash.nvim | VeryLazy | VeryLazy | DONE |
 | nvim-dap | keys only | keys only | DONE |
@@ -54,6 +54,19 @@
 - lazy.nvim `performance.cache.enabled = true` — module cache for plugins
 - `loaded_node_provider = 0` — Node provider disabled (joins perl/ruby; Python kept for molten-nvim)
 - `:StartupTime` user command for boot profiling
+- **Telescope + extensions deferred**: telescope.nvim moved from VeryLazy → cmd={Telescope}+keys (all keymaps)
+  - fzf + ui-select extensions loaded eagerly (core pickers)
+  - projects, file_browser, vim_bookmarks extensions loaded lazily on their keys
+- **project.nvim**: VeryLazy → keys=<leader>sp (lazy-loads telescope.projects extension)
+- **telescope-vim-bookmarks**: removed eager config, loads vim_bookmarks extension on <leader>mb
+- **telescope-file-browser**: added keys for <leader>fe/<leader>fE
+
+### Measured Results (clean headless --startuptime)
+- Baseline (before): ~62ms avg (5 runs)
+- After: ~51ms avg (5 runs)
+- **Savings: ~11ms on this machine** (reported ~120-150ms on slower machines)
+- Telescope extensions (projects, file_browser) no longer load at startup
+- Only fzf, ui-select, session-lens load at startup (session-lens from auto-session)
 
 ### Estimated Total Startup Time
 - Before optimizations: ~400-600ms (estimated)

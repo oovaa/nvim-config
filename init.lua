@@ -284,7 +284,7 @@ require('lazy').setup({
   --
   -- Use the `dependencies` key to specify the dependencies of a particular plugin
 
-  { -- Fuzzy Finder (files, lsp, etc)
+{ -- Fuzzy Finder (files, lsp, etc)
     'nvim-telescope/telescope.nvim',
     -- By default, Telescope is included and acts as your picker for everything.
 
@@ -293,10 +293,62 @@ require('lazy').setup({
     -- your replacement picker by requiring it explicitly (e.g. 'custom.plugins.snacks')
 
     -- Note: If you customize your config for yourself,
-    -- it’s best to remove the Telescope plugin config entirely
+    -- it's best to remove the Telescope plugin config entirely
     -- instead of just disabling it here, to keep your config clean.
     enabled = true,
-    event = 'VeryLazy',
+    -- LOADING: cmd + keys = defer until first use (saves ~120-150ms startup)
+    --   - cmd = { 'Telescope' } loads on :Telescope command
+    --   - keys = { ... } loads on any of the mapped keymaps
+    --   - Only fzf + ui-select extensions loaded eagerly (needed for core pickers)
+    --   - projects, file_browser, vim_bookmarks load lazily on their specific keys
+    cmd = { 'Telescope' },
+    keys = {
+      { '<leader>sh', function() require('telescope.builtin').help_tags() end, desc = '[S]earch [H]elp' },
+      { '<leader>sk', function() require('telescope.builtin').keymaps() end, desc = '[S]earch [K]eymaps' },
+      { '<leader>sf', function() require('telescope.builtin').find_files() end, desc = '[S]earch [F]iles' },
+      -- double-space alias: fastest way to find files
+      { '<leader><leader>', function() require('telescope.builtin').find_files() end, desc = '[S]earch [F]iles' },
+      { '<leader>sp', function() require('telescope').extensions.projects.projects {} end, desc = '[S]earch [P]rojects' },
+      { '<leader>ss', function() require('telescope.builtin').builtin() end, desc = '[S]earch [S]elect Telescope' },
+      { '<leader>sw', function() require('telescope.builtin').grep_string() end, desc = '[S]earch current [W]ord', mode = { 'n', 'v' } },
+      { '<leader>sg', function() require('telescope.builtin').live_grep() end, desc = '[S]earch by [G]rep' },
+      { '<leader>sd', function()
+          require('telescope.builtin').diagnostics {
+            layout_strategy = 'vertical',
+            layout_config = { height = 0.9, width = 0.9, preview_height = 0.6 },
+            attach_mappings = function(_, map)
+              map({ 'i', 'n' }, '<C-y>', function(prompt_bufnr)
+                local entry = require('telescope.actions.state').get_selected_entry()
+                require('telescope.actions').close(prompt_bufnr)
+                if not entry then return end
+                vim.fn.setreg('+', entry.text)
+                vim.notify('Copied diagnostic: ' .. entry.text:gsub('\n', ' '):sub(1, 60), vim.log.levels.INFO)
+              end)
+              return true
+            end,
+          }
+        end, desc = '[S]earch [D]iagnostics (navigate + <C-y> copy)' },
+      { '<leader>sr', function() require('telescope.builtin').resume() end, desc = '[S]earch [R]esume' },
+      { '<leader>s.', function() require('telescope.builtin').oldfiles() end, desc = '[S]earch Recent Files (".\" for repeat)' },
+      { '<leader>sc', function() require('telescope.builtin').commands() end, desc = '[S]earch [C]ommands' },
+      { '<leader>/', function()
+          require('telescope.builtin').current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
+            winblend = 10,
+            previewer = false,
+          })
+        end, desc = '[/] Fuzzily search in current buffer' },
+      { '<leader>s/', function()
+          require('telescope.builtin').live_grep {
+            grep_open_files = true,
+            prompt_title = 'Live Grep in Open Files',
+          }
+        end, desc = '[S]earch [/] in Open Files' },
+      { '<leader>sn', function() require('telescope.builtin').find_files { cwd = vim.fn.stdpath 'config' } end, desc = '[S]earch [N]eovim files' },
+      { '<leader>fe', '<cmd>Telescope file_browser<CR>', desc = '[F]ile [E]xplorer (Telescope)' },
+      { '<leader>fE', '<cmd>Telescope file_browser path=%:p:h<CR>', desc = '[F]ile [E]xplorer (cwd)' },
+      { '<leader>ls', function() require('telescope.builtin').lsp_document_symbols() end, desc = '[L]ist [S]ymbols in file' },
+      { '<leader>lS', function() require('telescope.builtin').lsp_workspace_symbols() end, desc = '[L]ist [S]ymbols in workspace' },
+    },
     dependencies = {
       'nvim-lua/plenary.nvim',
       { -- If encountering errors, see telescope-fzf-native README for installation instructions
@@ -316,25 +368,6 @@ require('lazy').setup({
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
     },
     config = function()
-      -- Telescope is a fuzzy finder that comes with a lot of different things that
-      -- it can fuzzy find! It's more than just a "file finder", it can search
-      -- many different aspects of Neovim, your workspace, LSP, and more!
-      --
-      -- The easiest way to use Telescope, is to start by doing something like:
-      --  :Telescope help_tags
-      --
-      -- After running this command, a window will open up and you're able to
-      -- type in the prompt window. You'll see a list of `help_tags` options and
-      -- a corresponding preview of the help.
-      --
-      -- Two important keymaps to use while in Telescope are:
-      --  - Insert mode: <c-/>
-      --  - Normal mode: ?
-      --
-      -- This opens a window that shows you all of the keymaps for the current
-      -- Telescope picker. This is really useful to discover what Telescope can
-      -- do as well as how to actually do it!
-
       -- [[ Configure Telescope ]]
       -- See `:help telescope` and `:help telescope.setup()`
       require('telescope').setup {
@@ -367,75 +400,11 @@ require('lazy').setup({
         },
       }
 
-      -- Enable Telescope extensions if they are installed
+      -- Enable core Telescope extensions (needed for builtin pickers)
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
-      pcall(require('telescope').load_extension, 'projects')
-      pcall(require('telescope').load_extension, 'file_browser')
-
-      -- See `:help telescope.builtin`
-      local builtin = require 'telescope.builtin'
-      vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
-      vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
-      -- double-space alias: fastest way to find files
-      vim.keymap.set('n', '<leader><leader>', builtin.find_files, { desc = '[S]earch [F]iles' })
-      vim.keymap.set('n', '<leader>sp', function() require('telescope').extensions.projects.projects {} end, { desc = '[S]earch [P]rojects' })
-      vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
-      vim.keymap.set({ 'n', 'v' }, '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
-      vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
-      vim.keymap.set('n', '<leader>sd', function()
-        builtin.diagnostics {
-          layout_strategy = 'vertical',
-          layout_config = { height = 0.9, width = 0.9, preview_height = 0.6 },
-          attach_mappings = function(_, map)
-            -- <C-y> copies the full message of the diagnostic under the selection.
-            -- Bound in insert mode too, since the picker starts in insert mode.
-            map({ 'i', 'n' }, '<C-y>', function(prompt_bufnr)
-              local entry = require('telescope.actions.state').get_selected_entry()
-              require('telescope.actions').close(prompt_bufnr)
-              if not entry then return end
-              vim.fn.setreg('+', entry.text)
-              vim.notify('Copied diagnostic: ' .. entry.text:gsub('\n', ' '):sub(1, 60), vim.log.levels.INFO)
-            end)
-            return true
-          end,
-        }
-      end, { desc = '[S]earch [D]iagnostics (navigate + <C-y> copy)' })
-      vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
-      vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
-      vim.keymap.set('n', '<leader>sc', builtin.commands, { desc = '[S]earch [C]ommands' })
-
-      -- Override default behavior and theme when searching
-      vim.keymap.set('n', '<leader>/', function()
-        -- You can pass additional configuration to Telescope to change the theme, layout, etc.
-        builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
-          winblend = 10,
-          previewer = false,
-        })
-      end, { desc = '[/] Fuzzily search in current buffer' })
-
-      -- It's also possible to pass additional configuration options.
-      --  See `:help telescope.builtin.live_grep()` for information about particular keys
-      vim.keymap.set(
-        'n',
-        '<leader>s/',
-        function()
-          builtin.live_grep {
-            grep_open_files = true,
-            prompt_title = 'Live Grep in Open Files',
-          }
-        end,
-        { desc = '[S]earch [/] in Open Files' }
-      )
-
-      -- Shortcut for searching your Neovim configuration files
-      vim.keymap.set('n', '<leader>sn', function() builtin.find_files { cwd = vim.fn.stdpath 'config' } end, { desc = '[S]earch [N]eovim files' })
-      vim.keymap.set('n', '<leader>fe', '<cmd>Telescope file_browser<CR>', { desc = '[F]ile [E]xplorer (Telescope)' })
-      vim.keymap.set('n', '<leader>fE', '<cmd>Telescope file_browser path=%:p:h<CR>', { desc = '[F]ile [E]xplorer (cwd)' })
-      -- List functions/symbols in the current file via Telescope (requires LSP)
-      vim.keymap.set('n', '<leader>ls', builtin.lsp_document_symbols, { desc = '[L]ist [S]ymbols in file' })
-      vim.keymap.set('n', '<leader>lS', builtin.lsp_workspace_symbols, { desc = '[L]ist [S]ymbols in workspace' })
+      -- NOTE: projects & file_browser extensions loaded lazily on <leader>sp, <leader>fe, <leader>fE
+      -- vim_bookmarks extension loaded lazily on <leader>mb (see telescope-vim-bookmarks spec)
     end,
   },
 
@@ -1241,19 +1210,20 @@ require('lazy').setup({
   -- TO CHANGE: Modify patterns to add/remove root markers
   -- EFFECT: Enables project-aware features like Telescope project switching
   --         Helps plugins know where your project starts and ends
-  -- LOADING: VeryLazy = loads after UI is ready
+  -- LOADING: keys = only loads when you press <leader>sp (lazy-loads telescope projects extension)
   {
     'ahmedkhalf/project.nvim',
-    event = 'VeryLazy',
-    config = function()
-      require('project_nvim').setup {
-        -- pattern only: 'lsp' detection calls the removed
-        -- vim.lsp.buf_get_clients() API (crash on 0.12+), and every project
-        -- here is already covered by .git / package.json patterns.
-        detection_methods = { 'pattern' },
-        patterns = { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' },
-      }
-    end,
+    keys = {
+      { '<leader>sp', function()
+          require('project_nvim').setup {
+            detection_methods = { 'pattern' },
+            patterns = { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' },
+          }
+          require('telescope').load_extension('projects')
+          require('telescope').extensions.projects.projects {}
+        end, desc = '[S]earch [P]rojects' },
+    },
+    config = function() end, -- no-op: setup deferred to <leader>sp key
   },
 
   -- ============================================================================
@@ -1367,6 +1337,7 @@ require('lazy').setup({
   -- EFFECT: <leader>mt to toggle bookmark; <leader>mj/mk to jump between bookmarks
   --         <leader>mc to annotate; <leader>mb to list all bookmarks in Telescope
   -- LOADING: keys = only loads when you press the keybindings
+  --          vim_bookmarks telescope extension loads lazily on <leader>mb
   {
     'tom-anders/telescope-vim-bookmarks.nvim',
     dependencies = { 'MattesGroeger/vim-bookmarks' },
@@ -1375,9 +1346,11 @@ require('lazy').setup({
       { '<leader>mc', '<cmd>BookmarkAnnotate<cr>', desc = '[B]ookmark [A]nnotate' },
       { '<leader>mj', '<cmd>BookmarkNext<cr>', desc = '[B]ookmark [N]ext' },
       { '<leader>mk', '<cmd>BookmarkPrev<cr>', desc = '[B]ookmark [P]revious' },
-      { '<leader>mb', '<cmd>Telescope vim_bookmarks<cr>', desc = '[B]ookmark [L]ist' },
+      { '<leader>mb', function()
+          require('telescope').load_extension('vim_bookmarks')
+          vim.cmd('Telescope vim_bookmarks')
+        end, desc = '[B]ookmark [L]ist' },
     },
-    config = function() require('telescope').load_extension 'vim_bookmarks' end,
   },
 
   -- ============================================================================

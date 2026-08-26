@@ -19,7 +19,7 @@ A starting point for Neovim that is:
 * **UI**: tokyonight theme (persisted across restarts), lualine, bufferline, alpha dashboard, mode-colored line numbers
 * **Git**: gitsigns, LazyGit on `<leader>fg`
 * **Debugging**: nvim-dap for Python; molten-nvim + image.nvim for Jupyter-style notebooks
-* **Performance**: ~110ms startup — everything lazy-loaded except the colorscheme and session restore; `:StartupTime` command to profile regressions
+* **Performance**: ~50ms startup — everything lazy-loaded except the colorscheme and session restore; Telescope + extensions deferred to first use via `cmd` + `keys`; `:StartupTime` command to profile regressions
 
 See `CHEATSHEET.md` for the full keybinding reference and `PERFORMANCE_PLAN.md` for loading strategy details.
 

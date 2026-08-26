@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "updatedAt": "2026-08-26T17:01:27.854Z",
+  "entries": [
+    {
+      "id": "2026-08-26T17-01-27-851Z-performance-plan-defer-telescope-extensions",
+      "category": "plan",
+      "title": "Performance Plan: Defer Telescope + Extensions",
+      "summary": "# Plan: Defer Telescope + Extensions for Startup Performance ## Context Current config loads telescope.nvim at `event = 'VeryLazy'` (init.lua:291) which pulls in ~130–150ms of self-time during startup: - telescope extensions (fzf, ui-select, projects, file_browser) all loaded eagerly inside telescope's `config()` func…",
+      "searchText": "plan Performance Plan: Defer Telescope + Extensions # Plan: Defer Telescope + Extensions for Startup Performance ## Context Current config loads telescope.nvim at `event = 'VeryLazy'` (init.lua:291) which pulls in ~130–150ms of self-time during startup: - telescope extensions (fzf, ui-select, projects, file_browser) all loaded eagerly inside telescope's `config()` func… /home/omar/.config/nvim/.context/todo.md markdown approved false",
+      "createdAt": "2026-08-26T17:01:27.851Z",
+      "updatedAt": "2026-08-26T17:01:27.851Z",
+      "sourcePath": "/home/omar/.config/nvim/.context/todo.md",
+      "sourceLabel": "todo.md",
+      "viewerPath": "/home/omar/.config/nvim/.context/todo.md",
+      "viewerLabel": "Performance Plan: Defer Telescope + Extensions",
+      "tags": [
+        "plan",
+        "markdown"
+      ],
+      "metadata": {
+        "action": "approved",
+        "modified": false
+      }
+    }
+  ]
+}
