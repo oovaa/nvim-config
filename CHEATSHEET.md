@@ -119,6 +119,14 @@ Press `<leader>e` to toggle the floating file explorer. Inside it:
 | `<leader>fE` | File browser in current dir | `telescope-file-browser` |
 | `:StartupTime` | Profile Neovim startup and list the 15 slowest sources | config |
 
+### ⚡ Performance Behavior
+
+- Files larger than **1 MiB** automatically enter **large-file mode**:
+  - diagnostics are disabled for that buffer
+  - swap/undo files are disabled for that buffer
+  - expensive highlighting work is reduced
+- Treesitter is skipped for minified files and files above the large-file threshold.
+
 ### 💬 Messages & Cmdline (noice.nvim)
 
 | Keybinding | Action | Plugin |
