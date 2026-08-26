@@ -121,6 +121,24 @@ vim.o.updatetime = 250
 -- EFFECT: Affects which-key display timing and key sequence completion
 vim.o.timeoutlen = 300
 
+-- REDRAW BEHAVIOR
+-- WHAT: Defers intermediate screen redraws while running macros/scripts
+-- TO CHANGE: Set to false if you want every intermediate visual update
+-- EFFECT: true = smoother/faster macros and large multi-step edits
+vim.o.lazyredraw = true
+
+-- SYNTAX COLUMN LIMIT
+-- WHAT: Stops regex syntax highlighting after this many columns on a line
+-- TO CHANGE: Increase for full long-line highlighting, decrease for more speed
+-- EFFECT: Improves responsiveness on minified/very long lines
+vim.o.synmaxcol = 300
+
+-- LARGE FILE THRESHOLD
+-- WHAT: Shared size cap (bytes) for "large file mode" safeguards in autocmds/plugins
+-- TO CHANGE: Raise/lower based on your machine and file mix
+-- EFFECT: Files above this size get less expensive runtime features
+vim.g.large_file_size = 1024 * 1024 -- 1 MiB
+
 -- SPLIT BEHAVIOR
 -- WHAT: Controls where new windows open
 -- TO CHANGE: Set to false for opposite behavior (traditional Vim)

@@ -367,11 +367,11 @@ require('lazy').setup({
         },
       }
 
-      -- Enable Telescope extensions if they are installed
+      -- Enable core Telescope extensions (needed for builtin pickers)
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
-      pcall(require('telescope').load_extension, 'projects')
-      pcall(require('telescope').load_extension, 'file_browser')
+      -- NOTE: projects & file_browser extensions loaded lazily on <leader>sp, <leader>fe, <leader>fE
+      -- vim_bookmarks extension loaded lazily on <leader>mb (see telescope-vim-bookmarks spec)
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
@@ -1241,19 +1241,20 @@ require('lazy').setup({
   -- TO CHANGE: Modify patterns to add/remove root markers
   -- EFFECT: Enables project-aware features like Telescope project switching
   --         Helps plugins know where your project starts and ends
-  -- LOADING: VeryLazy = loads after UI is ready
+  -- LOADING: keys = only loads when you press <leader>sp (lazy-loads telescope projects extension)
   {
     'ahmedkhalf/project.nvim',
-    event = 'VeryLazy',
-    config = function()
-      require('project_nvim').setup {
-        -- pattern only: 'lsp' detection calls the removed
-        -- vim.lsp.buf_get_clients() API (crash on 0.12+), and every project
-        -- here is already covered by .git / package.json patterns.
-        detection_methods = { 'pattern' },
-        patterns = { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' },
-      }
-    end,
+    keys = {
+      { '<leader>sp', function()
+          require('project_nvim').setup {
+            detection_methods = { 'pattern' },
+            patterns = { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' },
+          }
+          require('telescope').load_extension('projects')
+          require('telescope').extensions.projects.projects {}
+        end, desc = '[S]earch [P]rojects' },
+    },
+    config = function() end, -- no-op: setup deferred to <leader>sp key
   },
 
   -- ============================================================================
@@ -1367,6 +1368,7 @@ require('lazy').setup({
   -- EFFECT: <leader>mt to toggle bookmark; <leader>mj/mk to jump between bookmarks
   --         <leader>mc to annotate; <leader>mb to list all bookmarks in Telescope
   -- LOADING: keys = only loads when you press the keybindings
+  --          vim_bookmarks telescope extension loads lazily on <leader>mb
   {
     'tom-anders/telescope-vim-bookmarks.nvim',
     dependencies = { 'MattesGroeger/vim-bookmarks' },
@@ -1375,9 +1377,11 @@ require('lazy').setup({
       { '<leader>mc', '<cmd>BookmarkAnnotate<cr>', desc = '[B]ookmark [A]nnotate' },
       { '<leader>mj', '<cmd>BookmarkNext<cr>', desc = '[B]ookmark [N]ext' },
       { '<leader>mk', '<cmd>BookmarkPrev<cr>', desc = '[B]ookmark [P]revious' },
-      { '<leader>mb', '<cmd>Telescope vim_bookmarks<cr>', desc = '[B]ookmark [L]ist' },
+      { '<leader>mb', function()
+          require('telescope').load_extension('vim_bookmarks')
+          vim.cmd('Telescope vim_bookmarks')
+        end, desc = '[B]ookmark [L]ist' },
     },
-    config = function() require('telescope').load_extension 'vim_bookmarks' end,
   },
 
   -- ============================================================================
