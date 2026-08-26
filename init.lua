@@ -1100,12 +1100,12 @@ require('lazy').setup({
       vim.api.nvim_create_autocmd('FileType', {
         group = vim.api.nvim_create_augroup('treesitter-start', { clear = true }),
         callback = function(args)
-          -- ponytail: skip treesitter on minified bundles / huge files (>200KB);
-          -- the parser chokes on them. Legacy regex highlighting covers it.
-          -- Raise/lower the size cap here if you want treesitter everywhere.
+          -- Skip treesitter on minified bundles / large files where parser work
+          -- can dominate runtime responsiveness while editing.
           local name = vim.api.nvim_buf_get_name(args.buf)
+          local large_file_size = tonumber(vim.g.large_file_size) or (1024 * 1024)
           local ok_stat, stat = pcall(vim.uv.fs_stat, name)
-          if name:match '%.min%.' or (ok_stat and stat and stat.size > 200 * 1024) then return end
+          if name:match '%.min%.' or (ok_stat and stat and stat.size > large_file_size) then return end
           pcall(vim.treesitter.start, args.buf)
         end,
       })

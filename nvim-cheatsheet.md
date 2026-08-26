@@ -74,3 +74,8 @@
 | `<C-r>` | Open recent projects |
 | `<leader>ty` | Switch theme (persisted across restarts) |
 | `:StartupTime` | Profile Neovim startup time |
+
+## Performance Notes
+
+- Files larger than **1 MiB** automatically use a lighter large-file mode for better responsiveness.
+- Treesitter is skipped for minified files and files above the large-file threshold.

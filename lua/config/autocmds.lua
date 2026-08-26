@@ -2,6 +2,8 @@
 -- Global autocommands. Plugin-scoped autocmds (LspAttach, styling tweaks)
 -- live with their plugin specs in init.lua.
 
+local large_file_size = tonumber(vim.g.large_file_size) or (1024 * 1024)
+
 -- Highlight yanked (copied) text briefly
 vim.api.nvim_create_autocmd('TextYankPost', {
   desc = 'Highlight when yanking (copying) text',
@@ -15,6 +17,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 vim.api.nvim_create_autocmd('CursorHold', {
   desc = 'Show diagnostic in a wrapping float',
   callback = function()
+    if vim.b.large_file_mode then return end
     -- Skip clean buffers: get(0) with a position costs little, the float
     -- render does not.
     local diag = vim.diagnostic.get(0, { lnum = vim.fn.line '.' - 1, col = vim.fn.col '.' - 1 })
@@ -23,6 +26,31 @@ vim.api.nvim_create_autocmd('CursorHold', {
       focusable = false,
       close_events = { 'CursorMoved', 'BufLeave', 'InsertEnter' },
     })
+  end,
+})
+
+-- Large file mode: protect editing responsiveness for very large files by
+-- disabling expensive per-buffer features that are less useful in that context.
+vim.api.nvim_create_autocmd('BufReadPre', {
+  group = vim.api.nvim_create_augroup('large-file-detect', { clear = true }),
+  callback = function(args)
+    local name = vim.api.nvim_buf_get_name(args.buf)
+    if name == '' then return end
+    local ok, stat = pcall(vim.uv.fs_stat, name)
+    if ok and stat and stat.size > large_file_size then vim.b[args.buf].large_file_mode = true end
+  end,
+})
+
+vim.api.nvim_create_autocmd('BufReadPost', {
+  group = vim.api.nvim_create_augroup('large-file-optimize', { clear = true }),
+  callback = function(args)
+    if not vim.b[args.buf].large_file_mode then return end
+    local bo = vim.bo[args.buf]
+    bo.swapfile = false
+    bo.undofile = false
+    bo.foldmethod = 'manual'
+    bo.synmaxcol = 200
+    pcall(vim.diagnostic.enable, false, { bufnr = args.buf })
   end,
 })
 
