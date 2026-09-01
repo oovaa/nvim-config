@@ -154,7 +154,7 @@ function M.setup_bufferline()
   _G._builtin_tabline = function()
     local s = ''
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-      if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].buflisted then
+      if vim.bo[buf].buflisted then
         local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ':t')
         if name == '' then name = '[No Name]' end
         local is_cur = buf == vim.api.nvim_get_current_buf()
