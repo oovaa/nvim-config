@@ -1392,19 +1392,56 @@ do
     return vim.fn.stdpath 'data' .. '/sessions/' .. cwd:gsub('[^%w]+', '%%') .. '.vim'
   end
   local function session_file() return session_file_for(nil) end
+  -- find existing session for cwd by scanning cd line (supports legacy %2F names)
+  local function find_session_for(cwd)
+    cwd = cwd and vim.fn.fnamemodify(cwd, ':p') or vim.fn.fnamemodify(vim.fn.getcwd(), ':p')
+    local f = session_file_for(cwd)
+    local function has_badd(p)
+      if vim.fn.filereadable(p) ~= 1 then return false end
+      for _, l in ipairs(vim.fn.readfile(p)) do if l:match('^badd') then return true end end
+      return false
+    end
+    if has_badd(f) then return f end
+    local norm = cwd:gsub('/+$', '')
+    if norm == '' then norm = '/' end
+    local dir = vim.fn.stdpath('data') .. '/sessions'
+    local best, best_time = nil, -1
+    for _, path in ipairs(vim.fn.glob(dir .. '/*.vim', false, true)) do
+      if has_badd(path) then
+        for _, l in ipairs(vim.fn.readfile(path)) do
+          local cd = l:match('^cd%s+(.+)$')
+          if cd then
+            cd = vim.fn.fnamemodify(vim.fn.expand(cd), ':p'):gsub('/+$', '')
+            if cd == '' then cd = '/' end
+            if cd == norm then
+              local t = vim.fn.getftime(path)
+              if t > best_time then best, best_time = path, t end
+            end
+            break
+          end
+        end
+      end
+    end
+    if best then return best end
+    return f
+  end
   -- expose for dashboard s picker
   _G._builtin_session_file_for = session_file_for
   _G._builtin_session_file = session_file
+  _G._builtin_find_session = find_session_for
   _G._builtin_suppressed_dir = suppressed_dir
   vim.api.nvim_create_autocmd('VimEnter', {
     nested = true,
     callback = function()
       if vim.fn.argc() > 0 or suppressed_dir() then return end
-      local f = session_file()
-      if vim.fn.filereadable(f) == 1 then
-        pcall(vim.cmd, 'silent! Neotree close')
-        vim.cmd('silent! source ' .. vim.fn.fnameescape(f))
-      end
+      local f = find_session_for(nil)
+      if vim.fn.filereadable(f) ~= 1 then return end
+      -- empty session (no badd = no buffers) -> show dashboard instead
+      local has = false
+      for _, l in ipairs(vim.fn.readfile(f)) do if l:match('^badd') then has = true; break end end
+      if not has then return end
+      pcall(vim.cmd, 'silent! Neotree close')
+      vim.cmd('silent! source ' .. vim.fn.fnameescape(f))
     end,
   })
   vim.api.nvim_create_autocmd('VimLeavePre', {

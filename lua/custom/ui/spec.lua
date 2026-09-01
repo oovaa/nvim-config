@@ -193,20 +193,62 @@ function M.setup_starter()
     { key = 'r', icon = '', label = 'File Explorer', action = '<cmd>Neotree toggle<CR>' },
     { key = 'g', icon = '', label = 'Git (LazyGit)', action = function() if vim.fn.exists ':LazyGit' == 2 then vim.cmd 'LazyGit' else vim.cmd 'terminal lazygit' end end },
     { key = 's', icon = '', label = 'Recent Sessions', action = function()
-      -- ponytail: restore current cwd session; if none, pick from sessions dir via Telescope/vim.ui.select
+      -- ponytail: restore current cwd session; if none, pick from sessions dir (readable `cd` dir, deduped)
+      local function has_badd(path)
+        if vim.fn.filereadable(path) ~= 1 then return false end
+        for _, l in ipairs(vim.fn.readfile(path)) do if l:match('^badd') then return true end end
+        return false
+      end
+      local f = _G._builtin_find_session and _G._builtin_find_session(nil) or nil
+      if not f then
+        local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
+        f = sess_dir .. '/' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'
+      end
+      if has_badd(f) then pcall(vim.cmd, 'silent! Neotree close'); vim.cmd('source ' .. vim.fn.fnameescape(f)); return end
       local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
-      local f = (_G._builtin_session_file and _G._builtin_session_file() or (sess_dir .. '/' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'))
-      if vim.fn.filereadable(f) == 1 then pcall(vim.cmd, 'silent! Neotree close'); vim.cmd('source ' .. vim.fn.fnameescape(f)); return end
       local files = vim.fn.glob(sess_dir .. '/*.vim', false, true)
-      if #files == 0 then vim.notify('No session for ' .. vim.fn.getcwd() .. ' — sessions are saved on quit (suppressed: ~, ~/Downloads, /etc, /tmp)', vim.log.levels.INFO) return end
+      -- readable labels via `cd` line, dedup by dir (legacy %2F vs new %), skip empty
+      local seen, items, map = {}, {}, {}
+      for _, path in ipairs(files) do
+        if has_badd(path) then
+          local label = nil
+          for _, l in ipairs(vim.fn.readfile(path)) do
+            local cd = l:match('^cd%s+(.+)$')
+            if cd then label = vim.fn.fnamemodify(vim.fn.expand(cd), ':p'):gsub('/+$', ''); break end
+          end
+          if label and not seen[label] then
+            seen[label] = path
+            -- keep newest mtime when duplicate (legacy vs new)
+            -- we already iterate glob sorted; dedup by first seen but prefer newer: compare mtime if duplicate
+          end
+        end
+      end
+      -- second pass: resolve newest per label
+      for _, path in ipairs(files) do
+        if has_badd(path) then
+          local label = nil
+          for _, l in ipairs(vim.fn.readfile(path)) do local cd = l:match('^cd%s+(.+)$'); if cd then label = vim.fn.fnamemodify(vim.fn.expand(cd), ':p'):gsub('/+$',''); break end end
+          if label and seen[label] then
+            if vim.fn.getftime(path) > vim.fn.getftime(seen[label]) then seen[label] = path end
+          end
+        end
+      end
+      for label, path in pairs(seen) do
+        local disp = label:gsub('^' .. vim.fn.expand('~'), '~')
+        items[#items + 1] = disp
+        map[disp] = path
+      end
+      table.sort(items)
+      if #items == 0 then vim.notify('No session for ' .. vim.fn.getcwd() .. ' — sessions are saved on quit (suppressed: ~, ~/Downloads, /etc, /tmp)', vim.log.levels.INFO) return end
+      local function do_pick(choice) if choice and map[choice] then pcall(vim.cmd, 'silent! Neotree close'); vim.cmd('source ' .. vim.fn.fnameescape(map[choice])) end end
       local function pick()
-        vim.ui.select(files, { prompt = 'Select session:' }, function(choice) if choice then vim.cmd('source ' .. vim.fn.fnameescape(choice)) end end)
+        vim.ui.select(items, { prompt = 'Select session:' }, function(choice) do_pick(choice) end)
       end
       if pcall(require, 'telescope') then
         local pickers, finders, conf = require('telescope.pickers'), require('telescope.finders'), require('telescope.config').values
-        pickers.new({}, { prompt_title = 'Sessions', finder = finders.new_table { results = files }, sorter = conf.generic_sorter({}), previewer = false, attach_mappings = function(_, map)
-          map('i', '<CR>', function(pb) local sel = require('telescope.actions.state').get_selected_entry(); require('telescope.actions').close(pb); vim.cmd('source ' .. vim.fn.fnameescape(sel[1])) end)
-          map('n', '<CR>', function(pb) local sel = require('telescope.actions.state').get_selected_entry(); require('telescope.actions').close(pb); vim.cmd('source ' .. vim.fn.fnameescape(sel[1])) end)
+        pickers.new({}, { prompt_title = 'Sessions', finder = finders.new_table { results = items }, sorter = conf.generic_sorter({}), previewer = false, attach_mappings = function(_, m)
+          m('i', '<CR>', function(pb) local sel = require('telescope.actions.state').get_selected_entry(); require('telescope.actions').close(pb); do_pick(sel[1]) end)
+          m('n', '<CR>', function(pb) local sel = require('telescope.actions.state').get_selected_entry(); require('telescope.actions').close(pb); do_pick(sel[1]) end)
           return true end }):find()
       else pick() end
     end },
@@ -235,10 +277,15 @@ function M.setup_starter()
     callback = function()
       if vim.fn.argc() > 0 or vim.api.nvim_buf_get_name(0) ~= '' then return end
       if vim.bo.filetype ~= '' then return end
-      -- if `nvim` was launched with no args and a session exists for this cwd,
+      -- if `nvim` was launched with no args and a non-empty session exists for this cwd,
       -- the session autocmd (init.lua) already restored it — skip dashboard
-      if _G._builtin_session_file and _G._builtin_suppressed_dir then
-        if not _G._builtin_suppressed_dir() and vim.fn.filereadable(_G._builtin_session_file()) == 1 then return end
+      do
+        local f = _G._builtin_find_session and _G._builtin_find_session(nil) or (_G._builtin_session_file and _G._builtin_session_file() or nil)
+        if f and not (_G._builtin_suppressed_dir and _G._builtin_suppressed_dir()) and vim.fn.filereadable(f) == 1 then
+          local has = false
+          for _, l in ipairs(vim.fn.readfile(f)) do if l:match('^badd') then has = true; break end end
+          if has then return end
+        end
       end
       local buf = vim.api.nvim_get_current_buf()
       local recent = collect_recent()
