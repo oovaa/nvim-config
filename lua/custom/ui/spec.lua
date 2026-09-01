@@ -123,23 +123,8 @@ end
 function M.setup_bufferline()
   local function define_hl()
     -- ponytail: adaptive dot fg + seamless bg — TabLine* bg may be nil (transparent themes)
-    -- only error/deletion is red for quick scan; other diags inherit TabLine
-    local ok, mod = pcall(require, 'tokyonight.colors')
-    local c = ok and mod.setup { style = vim.g.colors_name and vim.g.colors_name:match '%-(.+)$' or 'night' } or { red='#f7768e' }
     local sel = vim.api.nvim_get_hl(0, { name = 'TabLineSel' })
     local norm = vim.api.nvim_get_hl(0, { name = 'TabLine' })
-    -- ponytail: TabDiagError needs explicit bg matching TabLine/Sel, else active breaks and shows Normal bg
-    local function set_diag(name, bg)
-      if bg then
-        vim.api.nvim_set_hl(0, name, { fg = c.red, bg = string.format('#%06x', bg) })
-      else
-        vim.api.nvim_set_hl(0, name, { fg = c.red })
-        local cur = vim.api.nvim_get_hl(0, { name = name })
-        if cur.bg then vim.api.nvim_set_hl(0, name, { fg = c.red, bg = nil }) end
-      end
-    end
-    set_diag('TabDiagError', norm.bg)
-    set_diag('TabDiagErrorSel', sel.bg)
     local function fg_for(bg)
       if not bg then return '#9ece6a' end
       local r = math.floor(bg / 65536) % 256
@@ -180,16 +165,7 @@ function M.setup_bufferline()
         for _, v in ipairs(d) do cnt[v.severity] = cnt[v.severity] + 1 end
         local icons = { '', '', '', '' }
         local diag = ''
-        for i = 1, 4 do
-          if cnt[i] > 0 then
-            if i == 1 then
-              local diag_hl = is_cur and 'TabDiagErrorSel' or 'TabDiagError'
-              diag = diag .. ('%%#%s#%s%d %%#%s#'):format(diag_hl, icons[i], cnt[i], tab_hl_name)
-            else
-              diag = diag .. icons[i] .. cnt[i] .. ' '
-            end
-          end
-        end
+        for i = 1, 4 do if cnt[i] > 0 then diag = diag .. icons[i] .. cnt[i] .. ' ' end end
         local mod_hl = is_cur and '%#TabLineModSel#' or '%#TabLineMod#'
         local mod = vim.bo[buf].modified and ' ' .. mod_hl .. '●' .. hl or ''
         s = s .. hl .. ' ' .. name .. mod .. (diag ~= '' and ' ' .. diag or '') .. ' %*'
