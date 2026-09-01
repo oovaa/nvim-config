@@ -744,7 +744,7 @@ require('lazy').setup({
           graphql = true,
         }
         if enabled_filetypes[vim.bo[bufnr].filetype] then
-          return { timeout_ms = 500 }
+          return { timeout_ms = 750 } -- ponytail: 500 was too tight for prettier on large files, 1000 felt laggy; 750 is middle
         else
           return nil
         end
@@ -1409,9 +1409,11 @@ do
   -- ponytail: single reusable buf per kind; hide/show = close win, keep buf (no new split each time)
   local horiz = { buf = nil, win = nil }
   local float = { buf = nil, win = nil }
+  local last = 'horiz' -- ponytail: C-\ targets last opened kind (like toggleterm)
   local function is_win_valid(w) return w and vim.api.nvim_win_is_valid(w) end
   local function is_buf_valid(b) return b and vim.api.nvim_buf_is_valid(b) end
   local function toggle_horiz(cmd)
+    last = 'horiz'
     if is_win_valid(horiz.win) then vim.api.nvim_win_close(horiz.win, true); horiz.win = nil; return end
     -- also handle case win was closed manually (buf still valid)
     if is_buf_valid(horiz.buf) then
@@ -1430,6 +1432,7 @@ do
     end
   end
   local function toggle_float(cmd)
+    last = 'float'
     if is_win_valid(float.win) then
       vim.api.nvim_win_close(float.win, true)
       float.win = nil
@@ -1463,7 +1466,19 @@ do
   vim.keymap.set('n', '<leader>t2', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [2]' })
   vim.keymap.set('n', '<leader>t3', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [3]' })
   vim.keymap.set('n', '<leader>tn', function() new_horiz(vim.o.shell) end, { desc = '[T]erminal [N]ew' })
-  vim.keymap.set({ 'n', 't' }, '<c-\\>', function() toggle_horiz(vim.o.shell) end, { desc = 'Toggle Terminal' })
+  local function toggle_last()
+    -- ponytail: C-\ mirrors toggleterm — if any terminal visible, hide it; else reopen last kind
+    if is_win_valid(float.win) then vim.api.nvim_win_close(float.win, true); float.win = nil; return end
+    if is_win_valid(horiz.win) then vim.api.nvim_win_close(horiz.win, true); horiz.win = nil; return end
+    -- also hunt for manually-opened wins still showing our bufs
+    for _, w in ipairs(vim.api.nvim_list_wins()) do
+      local b = vim.api.nvim_win_get_buf(w)
+      if b == float.buf then vim.api.nvim_win_close(w, true); return end
+      if b == horiz.buf then vim.api.nvim_win_close(w, true); horiz.win = nil; return end
+    end
+    if last == 'float' then toggle_float(vim.o.shell) else toggle_horiz(vim.o.shell) end
+  end
+  vim.keymap.set({ 'n', 't' }, '<c-\\>', toggle_last, { desc = 'Toggle Terminal' })
 end
 
 -- BUILTIN CODE RUNNER (replaces CRAG666/code_runner.nvim, zero loss via :terminal)
