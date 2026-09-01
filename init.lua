@@ -1373,15 +1373,29 @@ vim.keymap.set('n', '<leader>bd', '<cmd>bdelete<cr>', { desc = '[B]uffer [D]elet
 
 -- BUILTIN SESSIONS (replaces rmagatti/auto-session, zero loss via :mksession)
 -- ponytail: native mksession + VimEnter/VimLeave autocmds; no plugin needed
+-- `nvim` with no args in a cwd restores that cwd's session if present (buffers + last file)
 do
   vim.o.sessionoptions = 'blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions'
   local suppressed = { ['~/'] = true, ['~/Downloads'] = true, ['/etc'] = true, ['/tmp'] = true }
-  local function suppressed_dir()
-    local cwd = vim.fn.getcwd()
-    for d in pairs(suppressed) do if cwd == vim.fn.expand(d) or cwd:find(vim.fn.expand(d), 1, true) == 1 then return true end end
+  local function suppressed_dir(cwd)
+    cwd = (cwd or vim.fn.getcwd()):gsub('/+$', '')
+    if cwd == '' then cwd = '/' end
+    for d in pairs(suppressed) do
+      local e = vim.fn.expand(d):gsub('/+$', '')
+      if e == '' then e = '/' end
+      if cwd == e then return true end -- exact only; not subdirs (fixes ~/ blocking ~/projects/*)
+    end
     return false
   end
-  local function session_file() return vim.fn.stdpath 'data' .. '/sessions/' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim' end
+  local function session_file_for(cwd)
+    cwd = cwd and vim.fn.fnamemodify(cwd, ':p') or vim.fn.fnamemodify(vim.fn.getcwd(), ':p')
+    return vim.fn.stdpath 'data' .. '/sessions/' .. cwd:gsub('[^%w]+', '%%') .. '.vim'
+  end
+  local function session_file() return session_file_for(nil) end
+  -- expose for dashboard s picker
+  _G._builtin_session_file_for = session_file_for
+  _G._builtin_session_file = session_file
+  _G._builtin_suppressed_dir = suppressed_dir
   vim.api.nvim_create_autocmd('VimEnter', {
     nested = true,
     callback = function()

@@ -195,8 +195,8 @@ function M.setup_starter()
     { key = 's', icon = '', label = 'Recent Sessions', action = function()
       -- ponytail: restore current cwd session; if none, pick from sessions dir via Telescope/vim.ui.select
       local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
-      local f = sess_dir .. '/' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'
-      if vim.fn.filereadable(f) == 1 then vim.cmd('source ' .. vim.fn.fnameescape(f)); return end
+      local f = (_G._builtin_session_file and _G._builtin_session_file() or (sess_dir .. '/' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'))
+      if vim.fn.filereadable(f) == 1 then pcall(vim.cmd, 'silent! Neotree close'); vim.cmd('source ' .. vim.fn.fnameescape(f)); return end
       local files = vim.fn.glob(sess_dir .. '/*.vim', false, true)
       if #files == 0 then vim.notify('No session for ' .. vim.fn.getcwd() .. ' — sessions are saved on quit (suppressed: ~, ~/Downloads, /etc, /tmp)', vim.log.levels.INFO) return end
       local function pick()
@@ -235,6 +235,11 @@ function M.setup_starter()
     callback = function()
       if vim.fn.argc() > 0 or vim.api.nvim_buf_get_name(0) ~= '' then return end
       if vim.bo.filetype ~= '' then return end
+      -- if `nvim` was launched with no args and a session exists for this cwd,
+      -- the session autocmd (init.lua) already restored it — skip dashboard
+      if _G._builtin_session_file and _G._builtin_suppressed_dir then
+        if not _G._builtin_suppressed_dir() and vim.fn.filereadable(_G._builtin_session_file()) == 1 then return end
+      end
       local buf = vim.api.nvim_get_current_buf()
       local recent = collect_recent()
       local raw = {}
