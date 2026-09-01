@@ -75,11 +75,11 @@ function M.setup_lualine()
       if d.removed and d.removed > 0 then parts[#parts + 1] = '%#SL_diff_delete#-' .. d.removed .. '%#SL_b_' .. key .. '#' end
       diff_s = table.concat(parts, ' ')
     end
-    -- diagnostics
+    -- diagnostics — Nerd Fonts v3 (old / codepoints often missing → '?') — this is the 'problems in current file'
     local diags = vim.diagnostic.get(0)
     local cnt = { 0, 0, 0, 0 }
     for _, v in ipairs(diags) do cnt[v.severity] = (cnt[v.severity] or 0) + 1 end
-    local icons = { ' ', ' ', ' ', ' ' }
+    local icons = { ' ', ' ', ' ', ' ' }
     local diag_parts = {}
     for i = 1, 4 do if cnt[i] > 0 then diag_parts[#diag_parts + 1] = icons[i] .. cnt[i] end end
     local diag_s = table.concat(diag_parts, ' ')
@@ -157,7 +157,7 @@ function M.setup_bufferline()
         local d = vim.diagnostic.get(buf)
         local cnt = { 0, 0, 0, 0 }
         for _, v in ipairs(d) do cnt[v.severity] = cnt[v.severity] + 1 end
-        local icons = { '', '', '', '' }
+        local icons = { '', '', '', '' }
         local diag = ''
         for i = 1, 4 do if cnt[i] > 0 then diag = diag .. icons[i] .. cnt[i] .. ' ' end end
         local is_cur = buf == vim.api.nvim_get_current_buf()
