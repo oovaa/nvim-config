@@ -32,6 +32,9 @@ function M.setup_lualine()
     hl('SL_lsp', c.bg_statusline, '#9ece6a')
     -- diff colors
     hl('SL_diff_add', c.fg_gutter, '#449dab'); hl('SL_diff_change', c.fg_gutter, '#6183bb'); hl('SL_diff_delete', c.fg_gutter, '#914c54')
+    -- diagnostics colors (so  icons are readable, not monochrome)
+    hl('SL_diag_error', c.fg_gutter, c.red); hl('SL_diag_warn', c.fg_gutter, c.yellow)
+    hl('SL_diag_info', c.fg_gutter, c.blue); hl('SL_diag_hint', c.fg_gutter, c.green)
   end
   define_hl()
   vim.api.nvim_create_autocmd('ColorScheme', { callback = define_hl })
@@ -80,8 +83,13 @@ function M.setup_lualine()
     local cnt = { 0, 0, 0, 0 }
     for _, v in ipairs(diags) do cnt[v.severity] = (cnt[v.severity] or 0) + 1 end
     local icons = { ' ', ' ', ' ', ' ' }
+    local diag_hl = { 'SL_diag_error', 'SL_diag_warn', 'SL_diag_info', 'SL_diag_hint' }
     local diag_parts = {}
-    for i = 1, 4 do if cnt[i] > 0 then diag_parts[#diag_parts + 1] = icons[i] .. cnt[i] end end
+    for i = 1, 4 do
+      if cnt[i] > 0 then
+        diag_parts[#diag_parts + 1] = ('%%#%s#%s%d%%#SL_b_%s#'):format(diag_hl[i], icons[i], cnt[i], key)
+      end
+    end
     local diag_s = table.concat(diag_parts, ' ')
 
     local b_parts = {}
@@ -120,6 +128,12 @@ end
 function M.setup_bufferline()
   local function define_hl()
     -- ponytail: adaptive dot fg + seamless bg — TabLine* bg may be nil (transparent themes)
+    -- diagnostic colors for readability (same palette as statusline but no bg → inherits TabLine)
+    local ok, mod = pcall(require, 'tokyonight.colors')
+    local c = ok and mod.setup { style = vim.g.colors_name and vim.g.colors_name:match '%-(.+)$' or 'night' } or { red='#f7768e', yellow='#e0af68', blue='#7aa2f7', green='#9ece6a' }
+    for _, hl in ipairs({ {'TabDiagError', c.red}, {'TabDiagWarn', c.yellow}, {'TabDiagInfo', c.blue}, {'TabDiagHint', c.green} }) do
+      vim.api.nvim_set_hl(0, hl[1], { fg = hl[2] })
+    end
     local sel = vim.api.nvim_get_hl(0, { name = 'TabLineSel' })
     local norm = vim.api.nvim_get_hl(0, { name = 'TabLine' })
     local function fg_for(bg)
@@ -154,14 +168,20 @@ function M.setup_bufferline()
       if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].buflisted then
         local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ':t')
         if name == '' then name = '[No Name]' end
+        local is_cur = buf == vim.api.nvim_get_current_buf()
+        local hl = is_cur and '%#TabLineSel#' or '%#TabLine#'
+        local tab_hl_name = is_cur and 'TabLineSel' or 'TabLine'
         local d = vim.diagnostic.get(buf)
         local cnt = { 0, 0, 0, 0 }
         for _, v in ipairs(d) do cnt[v.severity] = cnt[v.severity] + 1 end
         local icons = { '', '', '', '' }
+        local diag_hl = { 'TabDiagError', 'TabDiagWarn', 'TabDiagInfo', 'TabDiagHint' }
         local diag = ''
-        for i = 1, 4 do if cnt[i] > 0 then diag = diag .. icons[i] .. cnt[i] .. ' ' end end
-        local is_cur = buf == vim.api.nvim_get_current_buf()
-        local hl = is_cur and '%#TabLineSel#' or '%#TabLine#'
+        for i = 1, 4 do
+          if cnt[i] > 0 then
+            diag = diag .. ('%%#%s#%s%d %%#%s#'):format(diag_hl[i], icons[i], cnt[i], tab_hl_name)
+          end
+        end
         local mod_hl = is_cur and '%#TabLineModSel#' or '%#TabLineMod#'
         local mod = vim.bo[buf].modified and ' ' .. mod_hl .. '●' .. hl or ''
         s = s .. hl .. ' ' .. name .. mod .. (diag ~= '' and ' ' .. diag or '') .. ' %*'
