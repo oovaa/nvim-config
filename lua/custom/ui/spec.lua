@@ -10,7 +10,10 @@ function M.setup_lualine()
     local ok, mod = pcall(require, 'tokyonight.colors')
     local c
     if ok then
-      c = mod.setup { style = 'night' }
+      local style = vim.g.colors_name and vim.g.colors_name:match '%-(.+)$' or 'night'
+      -- ponytail: tokyonight-moon vs night etc have different palettes; matching active style keeps statusline in sync
+      if style ~= 'night' and style ~= 'storm' and style ~= 'moon' and style ~= 'day' then style = 'night' end
+      c = mod.setup { style = style }
     else
       c = {
         blue = '#7aa2f7', green = '#9ece6a', yellow = '#e0af68', magenta = '#bb9af7',
