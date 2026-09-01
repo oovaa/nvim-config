@@ -156,9 +156,22 @@ function M.setup_starter()
     { key = 'r', icon = '', label = 'File Explorer', action = '<cmd>Neotree toggle<CR>' },
     { key = 'g', icon = '', label = 'Git (LazyGit)', action = function() if vim.fn.exists ':LazyGit' == 2 then vim.cmd 'LazyGit' else vim.cmd 'terminal lazygit' end end },
     { key = 's', icon = '', label = 'Recent Sessions', action = function()
-      -- builtin session restore (mirrors init.lua mksession logic)
-      local f = vim.fn.stdpath 'data' .. '/sessions/' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'
-      if vim.fn.filereadable(f) == 1 then vim.cmd('source ' .. vim.fn.fnameescape(f)) else vim.notify('No session for ' .. vim.fn.getcwd(), vim.log.levels.INFO) end
+      -- ponytail: restore current cwd session; if none, pick from sessions dir via Telescope/vim.ui.select
+      local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
+      local f = sess_dir .. '/' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'
+      if vim.fn.filereadable(f) == 1 then vim.cmd('source ' .. vim.fn.fnameescape(f)); return end
+      local files = vim.fn.glob(sess_dir .. '/*.vim', false, true)
+      if #files == 0 then vim.notify('No session for ' .. vim.fn.getcwd() .. ' — sessions are saved on quit (suppressed: ~, ~/Downloads, /etc, /tmp)', vim.log.levels.INFO) return end
+      local function pick()
+        vim.ui.select(files, { prompt = 'Select session:' }, function(choice) if choice then vim.cmd('source ' .. vim.fn.fnameescape(choice)) end end)
+      end
+      if pcall(require, 'telescope') then
+        local pickers, finders, conf = require('telescope.pickers'), require('telescope.finders'), require('telescope.config').values
+        pickers.new({}, { prompt_title = 'Sessions', finder = finders.new_table { results = files }, sorter = conf.generic_sorter({}), previewer = false, attach_mappings = function(_, map)
+          map('i', '<CR>', function(pb) local sel = require('telescope.actions.state').get_selected_entry(); require('telescope.actions').close(pb); vim.cmd('source ' .. vim.fn.fnameescape(sel[1])) end)
+          map('n', '<CR>', function(pb) local sel = require('telescope.actions.state').get_selected_entry(); require('telescope.actions').close(pb); vim.cmd('source ' .. vim.fn.fnameescape(sel[1])) end)
+          return true end }):find()
+      else pick() end
     end },
     { key = 'u', icon = '', label = 'Update Plugins', action = '<cmd>Lazy sync<CR>' },
     { key = 'q', icon = '', label = 'Quit', action = '<cmd>qa<CR>' },

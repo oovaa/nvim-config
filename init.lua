@@ -744,7 +744,7 @@ require('lazy').setup({
           graphql = true,
         }
         if enabled_filetypes[vim.bo[bufnr].filetype] then
-          return { timeout_ms = 1000 }
+          return { timeout_ms = 500 }
         else
           return nil
         end
@@ -1406,28 +1406,64 @@ end
 -- BUILTIN TERMINAL (replaces toggleterm.nvim + lazygit.nvim, zero loss via :terminal)
 -- ponytail: :terminal + TermOpen autocmd (lua/config/autocmds.lua) already handles jk/C-hjkl
 do
-  local function term(cmd, dir)
-    dir = dir or 'horizontal'
-    if dir == 'float' then
-      vim.cmd('split | terminal ' .. cmd)
-      -- make it float-ish: maximize the split; true float needs nvim_open_win, split is simpler
-      vim.cmd 'wincmd J | resize 15'
+  -- ponytail: single reusable buf per kind; hide/show = close win, keep buf (no new split each time)
+  local horiz = { buf = nil, win = nil }
+  local float = { buf = nil, win = nil }
+  local function is_win_valid(w) return w and vim.api.nvim_win_is_valid(w) end
+  local function is_buf_valid(b) return b and vim.api.nvim_buf_is_valid(b) end
+  local function toggle_horiz(cmd)
+    if is_win_valid(horiz.win) then vim.api.nvim_win_close(horiz.win, true); horiz.win = nil; return end
+    -- also handle case win was closed manually (buf still valid)
+    if is_buf_valid(horiz.buf) then
+      for _, w in ipairs(vim.api.nvim_list_wins()) do if vim.api.nvim_win_get_buf(w) == horiz.buf then vim.api.nvim_set_current_win(w); vim.cmd.startinsert(); horiz.win = w; return end end
+      vim.cmd 'botright split'
+      vim.cmd 'resize 15'
+      vim.api.nvim_win_set_buf(0, horiz.buf)
+      horiz.win = vim.api.nvim_get_current_win()
+      vim.cmd.startinsert()
     else
-      vim.cmd('split | terminal ' .. cmd)
-      vim.cmd 'wincmd J | resize 15'
+      vim.cmd('botright split | terminal ' .. cmd)
+      vim.cmd 'resize 15'
+      horiz.buf = vim.api.nvim_get_current_buf()
+      horiz.win = vim.api.nvim_get_current_win()
+      vim.cmd.startinsert()
     end
+  end
+  local function toggle_float(cmd)
+    if is_win_valid(float.win) then
+      vim.api.nvim_win_close(float.win, true)
+      float.win = nil
+      return
+    end
+    local width = math.floor(vim.o.columns * 0.85)
+    local height = math.floor(vim.o.lines * 0.85)
+    local row = math.floor((vim.o.lines - height) / 2)
+    local col = math.floor((vim.o.columns - width) / 2)
+    if is_buf_valid(float.buf) then
+      float.win = vim.api.nvim_open_win(float.buf, true, { relative = 'editor', width = width, height = height, row = row, col = col, style = 'minimal', border = 'rounded' })
+      vim.cmd.startinsert()
+    else
+      float.buf = vim.api.nvim_create_buf(false, true)
+      float.win = vim.api.nvim_open_win(float.buf, true, { relative = 'editor', width = width, height = height, row = row, col = col, style = 'minimal', border = 'rounded' })
+      vim.fn.termopen(cmd, { on_exit = function() end })
+      vim.cmd.startinsert()
+    end
+  end
+  local function new_horiz(cmd)
+    vim.cmd('botright split | terminal ' .. cmd)
+    vim.cmd 'resize 15'
     vim.cmd.startinsert()
   end
-  vim.keymap.set('n', '<leader>tt', function() term(vim.o.shell) end, { desc = '[T]oggle [T]erminal' })
-  vim.keymap.set('n', '<leader>tf', function() term(vim.o.shell, 'float') end, { desc = '[T]erminal [F]loat' })
-  vim.keymap.set('n', '<leader>fg', function() term('lazygit') end, { desc = '[F]ile [G]it (LazyGit)' })
-  vim.keymap.set('n', '<leader>tm', function() term('tmux new -s float 2>/dev/null || tmux attach -t float', 'float') end, { desc = '[T]erminal t[M]ux' })
-  vim.keymap.set('n', '<leader>ht', function() term('herdr', 'float') end, { desc = '[H]erdr [T]erminal' })
-  vim.keymap.set('n', '<leader>t1', function() term(vim.o.shell) end, { desc = 'Terminal [1]' })
-  vim.keymap.set('n', '<leader>t2', function() term(vim.o.shell) end, { desc = 'Terminal [2]' })
-  vim.keymap.set('n', '<leader>t3', function() term(vim.o.shell) end, { desc = 'Terminal [3]' })
-  vim.keymap.set('n', '<leader>tn', function() term(vim.o.shell) end, { desc = '[T]erminal [N]ew' })
-  vim.keymap.set('n', '<c-\\>', function() term(vim.o.shell) end, { desc = 'Toggle Terminal' })
+  vim.keymap.set('n', '<leader>tt', function() toggle_horiz(vim.o.shell) end, { desc = '[T]oggle [T]erminal' })
+  vim.keymap.set('n', '<leader>tf', function() toggle_float(vim.o.shell) end, { desc = '[T]erminal [F]loat' })
+  vim.keymap.set('n', '<leader>fg', function() toggle_float('lazygit') end, { desc = '[F]ile [G]it (LazyGit)' })
+  vim.keymap.set('n', '<leader>tm', function() toggle_float('tmux new -s float 2>/dev/null || tmux attach -t float') end, { desc = '[T]erminal t[M]ux' })
+  vim.keymap.set('n', '<leader>ht', function() toggle_float('herdr') end, { desc = '[H]erdr [T]erminal' })
+  vim.keymap.set('n', '<leader>t1', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [1]' })
+  vim.keymap.set('n', '<leader>t2', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [2]' })
+  vim.keymap.set('n', '<leader>t3', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [3]' })
+  vim.keymap.set('n', '<leader>tn', function() new_horiz(vim.o.shell) end, { desc = '[T]erminal [N]ew' })
+  vim.keymap.set({ 'n', 't' }, '<c-\\>', function() toggle_horiz(vim.o.shell) end, { desc = 'Toggle Terminal' })
 end
 
 -- BUILTIN CODE RUNNER (replaces CRAG666/code_runner.nvim, zero loss via :terminal)
