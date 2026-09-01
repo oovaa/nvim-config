@@ -1,44 +1,117 @@
 ---@module 'custom.ui.spec'
 local M = {}
 
--- builtin statusline (replaces lualine.nvim) — same sections, tokyonight colors
+-- builtin statusline (replaces lualine.nvim) — tokyonight-night, same sections as before
 function M.setup_lualine()
-  vim.o.laststatus = 3 -- globalstatus
+  vim.o.laststatus = 3
   vim.o.showmode = false
-  local function lsp_name()
-    local c = vim.lsp.get_clients { bufnr = 0 }
-    return #c == 0 and '' or '󰄶 ' .. c[1].name
+
+  local function define_hl()
+    local ok, mod = pcall(require, 'tokyonight.colors')
+    local c
+    if ok then
+      c = mod.setup { style = 'night' }
+    else
+      c = {
+        blue = '#7aa2f7', green = '#9ece6a', yellow = '#e0af68', magenta = '#bb9af7',
+        red = '#f7768e', green1 = '#73daca', black = '#1d202f', fg_gutter = '#3b4261',
+        bg_statusline = '#16161e', fg_sidebar = '#a9b1d6',
+      }
+    end
+    local function hl(name, bg, fg, gui)
+      vim.api.nvim_set_hl(0, name, { bg = bg, fg = fg, bold = gui == 'bold' })
+    end
+    -- tokyonight lualine theme: a=mode pill, b=branch/diff/diag, c=filename
+    hl('SL_a_normal', c.blue, c.black, 'bold'); hl('SL_b_normal', c.fg_gutter, c.blue)
+    hl('SL_a_insert', c.green, c.black, 'bold'); hl('SL_b_insert', c.fg_gutter, c.green)
+    hl('SL_a_visual', c.magenta, c.black, 'bold'); hl('SL_b_visual', c.fg_gutter, c.magenta)
+    hl('SL_a_replace', c.red, c.black, 'bold'); hl('SL_b_replace', c.fg_gutter, c.red)
+    hl('SL_a_command', c.yellow, c.black, 'bold'); hl('SL_b_command', c.fg_gutter, c.yellow)
+    hl('SL_a_terminal', c.green1, c.black, 'bold'); hl('SL_b_terminal', c.fg_gutter, c.green1)
+    hl('SL_c', c.bg_statusline, c.fg_sidebar)
+    hl('SL_lsp', c.bg_statusline, '#9ece6a')
+    -- diff colors
+    hl('SL_diff_add', c.fg_gutter, '#449dab'); hl('SL_diff_change', c.fg_gutter, '#6183bb'); hl('SL_diff_delete', c.fg_gutter, '#914c54')
   end
-  local function git_branch()
-    local b = vim.b.gitsigns_head or vim.g.gitsigns_head
-    return b and b ~= '' and (' ' .. b) or ''
+  define_hl()
+  vim.api.nvim_create_autocmd('ColorScheme', { callback = define_hl })
+
+  local mode_map = {
+    n = 'NORMAL', i = 'INSERT', v = 'VISUAL', V = 'V-LINE', ['\22'] = 'V-BLOCK',
+    c = 'COMMAND', R = 'REPLACE', t = 'TERMINAL', nt = 'TERMINAL',
+  }
+  local function mode_hl_key(m)
+    if m:find('^[iI]') then return 'insert'
+    elseif m:find('^[vV\22]') then return 'visual'
+    elseif m:find('^R') then return 'replace'
+    elseif m:find('^c') then return 'command'
+    elseif m:find('^t') then return 'terminal'
+    else return 'normal' end
   end
-  local function diagnostics()
-    local d = vim.diagnostic.get(0)
-    if #d == 0 then return '' end
-    local cnt = { 0, 0, 0, 0 }
-    for _, v in ipairs(d) do cnt[v.severity] = cnt[v.severity] + 1 end
-    local icons = { '', '', '', '' }
-    local s = {}
-    for i = 1, 4 do if cnt[i] > 0 then s[#s + 1] = icons[i] .. cnt[i] end end
-    return table.concat(s, ' ')
-  end
+
   _G._builtin_statusline = function()
-    local mode = vim.fn.mode():upper()
-    local branch = git_branch()
-    local diag = diagnostics()
-    local fname = vim.fn.expand '%:~:.'
-    if fname == '' then fname = '[No Name]' elseif vim.bo.modified then fname = fname .. ' [+]' end
-    local lsp = lsp_name()
-    local enc = vim.bo.fileencoding ~= '' and vim.bo.fileencoding or vim.o.encoding
+    -- disabled filetypes like lualine: neo-tree / TelescopePrompt / lazy / dashboard
     local ft = vim.bo.filetype
-    local loc = '%l:%c'
-    local pct = '%p%%'
-    -- left: mode | branch diag | filename   right: lsp | enc ft | pct loc
-    local left = string.format(' %s %s %s %%f%%m', mode, branch, diag)
-    -- use %f for filename handled above via fname; inject manually
-    -- ponytail: keep it simple — statusline is a Vim expression, not a lua concat per redraw
-    return string.format(' %s  %s %s │ %s │ %s %s │ %s %s ', mode, branch, diag, fname, lsp, enc .. (ft ~= '' and ' ' .. ft or ''), pct, loc)
+    if ft == 'neo-tree' or ft == 'TelescopePrompt' or ft == 'lazy' or ft == 'dashboard' then
+      return '%#SL_c# %f %*'
+    end
+    local raw = vim.fn.mode()
+    local mode = mode_map[raw] or raw:upper()
+    local key = mode_hl_key(raw)
+    local hl_a = '%#SL_a_' .. key .. '#'
+    local hl_b = '%#SL_b_' .. key .. '#'
+    local hl_c = '%#SL_c#'
+
+    -- branch
+    local branch = vim.b.gitsigns_head or vim.g.gitsigns_head or ''
+    local branch_s = branch ~= '' and (' ' .. branch) or ''
+    -- diff (gitsigns_status_dict)
+    local diff_s = ''
+    local d = vim.b.gitsigns_status_dict
+    if d then
+      local parts = {}
+      if d.added and d.added > 0 then parts[#parts + 1] = '%#SL_diff_add#+' .. d.added .. '%#SL_b_' .. key .. '#' end
+      if d.changed and d.changed > 0 then parts[#parts + 1] = '%#SL_diff_change#~' .. d.changed .. '%#SL_b_' .. key .. '#' end
+      if d.removed and d.removed > 0 then parts[#parts + 1] = '%#SL_diff_delete#-' .. d.removed .. '%#SL_b_' .. key .. '#' end
+      diff_s = table.concat(parts, ' ')
+    end
+    -- diagnostics
+    local diags = vim.diagnostic.get(0)
+    local cnt = { 0, 0, 0, 0 }
+    for _, v in ipairs(diags) do cnt[v.severity] = (cnt[v.severity] or 0) + 1 end
+    local icons = { ' ', ' ', ' ', ' ' }
+    local diag_parts = {}
+    for i = 1, 4 do if cnt[i] > 0 then diag_parts[#diag_parts + 1] = icons[i] .. cnt[i] end end
+    local diag_s = table.concat(diag_parts, ' ')
+
+    local b_parts = {}
+    if branch_s ~= '' then b_parts[#b_parts + 1] = branch_s end
+    if diff_s ~= '' then b_parts[#b_parts + 1] = diff_s end
+    if diag_s ~= '' then b_parts[#b_parts + 1] = diag_s end
+    local b_s = table.concat(b_parts, '  ')
+
+    -- filename path=1 with symbols
+    local fname = vim.fn.expand '%:~:.'
+    if fname == '' then fname = '[No Name]' end
+    if vim.bo.modified then fname = fname .. ' [+]' end
+    if vim.bo.readonly then fname = fname .. ' 󰌾' end
+
+    -- lsp
+    local clients = vim.lsp.get_clients { bufnr = 0 }
+    local lsp_s = #clients == 0 and '' or '%#SL_lsp#󰄶 ' .. clients[1].name .. hl_c
+
+    local enc = (vim.bo.fileencoding ~= '' and vim.bo.fileencoding or vim.o.encoding)
+    local ff = vim.bo.fileformat
+    local ft_s = vim.bo.filetype
+
+    -- sections mirror lualine: a=mode | b=branch/diff/diag | c=filename | x=lsp/enc/ff/ft | y=progress | z=location
+    -- lualine had no separators
+    local left = hl_a .. ' ' .. mode .. ' ' .. hl_b .. (b_s ~= '' and ' ' .. b_s .. ' ' or ' ')
+    local center = hl_c .. ' ' .. fname .. ' '
+    local right_x = hl_c .. (lsp_s ~= '' and ' ' .. lsp_s .. ' ' or ' ') .. enc .. ' ' .. ff .. (ft_s ~= '' and ' ' .. ft_s or '') .. ' '
+    local right_y = hl_b .. ' %p%% '
+    local right_z = hl_a .. ' %l:%c ' .. '%*'
+    return left .. center .. '%=' .. right_x .. right_y .. right_z
   end
   vim.o.statusline = '%!v:lua._builtin_statusline()'
 end
@@ -67,7 +140,7 @@ function M.setup_bufferline()
   vim.o.tabline = '%!v:lua._builtin_tabline()'
 end
 
--- builtin dashboard (replaces alpha-nvim) — scratch buffer on VimEnter when no args
+-- builtin dashboard (replaces alpha-nvim) — same header/buttons/recent as before
 function M.setup_starter()
   local header = {
     '   _                ',
@@ -77,8 +150,21 @@ function M.setup_starter()
     ' _/ |\\___\\__,_|_| |_|',
     '|__/                ',
   }
+  local buttons = {
+    { key = 'e', icon = '', label = 'New File', action = '<cmd>ene<CR>' },
+    { key = 'f', icon = '', label = 'Find File', action = '<cmd>Telescope find_files<CR>' },
+    { key = 'r', icon = '', label = 'File Explorer', action = '<cmd>Neotree toggle<CR>' },
+    { key = 'g', icon = '', label = 'Git (LazyGit)', action = function() if vim.fn.exists ':LazyGit' == 2 then vim.cmd 'LazyGit' else vim.cmd 'terminal lazygit' end end },
+    { key = 's', icon = '', label = 'Recent Sessions', action = function()
+      -- builtin session restore (mirrors init.lua mksession logic)
+      local f = vim.fn.stdpath 'data' .. '/sessions/' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'
+      if vim.fn.filereadable(f) == 1 then vim.cmd('source ' .. vim.fn.fnameescape(f)) else vim.notify('No session for ' .. vim.fn.getcwd(), vim.log.levels.INFO) end
+    end },
+    { key = 'u', icon = '', label = 'Update Plugins', action = '<cmd>Lazy sync<CR>' },
+    { key = 'q', icon = '', label = 'Quit', action = '<cmd>qa<CR>' },
+  }
   local config_dir = vim.fn.stdpath 'config'
-  local function recent_files()
+  local function collect_recent()
     local out, seen = {}, {}
     for _, f in ipairs(vim.v.oldfiles or {}) do
       if #out >= 9 then break end
@@ -87,34 +173,86 @@ function M.setup_starter()
       local key = vim.fn.fnamemodify(f, ':.')
       if not seen[key] then
         seen[key] = true
-        out[#out + 1] = ' ' .. #out + 1 .. '  ' .. vim.fn.fnamemodify(f, ':~:.')
+        out[#out + 1] = { path = f, disp = vim.fn.fnamemodify(f, ':~:.') }
       end
       ::continue::
     end
     return out
   end
+
   vim.api.nvim_create_autocmd('VimEnter', {
     once = true,
     callback = function()
       if vim.fn.argc() > 0 or vim.api.nvim_buf_get_name(0) ~= '' then return end
       if vim.bo.filetype ~= '' then return end
       local buf = vim.api.nvim_get_current_buf()
+      local recent = collect_recent()
+      local raw = {}
+      vim.list_extend(raw, { '', '' })
+      vim.list_extend(raw, header)
+      raw[#raw + 1] = ''
+      -- straight table: pad labels to fixed width so columns line up
+      local function pad_disp(s, w)
+        local d = vim.fn.strdisplaywidth(s)
+        if d >= w then return s end
+        return s .. string.rep(' ', w - d)
+      end
+      local label_w = 0
+      for _, b in ipairs(buttons) do label_w = math.max(label_w, vim.fn.strdisplaywidth(b.label)) end
+      for _, b in ipairs(buttons) do
+        raw[#raw + 1] = string.format('  %s  %s  %s', b.key, b.icon, pad_disp(b.label, label_w))
+      end
+      raw[#raw + 1] = ''
+      for i, r in ipairs(recent) do
+        raw[#raw + 1] = string.format('  %d  %s', i, r.disp)
+      end
+      raw[#raw + 1] = ''
+      raw[#raw + 1] = 'neon-ui · ' .. vim.version().major .. '.' .. vim.version().minor .. '.' .. vim.version().patch
+
+      -- center as a block (like alpha margin 4) — not per-line, so left edge is straight
+      local win = vim.api.nvim_get_current_win()
+      local win_w = vim.api.nvim_win_get_width(win)
+      local win_h = vim.api.nvim_win_get_height(win)
+      local max_w = 0
+      for _, l in ipairs(raw) do max_w = math.max(max_w, vim.fn.strdisplaywidth(l)) end
+      local block_pad = math.max(4, math.floor((win_w - max_w) / 2))
+      local pad_top = math.max(0, math.floor((win_h - #raw) / 2) - 2)
       local lines = {}
-      vim.list_extend(lines, { '', '' })
-      vim.list_extend(lines, header)
-      vim.list_extend(lines, { '', '  e  New File      f  Find File      r  File Explorer', '  g  Git (LazyGit) s  Recent       u  Update Plugins  q  Quit', '' })
-      vim.list_extend(lines, recent_files())
-      vim.list_extend(lines, { '', 'neon-ui · ' .. vim.version().major .. '.' .. vim.version().minor .. '.' .. vim.version().patch })
+      for _ = 1, pad_top do lines[#lines + 1] = '' end
+      for _, l in ipairs(raw) do
+        if l == '' then lines[#lines + 1] = ''
+        else lines[#lines + 1] = string.rep(' ', block_pad) .. l end
+      end
+
       vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+      -- highlight like alpha: header Include, footer subtle (account for pad_top)
+      local hdr_start = pad_top + 3
+      for i = hdr_start, hdr_start + 5 do pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Include', i - 1, block_pad, -1) end
+      pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Comment', #lines - 1, block_pad, -1)
       vim.bo[buf].modifiable = false
+      vim.bo[buf].modified = false
       vim.bo[buf].filetype = 'dashboard'
-      vim.keymap.set('n', 'e', '<cmd>ene<CR>', { buffer = buf })
-      vim.keymap.set('n', 'f', '<cmd>Telescope find_files<CR>', { buffer = buf })
-      vim.keymap.set('n', 'r', '<cmd>Neotree toggle<CR>', { buffer = buf })
-      vim.keymap.set('n', 'g', function()
-        if vim.fn.exists ':LazyGit' == 2 then vim.cmd 'LazyGit' else vim.cmd 'terminal lazygit' end
+      vim.wo.wrap = false
+      vim.wo.cursorline = false
+
+      for _, b in ipairs(buttons) do
+        if type(b.action) == 'string' then
+          vim.keymap.set('n', b.key, b.action, { buffer = buf, silent = true, desc = b.label })
+        else
+          vim.keymap.set('n', b.key, b.action, { buffer = buf, silent = true, desc = b.label })
+        end
+      end
+      for i, r in ipairs(recent) do
+        local path = r.path
+        vim.keymap.set('n', tostring(i), function() vim.cmd('edit ' .. vim.fn.fnameescape(path)) end, { buffer = buf, silent = true })
+      end
+      -- also allow <CR> on recent line to open
+      vim.keymap.set('n', '<CR>', function()
+        local row = vim.api.nvim_win_get_cursor(0)[1]
+        local first_recent = pad_top + 2 + 6 + 1 + #buttons + 1 + 1 -- pad_top + raw index of first recent
+        local idx = row - first_recent + 1
+        if idx >= 1 and idx <= #recent then vim.cmd('edit ' .. vim.fn.fnameescape(recent[idx].path)) end
       end, { buffer = buf })
-      vim.keymap.set('n', 'q', '<cmd>qa<CR>', { buffer = buf })
     end,
   })
 end
