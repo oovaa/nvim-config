@@ -199,12 +199,13 @@ function M.setup_starter()
         for _, l in ipairs(vim.fn.readfile(path)) do if l:match('^badd') then return true end end
         return false
       end
+      local function close_dashboard() if vim.bo.filetype == 'dashboard' then pcall(vim.cmd, 'bwipeout!') end end
       local f = _G._builtin_find_session and _G._builtin_find_session(nil) or nil
       if not f then
         local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
         f = sess_dir .. '/' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'
       end
-      if has_badd(f) then pcall(vim.cmd, 'silent! Neotree close'); vim.cmd('source ' .. vim.fn.fnameescape(f)); return end
+      if has_badd(f) then pcall(vim.cmd, 'silent! Neotree close'); close_dashboard(); vim.cmd('source ' .. vim.fn.fnameescape(f)); return end
       local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
       local files = vim.fn.glob(sess_dir .. '/*.vim', false, true)
       -- readable labels via `cd` line, dedup by dir (legacy %2F vs new %), skip empty
@@ -240,7 +241,7 @@ function M.setup_starter()
       end
       table.sort(items)
       if #items == 0 then vim.notify('No session for ' .. vim.fn.getcwd() .. ' — sessions are saved on quit (suppressed: ~, ~/Downloads, /etc, /tmp)', vim.log.levels.INFO) return end
-      local function do_pick(choice) if choice and map[choice] then pcall(vim.cmd, 'silent! Neotree close'); vim.cmd('source ' .. vim.fn.fnameescape(map[choice])) end end
+      local function do_pick(choice) if choice and map[choice] then pcall(vim.cmd, 'silent! Neotree close'); if vim.bo.filetype == 'dashboard' then pcall(vim.cmd, 'bwipeout!') end; vim.cmd('source ' .. vim.fn.fnameescape(map[choice])) end end
       local function pick()
         vim.ui.select(items, { prompt = 'Select session:' }, function(choice) do_pick(choice) end)
       end
