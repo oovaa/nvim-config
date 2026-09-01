@@ -81,8 +81,9 @@ Key Mappings Reference:
 -- ============================================================================
 vim.loader.enable()
 
--- Ensure bun shims are on PATH for any bun-managed tooling (LSP, formatters, etc.)
-vim.env.PATH = vim.env.HOME .. '/.local/share/nvim/bin' .. ':' .. (vim.env.PATH or '')
+-- ponytail: node shim removed; tsserver_path is set explicitly in
+-- typescript-tools config, and the old node->bun shim broke node formatters
+-- (prettierd/prettier run via real linuxbrew node now).
 
 -- ============================================================================
 -- SECTION 1: PROVIDER DISABLES
@@ -380,7 +381,10 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
       -- double-space alias: fastest way to find files
       vim.keymap.set('n', '<leader><leader>', builtin.find_files, { desc = '[S]earch [F]iles' })
-      vim.keymap.set('n', '<leader>sp', function() require('telescope').extensions.projects.projects {} end, { desc = '[S]earch [P]rojects' })
+      vim.keymap.set('n', '<leader>sp', function()
+        local root = vim.fs.root(0, { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' }) or vim.fn.getcwd()
+        require('telescope.builtin').find_files { cwd = root, prompt_title = 'Projects: ' .. vim.fn.fnamemodify(root, ':~') }
+      end, { desc = '[S]earch [P]rojects (builtin root)' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set({ 'n', 'v' }, '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
@@ -431,8 +435,8 @@ require('lazy').setup({
 
       -- Shortcut for searching your Neovim configuration files
       vim.keymap.set('n', '<leader>sn', function() builtin.find_files { cwd = vim.fn.stdpath 'config' } end, { desc = '[S]earch [N]eovim files' })
-      vim.keymap.set('n', '<leader>fe', '<cmd>Telescope file_browser<CR>', { desc = '[F]ile [E]xplorer (Telescope)' })
-      vim.keymap.set('n', '<leader>fE', '<cmd>Telescope file_browser path=%:p:h<CR>', { desc = '[F]ile [E]xplorer (cwd)' })
+      vim.keymap.set('n', '<leader>fe', '<cmd>Neotree toggle<CR>', { desc = '[F]ile [E]xplorer (Neo-tree)' })
+      vim.keymap.set('n', '<leader>fE', '<cmd>Neotree reveal<CR>', { desc = '[F]ile [E]xplorer (reveal)' })
       -- List functions/symbols in the current file via Telescope (requires LSP)
       vim.keymap.set('n', '<leader>ls', builtin.lsp_document_symbols, { desc = '[L]ist [S]ymbols in file' })
       vim.keymap.set('n', '<leader>lS', builtin.lsp_workspace_symbols, { desc = '[L]ist [S]ymbols in workspace' })
@@ -719,10 +723,10 @@ require('lazy').setup({
     ---@module 'conform'
     ---@type conform.setupOpts
     opts = {
-      notify_on_error = true,
-      format_on_save = function(bufnr)
+      notify_on_error = false,
+      format_after_save = function(bufnr)
         -- TO CHANGE: Add or remove filetypes from this table
-        -- EFFECT: Only files matching these types will auto-format on save
+        -- EFFECT: Only files matching these types will auto-format after save
         local enabled_filetypes = {
           python = true,
           javascript = true,
@@ -740,7 +744,7 @@ require('lazy').setup({
           graphql = true,
         }
         if enabled_filetypes[vim.bo[bufnr].filetype] then
-          return { timeout_ms = 500 }
+          return { timeout_ms = 1000 }
         else
           return nil
         end
@@ -748,8 +752,15 @@ require('lazy').setup({
       default_format_opts = {
         lsp_format = 'fallback', -- Use external formatters if configured below, otherwise use LSP formatting. Set to `false` to disable LSP formatting entirely.
       },
-      -- Let prettier auto-discover each project's own .prettierrc / prettier.config.
-      formatters = {},
+      formatters = {
+        prettier = {
+          prepend_args = { '--config', vim.fn.expand '~/.config/nvim/prettier.config.json' },
+        },
+        prettierd = {
+          stdin = true,
+          prepend_args = { '--config=' .. vim.fn.expand '~/.config/nvim/prettier.config.json' },
+        },
+      },
       -- You can also specify external formatters in here.
       formatters_by_ft = {
         python = { 'ruff_organize_imports', 'ruff_format' },
@@ -1042,34 +1053,7 @@ require('lazy').setup({
     end,
   },
 
-  -- CODE RUNNER
-  -- WHAT: Run code directly from the editor with a single keypress
-  -- TO CHANGE: Modify the filetype table to add/change run commands
-  -- EFFECT: <leader>r runs the current file; <leader>rf also runs the file
-  --         Output appears in a terminal split below
-  -- LOADING: keys = only loads when you press the keybindings
-  {
-    'CRAG666/code_runner.nvim',
-    config = function()
-      require('code_runner').setup {
-        mode = 'term',
-        focus = true,
-        startinsert = true,
-        filetype = {
-          javascript = 'bun',
-          python = 'python3 -u',
-          typescript = 'bun',
-          typescriptreact = 'bun',
-          cpp = { 'cd $dir && g++ $fileName -o $fileNameWithoutExt && ./$fileNameWithoutExt' },
-          c = { 'cd $dir && gcc $fileName -o $fileNameWithoutExt && ./$fileNameWithoutExt' },
-        },
-      }
-    end,
-    keys = {
-      { '<leader>r', ':RunCode<CR>', desc = '[R]un [C]ode' },
-      { '<leader>rf', ':RunFile<CR>', desc = '[R]un [F]ile' },
-    },
-  },
+  -- CODE RUNNER (builtin — replaces code_runner.nvim, zero loss via :terminal)
 
   -- ============================================================================
   -- SECTION 6.8: SYNTAX HIGHLIGHTING
@@ -1148,140 +1132,18 @@ require('lazy').setup({
     },
   },
 
-  -- BUFFERLINE
-  -- WHAT: Shows open buffers as tabs at the top of the screen
-  -- TO CHANGE: See lua/custom/ui/spec.lua setup_bufferline
-  -- EFFECT: Shift+H/L to switch buffers; <leader>bd to delete a buffer
-  --         Shows LSP diagnostics indicators on buffer tabs
-  -- LOADING: keys = only loads when you press the keybindings
-  -- CONFIG: Tuning lives in lua/custom/ui/spec.lua (diagnostics + icons)
+  -- BUILTIN UI (replaces bufferline/lualine/alpha — no plugin, zero loss)
+  -- statusline/tabline/dashboard via lua/custom/ui/spec.lua (pure nvim 0.12)
+  -- keys S-h/S-l/<leader>bd preserved via builtin :bprev/:bnext/:bdelete
   {
-    'akinsho/bufferline.nvim',
-    version = '*',
-    dependencies = 'nvim-tree/nvim-web-devicons',
-    event = 'VeryLazy',
-    config = function() require('custom.ui.spec').setup_bufferline() end,
-    keys = {
-      { '<S-h>', '<cmd>BufferLineCyclePrev<cr>', desc = 'Prev Buffer' },
-      { '<S-l>', '<cmd>BufferLineCycleNext<cr>', desc = 'Next Buffer' },
-      { '<leader>bd', '<cmd>bdelete<cr>', desc = '[B]uffer [D]elete' },
-    },
-  },
-
-  -- LUALINE
-  -- WHAT: Statusline (mode-aware, tokyonight theme)
-  -- CONFIG: Tuning lives in lua/custom/ui/spec.lua setup_lualine
-  {
-    'nvim-lualine/lualine.nvim',
-    dependencies = 'nvim-tree/nvim-web-devicons',
-    event = 'VeryLazy',
-    config = function() require('custom.ui.spec').setup_lualine() end,
-  },
-
-  -- ALPHA (DASHBOARD)
-  -- WHAT: Modern startup screen - banner, quick actions, recent files
-  -- CONFIG: Tuning lives in lua/custom/ui/spec.lua setup_starter
-  {
-    'goolord/alpha-nvim',
-    dependencies = { 'nvim-tree/nvim-web-devicons' },
-    event = 'VimEnter',
-    config = function() require('custom.ui.spec').setup_starter() end,
-  },
-
-  -- LAZYGIT
-  -- WHAT: Opens LazyGit (a terminal git UI) in a floating window
-  -- TO CHANGE: Change the keybinding or remove this plugin
-  -- EFFECT: Press <leader>fg to open a full git interface in a floating window
-  --         Much faster than command-line git for common operations
-  -- LOADING: cmd/keys = only loads when you press the keybinding
-  {
-    'kdheepak/lazygit.nvim',
-    dependencies = { 'nvim-lua/plenary.nvim' },
-    cmd = { 'LazyGit', 'LazyGitConfig' },
-    keys = {
-      { '<leader>fg', '<cmd>LazyGit<cr>', desc = '[F]ile [G]it (LazyGit)' },
-    },
-  },
-
-  -- TOGGLETERM
-  -- WHAT: Better terminal management with multiple terminal support
-  -- TO CHANGE: Modify direction, size, or keybindings
-  -- EFFECT: <C-\> to toggle terminal; <leader>tt for horizontal terminal
-  --         <leader>tf for floating terminal; <leader>t1/t2/t3 for numbered terminals
-  -- LOADING: VeryLazy = loads after UI is ready
-  {
-    'akinsho/toggleterm.nvim',
-    version = '*',
-    event = 'VeryLazy',
-    opts = {
-      open_mapping = [[<c-\>]],
-      direction = 'horizontal',
-      size = 15,
-      hide_numbers = true,
-      shade_terminals = true,
-      start_in_insert = true,
-      insert_mappings = true,
-      persist_size = true,
-      close_on_exit = true,
-    },
-    keys = {
-      { '<leader>tt', '<cmd>ToggleTerm<cr>', desc = '[T]oggle [T]erminal' },
-      { '<leader>tf', '<cmd>ToggleTerm direction=float<cr>', desc = '[T]erminal [F]loat' },
-      { '<leader>tm', "<cmd>TermExec cmd='tmux new -s float 2>/dev/null || tmux attach -t float' direction=float<cr>", desc = '[T]erminal t[M]ux' },
-      { '<leader>ht', "<cmd>TermExec cmd='herdr' direction=float<cr>", desc = '[H]erdr [T]erminal' },
-      { '<leader>t1', '<cmd>1ToggleTerm<cr>', desc = 'Terminal [1]' },
-      { '<leader>t2', '<cmd>2ToggleTerm<cr>', desc = 'Terminal [2]' },
-      { '<leader>t3', '<cmd>3ToggleTerm<cr>', desc = 'Terminal [3]' },
-      { '<leader>tn', "<cmd>TermExec cmd=''<cr>", desc = '[T]erminal [N]ew' },
-    },
-  },
-
-  -- PROJECT.NVIM
-  -- WHAT: Auto-detects project root directories (where .git, package.json, etc. are)
-  -- TO CHANGE: Modify patterns to add/remove root markers
-  -- EFFECT: Enables project-aware features like Telescope project switching
-  --         Helps plugins know where your project starts and ends
-  -- LOADING: keys = only loads when you press <leader>sp (lazy-loads telescope projects extension)
-  {
-    'ahmedkhalf/project.nvim',
-    keys = {
-      { '<leader>sp', function()
-          require('project_nvim').setup {
-            detection_methods = { 'pattern' },
-            patterns = { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' },
-          }
-          require('telescope').load_extension('projects')
-          require('telescope').extensions.projects.projects {}
-        end, desc = '[S]earch [P]rojects' },
-    },
-    config = function() end, -- no-op: setup deferred to <leader>sp key
+    'nvim-tree/nvim-web-devicons',
+    lazy = true,
   },
 
   -- ============================================================================
-  -- SECTION 6.10: SESSIONS
+  -- SECTION 6.10: SESSIONS (builtin — replaces auto-session, zero loss)
   -- ============================================================================
-  -- Plugins for saving and restoring editor state.
-
-  -- AUTO-SESSION
-  -- WHAT: Automatically saves and restores Neovim sessions
-  -- TO CHANGE: Modify suppressed_dirs to prevent session saving in certain dirs
-  -- EFFECT: When you open Neovim in a directory, it restores your previous session
-  --         (open files, window layout, cursor positions)
-  -- IMPORTANT: Must load at startup (lazy=false) for auto-restore to work
-  {
-    'rmagatti/auto-session',
-    lazy = false,
-    config = function()
-      vim.o.sessionoptions = 'blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions'
-      require('auto-session').setup {
-        log_level = 'error',
-        suppressed_dirs = { '~/', '~/Downloads', '/etc' },
-        pre_save_cmds = {
-          function() pcall(vim.cmd, 'Neotree close') end,
-        },
-      }
-    end,
-  },
+  -- (builtin session handling is set up after lazy.nvim — see bottom of file)
 
   -- ============================================================================
   -- SECTION 6.11: NAVIGATION
@@ -1452,23 +1314,6 @@ require('lazy').setup({
     event = 'BufRead',
   },
 
-  -- NEOSCROLL
-  -- WHAT: Smooth animated scrolling on wheel and Ctrl-u/d
-  -- TO CHANGE: Adjust lines/time in setup
-  -- EFFECT: Scrolling feels eased instead of jumping
-  -- LOADING: VeryLazy = loads after UI is ready
-  {
-    'karb94/neoscroll.nvim',
-    event = 'VeryLazy',
-    config = function()
-      require('neoscroll').setup {
-        -- ponytail: defaults are fine; tuned easing for feel
-        easing_function = 'quadratic',
-        hide_cursor = true,
-      }
-    end,
-  },
-
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
   -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
@@ -1517,6 +1362,106 @@ require('lazy').setup({
     },
   },
 })
+
+-- BUILTIN UI: statusline/tabline/dashboard (replaces lualine/bufferline/alpha)
+pcall(function() require('custom.ui.spec').setup_lualine() end)
+pcall(function() require('custom.ui.spec').setup_bufferline() end)
+pcall(function() require('custom.ui.spec').setup_starter() end)
+vim.keymap.set('n', '<S-h>', '<cmd>bprev<cr>', { desc = 'Prev Buffer' })
+vim.keymap.set('n', '<S-l>', '<cmd>bnext<cr>', { desc = 'Next Buffer' })
+vim.keymap.set('n', '<leader>bd', '<cmd>bdelete<cr>', { desc = '[B]uffer [D]elete' })
+
+-- BUILTIN SESSIONS (replaces rmagatti/auto-session, zero loss via :mksession)
+-- ponytail: native mksession + VimEnter/VimLeave autocmds; no plugin needed
+do
+  vim.o.sessionoptions = 'blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions'
+  local suppressed = { ['~/'] = true, ['~/Downloads'] = true, ['/etc'] = true, ['/tmp'] = true }
+  local function suppressed_dir()
+    local cwd = vim.fn.getcwd()
+    for d in pairs(suppressed) do if cwd == vim.fn.expand(d) or cwd:find(vim.fn.expand(d), 1, true) == 1 then return true end end
+    return false
+  end
+  local function session_file() return vim.fn.stdpath 'data' .. '/sessions/' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim' end
+  vim.api.nvim_create_autocmd('VimEnter', {
+    nested = true,
+    callback = function()
+      if vim.fn.argc() > 0 or suppressed_dir() then return end
+      local f = session_file()
+      if vim.fn.filereadable(f) == 1 then
+        pcall(vim.cmd, 'silent! Neotree close')
+        vim.cmd('silent! source ' .. vim.fn.fnameescape(f))
+      end
+    end,
+  })
+  vim.api.nvim_create_autocmd('VimLeavePre', {
+    callback = function()
+      if suppressed_dir() then return end
+      pcall(vim.cmd, 'silent! Neotree close')
+      vim.fn.mkdir(vim.fn.stdpath 'data' .. '/sessions', 'p')
+      vim.cmd('silent! mksession! ' .. vim.fn.fnameescape(session_file()))
+    end,
+  })
+end
+
+-- BUILTIN TERMINAL (replaces toggleterm.nvim + lazygit.nvim, zero loss via :terminal)
+-- ponytail: :terminal + TermOpen autocmd (lua/config/autocmds.lua) already handles jk/C-hjkl
+do
+  local function term(cmd, dir)
+    dir = dir or 'horizontal'
+    if dir == 'float' then
+      vim.cmd('split | terminal ' .. cmd)
+      -- make it float-ish: maximize the split; true float needs nvim_open_win, split is simpler
+      vim.cmd 'wincmd J | resize 15'
+    else
+      vim.cmd('split | terminal ' .. cmd)
+      vim.cmd 'wincmd J | resize 15'
+    end
+    vim.cmd.startinsert()
+  end
+  vim.keymap.set('n', '<leader>tt', function() term(vim.o.shell) end, { desc = '[T]oggle [T]erminal' })
+  vim.keymap.set('n', '<leader>tf', function() term(vim.o.shell, 'float') end, { desc = '[T]erminal [F]loat' })
+  vim.keymap.set('n', '<leader>fg', function() term('lazygit') end, { desc = '[F]ile [G]it (LazyGit)' })
+  vim.keymap.set('n', '<leader>tm', function() term('tmux new -s float 2>/dev/null || tmux attach -t float', 'float') end, { desc = '[T]erminal t[M]ux' })
+  vim.keymap.set('n', '<leader>ht', function() term('herdr', 'float') end, { desc = '[H]erdr [T]erminal' })
+  vim.keymap.set('n', '<leader>t1', function() term(vim.o.shell) end, { desc = 'Terminal [1]' })
+  vim.keymap.set('n', '<leader>t2', function() term(vim.o.shell) end, { desc = 'Terminal [2]' })
+  vim.keymap.set('n', '<leader>t3', function() term(vim.o.shell) end, { desc = 'Terminal [3]' })
+  vim.keymap.set('n', '<leader>tn', function() term(vim.o.shell) end, { desc = '[T]erminal [N]ew' })
+  vim.keymap.set('n', '<c-\\>', function() term(vim.o.shell) end, { desc = 'Toggle Terminal' })
+end
+
+-- BUILTIN CODE RUNNER (replaces CRAG666/code_runner.nvim, zero loss via :terminal)
+do
+  local runners = {
+    javascript = 'bun',
+    typescript = 'bun',
+    javascriptreact = 'bun',
+    typescriptreact = 'bun',
+    python = 'python3 -u',
+  }
+  local function run_file()
+    local ft = vim.bo.filetype
+    local file = vim.fn.expand '%:p'
+    if file == '' then vim.notify('No file to run', vim.log.levels.WARN) return end
+    local cmd
+    if runners[ft] then
+      cmd = runners[ft] .. ' ' .. vim.fn.shellescape(file)
+    elseif ft == 'cpp' then
+      local out = '/tmp/' .. vim.fn.expand '%:t:r'
+      cmd = string.format('g++ %s -o %s && %s', vim.fn.shellescape(file), vim.fn.shellescape(out), vim.fn.shellescape(out))
+    elseif ft == 'c' then
+      local out = '/tmp/' .. vim.fn.expand '%:t:r'
+      cmd = string.format('gcc %s -o %s && %s', vim.fn.shellescape(file), vim.fn.shellescape(out), vim.fn.shellescape(out))
+    else
+      vim.notify('No runner for filetype: ' .. ft, vim.log.levels.WARN) return
+    end
+    vim.cmd('split | terminal ' .. cmd)
+    vim.cmd 'wincmd J | resize 15'
+    vim.cmd.startinsert()
+  end
+  vim.keymap.set('n', '<leader>r', run_file, { desc = '[R]un [C]ode' })
+  vim.keymap.set('n', '<leader>rf', run_file, { desc = '[R]un [F]ile' })
+end
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et

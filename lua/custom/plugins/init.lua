@@ -7,15 +7,6 @@
 ---@type LazySpec
 return {
   {
-    'nvim-telescope/telescope-file-browser.nvim',
-    dependencies = { 'nvim-telescope/telescope.nvim' },
-    keys = {
-      { '<leader>fe', '<cmd>Telescope file_browser<CR>', desc = '[F]ile [E]xplorer (Telescope)' },
-      { '<leader>fE', '<cmd>Telescope file_browser path=%:p:h<CR>', desc = '[F]ile [E]xplorer (cwd)' },
-    },
-  },
-
-  {
     'benlubas/molten-nvim',
     version = '^1',
     build = ':UpdateRemotePlugins',

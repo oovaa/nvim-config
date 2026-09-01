@@ -173,6 +173,9 @@ vim.o.cursorline = true
 -- EFFECT: Higher values = more context visible (cursor stays centered-ish)
 vim.o.scrolloff = 10
 
+-- SMOOTH SCROLL (replaces neoscroll.nvim — builtin line-wise smooth scroll)
+vim.o.smoothscroll = true
+
 -- CONFIRM DIALOG
 -- WHAT: Shows a confirmation when trying to quit with unsaved changes
 -- TO CHANGE: Set to false for classic behavior (error message instead)
