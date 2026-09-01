@@ -277,16 +277,6 @@ function M.setup_starter()
     callback = function()
       if vim.fn.argc() > 0 or vim.api.nvim_buf_get_name(0) ~= '' then return end
       if vim.bo.filetype ~= '' then return end
-      -- if `nvim` was launched with no args and a non-empty session exists for this cwd,
-      -- the session autocmd (init.lua) already restored it — skip dashboard
-      do
-        local f = _G._builtin_find_session and _G._builtin_find_session(nil) or (_G._builtin_session_file and _G._builtin_session_file() or nil)
-        if f and not (_G._builtin_suppressed_dir and _G._builtin_suppressed_dir()) and vim.fn.filereadable(f) == 1 then
-          local has = false
-          for _, l in ipairs(vim.fn.readfile(f)) do if l:match('^badd') then has = true; break end end
-          if has then return end
-        end
-      end
       local buf = vim.api.nvim_get_current_buf()
       local recent = collect_recent()
       local raw = {}

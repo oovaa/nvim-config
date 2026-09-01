@@ -1430,20 +1430,8 @@ do
   _G._builtin_session_file = session_file
   _G._builtin_find_session = find_session_for
   _G._builtin_suppressed_dir = suppressed_dir
-  vim.api.nvim_create_autocmd('VimEnter', {
-    nested = true,
-    callback = function()
-      if vim.fn.argc() > 0 or suppressed_dir() then return end
-      local f = find_session_for(nil)
-      if vim.fn.filereadable(f) ~= 1 then return end
-      -- empty session (no badd = no buffers) -> show dashboard instead
-      local has = false
-      for _, l in ipairs(vim.fn.readfile(f)) do if l:match('^badd') then has = true; break end end
-      if not has then return end
-      pcall(vim.cmd, 'silent! Neotree close')
-      vim.cmd('silent! source ' .. vim.fn.fnameescape(f))
-    end,
-  })
+  -- ponytail: no auto-restore on VimEnter; dashboard is default, `s` restores (see spec.lua)
+  -- helpers kept for `s` (find_session_for / session_file)
   vim.api.nvim_create_autocmd('VimLeavePre', {
     callback = function()
       if suppressed_dir() then return end
