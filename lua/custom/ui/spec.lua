@@ -116,8 +116,18 @@ function M.setup_lualine()
   vim.o.statusline = '%!v:lua._builtin_statusline()'
 end
 
--- builtin tabline (replaces bufferline.nvim) — buffers as tabs, diagnostics indicator
+-- builtin tabline (replaces bufferline.nvim) — buffers as tabs, diagnostics + modified dot
 function M.setup_bufferline()
+  local function define_hl()
+    local sel = vim.api.nvim_get_hl(0, { name = 'TabLineSel' })
+    local norm = vim.api.nvim_get_hl(0, { name = 'TabLine' })
+    local sel_bg = sel.bg and string.format('#%06x', sel.bg) or '#7aa2f7'
+    local norm_bg = norm.bg and string.format('#%06x', norm.bg) or '#16161e'
+    vim.api.nvim_set_hl(0, 'TabLineMod', { fg = '#9ece6a', bg = norm_bg, bold = true })
+    vim.api.nvim_set_hl(0, 'TabLineModSel', { fg = '#9ece6a', bg = sel_bg, bold = true })
+  end
+  define_hl()
+  vim.api.nvim_create_autocmd('ColorScheme', { callback = define_hl })
   _G._builtin_tabline = function()
     local s = ''
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
@@ -130,8 +140,11 @@ function M.setup_bufferline()
         local icons = { '', '', '', '' }
         local diag = ''
         for i = 1, 4 do if cnt[i] > 0 then diag = diag .. icons[i] .. cnt[i] .. ' ' end end
-        local hl = buf == vim.api.nvim_get_current_buf() and '%#TabLineSel#' or '%#TabLine#'
-        s = s .. hl .. ' ' .. name .. (diag ~= '' and ' ' .. diag or '') .. ' %*'
+        local is_cur = buf == vim.api.nvim_get_current_buf()
+        local hl = is_cur and '%#TabLineSel#' or '%#TabLine#'
+        local mod_hl = is_cur and '%#TabLineModSel#' or '%#TabLineMod#'
+        local mod = vim.bo[buf].modified and ' ' .. mod_hl .. '●' .. hl or ''
+        s = s .. hl .. ' ' .. name .. mod .. (diag ~= '' and ' ' .. diag or '') .. ' %*'
       end
     end
     return s .. '%#TabLineFill#%='
