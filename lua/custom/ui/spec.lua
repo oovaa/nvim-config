@@ -119,12 +119,32 @@ end
 -- builtin tabline (replaces bufferline.nvim) — buffers as tabs, diagnostics + modified dot
 function M.setup_bufferline()
   local function define_hl()
+    -- ponytail: adaptive dot fg + seamless bg — TabLine* bg may be nil (transparent themes)
     local sel = vim.api.nvim_get_hl(0, { name = 'TabLineSel' })
     local norm = vim.api.nvim_get_hl(0, { name = 'TabLine' })
-    local sel_bg = sel.bg and string.format('#%06x', sel.bg) or '#7aa2f7'
-    local norm_bg = norm.bg and string.format('#%06x', norm.bg) or '#16161e'
-    vim.api.nvim_set_hl(0, 'TabLineMod', { fg = '#9ece6a', bg = norm_bg, bold = true })
-    vim.api.nvim_set_hl(0, 'TabLineModSel', { fg = '#9ece6a', bg = sel_bg, bold = true })
+    local function fg_for(bg)
+      if not bg then return '#9ece6a' end
+      local r = math.floor(bg / 65536) % 256
+      local g = math.floor(bg / 256) % 256
+      local b = bg % 256
+      local luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
+      -- light bg -> dark green for contrast, dark bg -> light green
+      if luma > 140 then return '#005f00' else return '#9ece6a' end
+    end
+    local function set_mod(name, bg)
+      local fg = fg_for(bg)
+      if bg then
+        vim.api.nvim_set_hl(0, name, { fg = fg, bg = string.format('#%06x', bg), bold = true })
+      else
+        -- transparent theme: no bg so dot inherits TabLine bg, clear stale bg
+        vim.api.nvim_set_hl(0, name, { fg = fg, bold = true })
+        -- nvim_set_hl without bg keeps old bg; force clear
+        local cur = vim.api.nvim_get_hl(0, { name = name })
+        if cur.bg then vim.api.nvim_set_hl(0, name, { fg = fg, bg = nil, bold = true }) end
+      end
+    end
+    set_mod('TabLineMod', norm.bg)
+    set_mod('TabLineModSel', sel.bg)
   end
   define_hl()
   vim.api.nvim_create_autocmd('ColorScheme', { callback = define_hl })
