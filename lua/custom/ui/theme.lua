@@ -65,7 +65,6 @@ function M.setup_mode_line_colors()
     defaults.CursorLineNr = vim.api.nvim_get_hl(0, { name = 'CursorLineNr' })
   end
 
-  local colors
   local mode_colors = {
     i = 'green', -- insert
     v = 'yellow', -- visual
@@ -76,13 +75,19 @@ function M.setup_mode_line_colors()
   local function swap(mode)
     local color_name = mode_colors[mode]
     if color_name then
-      -- tokyonight loads eagerly (priority=1000); palette is only needed
-      -- once the first mode change happens. Match the ACTIVE style
-      -- (night/moon/storm/day) — colors.setup() defaults to moon otherwise.
-      colors = colors or require('tokyonight.colors').setup {
-        style = vim.g.colors_name and vim.g.colors_name:match '%-(.+)$' or 'night',
-      }
-      local fg = colors[color_name]
+      -- ponytail: guard tokyonight palette lookup — non-tokyonight themes
+      -- like catppuccin-mocha have suffix 'mocha' which is not a valid
+      -- tokyonight style (storm/night/moon/day) and crashes util.lua:22.
+      -- Only query tokyonight when active scheme is tokyonight; else use
+      -- hardcoded fallback so <leader>ty preview + mode switches never error.
+      local fg
+      if vim.g.colors_name and vim.g.colors_name:match '^tokyonight' then
+        local style = vim.g.colors_name:match '%-(.+)$' or 'night'
+        if style ~= 'night' and style ~= 'moon' and style ~= 'storm' and style ~= 'day' then style = 'night' end
+        local ok, pal = pcall(require('tokyonight.colors').setup, { style = style })
+        if ok and pal then fg = pal[color_name] end
+      end
+      fg = fg or (color_name == 'green' and '#9ece6a' or '#e0af68')
       vim.api.nvim_set_hl(0, 'LineNr', { fg = fg })
       vim.api.nvim_set_hl(0, 'CursorLineNr', { fg = fg, bold = true })
     else

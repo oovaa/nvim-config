@@ -41,7 +41,15 @@ vim.keymap.set('n', '<leader>uc', '<cmd>ColorizerToggle<cr>', { desc = '[U]I [C]
 
 -- Switch themes with a live Telescope preview; the selection persists via the
 -- theme-management in custom/ui/theme.lua.
-vim.keymap.set('n', '<leader>ty', function() require('telescope.builtin').colorscheme { enable_preview = true } end, { desc = 'Switch [T]heme (preview)' })
+vim.keymap.set('n', '<leader>ty', function()
+  local ok, builtin = pcall(require, 'telescope.builtin')
+  if not ok then
+    vim.notify('telescope not available: ' .. tostring(builtin), vim.log.levels.ERROR)
+    return
+  end
+  local ok2, err = pcall(builtin.colorscheme, { enable_preview = true })
+  if not ok2 then vim.notify('theme picker failed: ' .. tostring(err), vim.log.levels.ERROR) end
+end, { desc = 'Switch [T]heme (preview)' })
 
 -- Terminal mode: exit with double <Esc>
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
