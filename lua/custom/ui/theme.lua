@@ -48,15 +48,6 @@ function M.setup()
   vim.opt.winblend = 10
   vim.opt.pumblend = 10
 
-  -- Inline hex/named color previews (toggled with <leader>uc).
-  local ok, colorizer = pcall(require, 'colorizer')
-  if ok then colorizer.setup({ '*' }, {
-    RGB = true,
-    RRGGBB = true,
-    names = true,
-    css = true,
-  }) end
-
   M.setup_persistence()
   M.setup_mode_line_colors()
 end

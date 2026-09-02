@@ -36,31 +36,43 @@ return {
   {
     '3rd/image.nvim',
     build = false,
+    -- Skip load entirely when there's no TTY (headless/`nvim --headless`):
+    -- image.nvim's term.lua warns "cannot query terminal size" at module-require
+    -- time (before config() runs), so gating setup() alone can't silence it.
+    -- cond=false means lazy never loads the module → no warning. Real terminals
+    -- (tmux/SSH give a PTY) load normally.
+    cond = function() return vim.fn.has('tty') == 1 end,
     -- Load on first file open; also a molten dependency so it's available
     -- when MoltenInit runs. (No trigger at all would load it at startup.)
     event = { 'BufReadPre', 'BufNewFile' },
-    opts = {
-      backend = 'kitty',
-      integrations = {
-        markdown = {
-          enabled = true,
-          clear_in_insert_mode = false,
-          download_remote_images = true,
-          only_render_image_at_cursor = false,
-          filetypes = { 'markdown', 'vimwiki' },
+    -- Use an explicit config (not opts) so we can skip setup() when there's no
+    -- TTY — image.nvim renders via terminal ioctl and is useless headless.
+    -- (cond above already prevents module load; this is belt-and-suspenders.)
+    config = function()
+      if vim.fn.has('tty') == 0 then return end
+      require('image').setup({
+        backend = 'kitty',
+        integrations = {
+          markdown = {
+            enabled = true,
+            clear_in_insert_mode = false,
+            download_remote_images = true,
+            only_render_image_at_cursor = false,
+            filetypes = { 'markdown', 'vimwiki' },
+          },
+          html = { enabled = false },
+          css = { enabled = false },
         },
-        html = { enabled = false },
-        css = { enabled = false },
-      },
-      max_width = nil,
-      max_height = nil,
-      max_width_window_width = nil,
-      max_height_window_height = nil,
-      window_overlap_clear_enabled = false,
-      window_overlap_clear_ft_ignore = { 'cmp_menu', 'cmp_docs' },
-      editor_only_render_when_focused = true,
-      tmux_show_only_in_active_window = false,
-      hijack_filetype_patterns = { 'rendermarkdown.*' },
-    },
+        max_width = nil,
+        max_height = nil,
+        max_width_window_width = nil,
+        max_height_window_height = nil,
+        window_overlap_clear_enabled = false,
+        window_overlap_clear_ft_ignore = { 'cmp_menu', 'cmp_docs' },
+        editor_only_render_when_focused = true,
+        tmux_show_only_in_active_window = false,
+        hijack_filetype_patterns = { 'rendermarkdown.*' },
+      })
+    end,
   },
 }

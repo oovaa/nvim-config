@@ -435,8 +435,7 @@ require('lazy').setup({
 
       -- Shortcut for searching your Neovim configuration files
       vim.keymap.set('n', '<leader>sn', function() builtin.find_files { cwd = vim.fn.stdpath 'config' } end, { desc = '[S]earch [N]eovim files' })
-      vim.keymap.set('n', '<leader>fe', '<cmd>Neotree toggle<CR>', { desc = '[F]ile [E]xplorer (Neo-tree)' })
-      vim.keymap.set('n', '<leader>fE', '<cmd>Neotree reveal<CR>', { desc = '[F]ile [E]xplorer (reveal)' })
+      -- <leader>fe/fE live in the neo-tree spec's `keys` so the plugin loads on first press
       -- List functions/symbols in the current file via Telescope (requires LSP)
       vim.keymap.set('n', '<leader>ls', builtin.lsp_document_symbols, { desc = '[L]ist [S]ymbols in file' })
       vim.keymap.set('n', '<leader>lS', builtin.lsp_workspace_symbols, { desc = '[L]ist [S]ymbols in workspace' })
@@ -1117,6 +1116,8 @@ require('lazy').setup({
     },
     keys = {
       { '<leader>e', '<cmd>Neotree float toggle<cr>', desc = 'Toggle File [E]xplorer (float)' },
+      { '<leader>fe', '<cmd>Neotree toggle<cr>', desc = '[F]ile [E]xplorer (Neo-tree)' },
+      { '<leader>fE', '<cmd>Neotree reveal<cr>', desc = '[F]ile [E]xplorer (reveal)' },
     },
     opts = {
       filesystem = {
@@ -1306,12 +1307,22 @@ require('lazy').setup({
   -- WHAT: Highlights hex (#ff00aa) and named colors inline
   -- TO CHANGE: <leader>uc to toggle
   -- EFFECT: Color swatches appear behind color codes in any buffer
-  -- LOADING: BufRead = loads when a file opens
+  -- LOADING: BufReadPost + cmd — loads when you open a file OR run the toggle command.
+  --         (BufRead alone misses the startup file because lazy bootstraps after BufRead fires.)
   {
     -- Maintained drop-in fork of norcalli/nvim-colorizer.lua (the original is
     -- unmaintained and uses vim.tbl_flatten, removed in Nvim 0.13).
     'catgoose/nvim-colorizer.lua',
-    event = 'BufRead',
+    event = 'BufReadPost',
+    cmd = 'ColorizerToggle',
+    config = function()
+      require('colorizer').setup({ '*' }, {
+        RGB = true,
+        RRGGBB = true,
+        names = true,
+        css = true,
+      })
+    end,
   },
 
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`

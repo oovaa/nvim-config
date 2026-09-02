@@ -152,9 +152,10 @@ function M.setup_bufferline()
   define_hl()
   vim.api.nvim_create_autocmd('ColorScheme', { callback = define_hl })
   _G._builtin_tabline = function()
-    local s = ''
+    local s, idx = '', 0
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
       if vim.bo[buf].buflisted then
+        idx = idx + 1
         local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ':t')
         if name == '' then name = '[No Name]' end
         local is_cur = buf == vim.api.nvim_get_current_buf()
@@ -163,12 +164,12 @@ function M.setup_bufferline()
         local d = vim.diagnostic.get(buf)
         local cnt = { 0, 0, 0, 0 }
         for _, v in ipairs(d) do cnt[v.severity] = cnt[v.severity] + 1 end
-        local icons = { '', '', '', '' }
+        local icons = { '', '', '', '' }
         local diag = ''
         for i = 1, 4 do if cnt[i] > 0 then diag = diag .. icons[i] .. cnt[i] .. ' ' end end
         local mod_hl = is_cur and '%#TabLineModSel#' or '%#TabLineMod#'
         local mod = vim.bo[buf].modified and ' ' .. mod_hl .. '●' .. hl or ''
-        s = s .. hl .. ' ' .. name .. mod .. (diag ~= '' and ' ' .. diag or '') .. ' %*'
+        s = s .. hl .. ' ' .. idx .. ' ' .. name .. mod .. (diag ~= '' and ' ' .. diag or '') .. ' %*'
       end
     end
     return s .. '%#TabLineFill#%='
@@ -322,6 +323,20 @@ function M.setup_starter()
       local hdr_start = pad_top + 3
       for i = hdr_start, hdr_start + 5 do pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Include', i - 1, block_pad, -1) end
       pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Comment', #lines - 1, block_pad, -1)
+      -- button rows: key char Special (then icon), then label as Function
+      local btn_start = pad_top + 1 + 1 + #header + 1 -- pad_top + 2 blanks + header lines + 1 blank
+      for i, b in ipairs(buttons) do
+        local row = btn_start + i - 1
+        pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Special', row, block_pad + 2, block_pad + 3)
+        pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Title', row, block_pad + 5, block_pad + 5 + vim.fn.strdisplaywidth(b.icon))
+        pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Function', row, block_pad + 5 + vim.fn.strdisplaywidth(b.icon) + 2, -1)
+      end
+      -- recent file rows: Directory on the basename (after '  N  ')
+      for i, r in ipairs(recent) do
+        local row = btn_start + #buttons + 1 + i -- +1 blank, then recents
+        pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Number', row, block_pad + 2, block_pad + 3)
+        pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Directory', row, block_pad + 5, -1)
+      end
       vim.bo[buf].modifiable = false
       vim.bo[buf].modified = false
       vim.bo[buf].filetype = 'dashboard'

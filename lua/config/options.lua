@@ -176,6 +176,11 @@ vim.o.scrolloff = 10
 -- SMOOTH SCROLL (replaces neoscroll.nvim — builtin line-wise smooth scroll)
 vim.o.smoothscroll = true
 
+-- FLOAT BORDER (builtin, replaces dressing.nvim — borders on cmdline, quickfix,
+-- help peek, incsearch split preview, terminal float, etc.)
+-- Plugins that set their own borders (noice, blink, telescope) are unaffected.
+vim.o.winborder = 'rounded'
+
 -- CONFIRM DIALOG
 -- WHAT: Shows a confirmation when trying to quit with unsaved changes
 -- TO CHANGE: Set to false for classic behavior (error message instead)

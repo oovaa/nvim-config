@@ -83,3 +83,18 @@ vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
     end
   end,
 })
+
+-- Auto-reload files when changed on disk (vim loses track after external edits).
+-- Classic kickstart pattern: :checktime on focus/enter/idle prompts Vim to
+-- reload changed buffers with the stock "file changed on disk" dialog.
+vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold' }, {
+  group = vim.api.nvim_create_augroup('auto-checktime', { clear = true }),
+  callback = function() pcall(vim.cmd, 'silent! checktime') end,
+})
+
+-- :SudoWrite — write the current buffer as root via sudo. Classic QOL for
+-- editing system files (/etc/hosts, nginx config, etc.) without leaving nvim.
+vim.api.nvim_create_user_command('SudoWrite', function(args)
+  local bang = args.bang and '!' or ''
+  vim.cmd('write! sudo://%' .. bang)
+end, { desc = 'Write current buffer via sudo', bang = true })
