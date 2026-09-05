@@ -1,6 +1,43 @@
 ---@module 'custom.ui.spec'
 local M = {}
 
+-- Render-path cache: statusline/tabline evaluate on every redraw, so per-buffer
+-- diagnostic counts + first LSP name are cached and refreshed on events only.
+-- ponytail: global per-buffer cache; per-win only if multi-window counts ever diverge.
+M._diag_counts = {} -- [bufnr] = { e, w, i, h, total }
+M._lsp_name = { buf = -1, name = '' }
+
+function M._count_diags(buf)
+  local sev = vim.diagnostic.severity
+  local c = { e = 0, w = 0, i = 0, h = 0, total = 0 }
+  for _, d in ipairs(vim.diagnostic.get(buf)) do
+    c.total = c.total + 1
+    if d.severity == sev.ERROR then c.e = c.e + 1
+    elseif d.severity == sev.WARN then c.w = c.w + 1
+    elseif d.severity == sev.INFO then c.i = c.i + 1
+    else c.h = c.h + 1 end
+  end
+  M._diag_counts[buf] = c
+  return c
+end
+
+function M._refresh_lsp(buf)
+  local name = ''
+  local ok, clients = pcall(vim.lsp.get_clients, { bufnr = buf })
+  if ok and clients and #clients > 0 then name = clients[1].name or '' end
+  M._lsp_name = { buf = buf, name = name }
+end
+
+do
+  local grp = vim.api.nvim_create_augroup('BuiltinUICache', { clear = true })
+  vim.api.nvim_create_autocmd('DiagnosticChanged', { group = grp,
+    callback = function(ev) M._count_diags(ev.buf) end })
+  vim.api.nvim_create_autocmd({ 'LspAttach', 'LspDetach', 'BufEnter' }, { group = grp,
+    callback = function(ev) M._refresh_lsp(ev.buf or vim.api.nvim_get_current_buf()) end })
+  vim.api.nvim_create_autocmd({ 'BufDelete', 'BufWipeout' }, { group = grp,
+    callback = function(ev) M._diag_counts[ev.buf] = nil end })
+end
+
 -- builtin statusline (replaces lualine.nvim) — tokyonight-night, same sections as before
 function M.setup_lualine()
   vim.o.laststatus = 3
@@ -79,12 +116,15 @@ function M.setup_lualine()
       diff_s = table.concat(parts, ' ')
     end
     -- diagnostics — Nerd Fonts v3 (old / codepoints often missing → '?') — this is the 'problems in current file'
-    local diags = vim.diagnostic.get(0)
-    local cnt = { 0, 0, 0, 0 }
-    for _, v in ipairs(diags) do cnt[v.severity] = (cnt[v.severity] or 0) + 1 end
+    -- diagnostics — cached counts (refreshed on DiagnosticChanged), not get() per redraw
+    local buf0 = vim.api.nvim_get_current_buf()
+    local cnt = M._diag_counts[buf0] or M._count_diags(buf0)
     local icons = { ' ', ' ', ' ', ' ' }
     local diag_parts = {}
-    for i = 1, 4 do if cnt[i] > 0 then diag_parts[#diag_parts + 1] = icons[i] .. cnt[i] end end
+    if cnt.e > 0 then diag_parts[#diag_parts + 1] = icons[1] .. cnt.e end
+    if cnt.w > 0 then diag_parts[#diag_parts + 1] = icons[2] .. cnt.w end
+    if cnt.i > 0 then diag_parts[#diag_parts + 1] = icons[3] .. cnt.i end
+    if cnt.h > 0 then diag_parts[#diag_parts + 1] = icons[4] .. cnt.h end
     local diag_s = table.concat(diag_parts, ' ')
 
     local b_parts = {}
@@ -99,9 +139,9 @@ function M.setup_lualine()
     if vim.bo.modified then fname = fname .. ' [+]' end
     if vim.bo.readonly then fname = fname .. ' 󰌾' end
 
-    -- lsp
-    local clients = vim.lsp.get_clients { bufnr = 0 }
-    local lsp_s = #clients == 0 and '' or '%#SL_lsp#󰄶 ' .. clients[1].name .. hl_c
+    -- lsp — cached first-client name (refreshed on LspAttach/Detach/BufEnter)
+    if M._lsp_name.buf ~= buf0 then M._refresh_lsp(buf0) end
+    local lsp_s = M._lsp_name.name == '' and '' or '%#SL_lsp#󰄶 ' .. M._lsp_name.name .. hl_c
 
     local enc = (vim.bo.fileencoding ~= '' and vim.bo.fileencoding or vim.o.encoding)
     local ff = vim.bo.fileformat
@@ -161,12 +201,12 @@ function M.setup_bufferline()
         local is_cur = buf == vim.api.nvim_get_current_buf()
         local hl = is_cur and '%#TabLineSel#' or '%#TabLine#'
         local tab_hl_name = is_cur and 'TabLineSel' or 'TabLine'
-        local d = vim.diagnostic.get(buf)
-        local cnt = { 0, 0, 0, 0 }
-        for _, v in ipairs(d) do cnt[v.severity] = cnt[v.severity] + 1 end
-        local icons = { '', '', '', '' }
+        local cnt = M._diag_counts[buf] or M._count_diags(buf)
         local diag = ''
-        for i = 1, 4 do if cnt[i] > 0 then diag = diag .. icons[i] .. cnt[i] .. ' ' end end
+        if cnt.e > 0 then diag = diag .. cnt.e .. ' ' end
+        if cnt.w > 0 then diag = diag .. cnt.w .. ' ' end
+        if cnt.i > 0 then diag = diag .. cnt.i .. ' ' end
+        if cnt.h > 0 then diag = diag .. cnt.h .. ' ' end
         local mod_hl = is_cur and '%#TabLineModSel#' or '%#TabLineMod#'
         local mod = vim.bo[buf].modified and ' ' .. mod_hl .. '●' .. hl or ''
         s = s .. hl .. ' ' .. idx .. ' ' .. name .. mod .. (diag ~= '' and ' ' .. diag or '') .. ' %*'
