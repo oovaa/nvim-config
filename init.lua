@@ -199,7 +199,7 @@ require('lazy').setup({
   -- TO CHANGE: Remove this plugin if you prefer manual settings
   -- EFFECT: When you open a file, it detects if it uses 2-space, 4-space, or tabs
   --         and sets your indent settings accordingly. Very small, safe to keep.
-  { 'NMAC427/guess-indent.nvim', opts = {} },
+  { 'NMAC427/guess-indent.nvim', event = 'BufReadPost', opts = {} },
 
   -- GITSIGNS
   -- WHAT: Shows git change indicators in the left gutter (next to line numbers)
@@ -1321,6 +1321,16 @@ require('lazy').setup({
         RRGGBB = true,
         names = true,
         css = true,
+      })
+      -- ponytail: 200KB guard mirrors treesitter; detach only, toggle still works per buffer.
+      vim.api.nvim_create_autocmd('BufWinEnter', {
+        group = vim.api.nvim_create_augroup('colorizer-size-guard', { clear = true }),
+        callback = function(ev)
+          local name = vim.api.nvim_buf_get_name(ev.buf)
+          if name ~= '' and vim.fn.getfsize(name) > 200 * 1024 then
+            pcall(vim.cmd, 'ColorizerDetachFromBuffer')
+          end
+        end,
       })
     end,
   },
