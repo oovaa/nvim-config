@@ -249,29 +249,22 @@ function M.setup_starter()
       if has_badd(f) then pcall(vim.cmd, 'silent! Neotree close'); close_dashboard(); vim.cmd('source ' .. vim.fn.fnameescape(f)); return end
       local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
       local files = vim.fn.glob(sess_dir .. '/*.vim', false, true)
-      -- readable labels via `cd` line, dedup by dir (legacy %2F vs new %), skip empty
+      -- readable labels via `cd` line, dedup by dir (legacy %2F vs new %), skip empty.
+      -- ponytail: one read per file (badd + cd label in a single scan, newest wins); split again only if session format changes.
       local seen, items, map = {}, {}, {}
       for _, path in ipairs(files) do
-        if has_badd(path) then
-          local label = nil
+        if vim.fn.filereadable(path) == 1 then
+          local has_b, label = false, nil
           for _, l in ipairs(vim.fn.readfile(path)) do
-            local cd = l:match('^cd%s+(.+)$')
-            if cd then label = vim.fn.fnamemodify(vim.fn.expand(cd), ':p'):gsub('/+$', ''); break end
+            if not has_b and l:match('^badd') then has_b = true end
+            if not label then
+              local cd = l:match('^cd%s+(.+)$')
+              if cd then label = vim.fn.fnamemodify(vim.fn.expand(cd), ':p'):gsub('/+$', '') end
+            end
+            if has_b and label then break end
           end
-          if label and not seen[label] then
+          if has_b and label and (not seen[label] or vim.fn.getftime(path) > vim.fn.getftime(seen[label])) then
             seen[label] = path
-            -- keep newest mtime when duplicate (legacy vs new)
-            -- we already iterate glob sorted; dedup by first seen but prefer newer: compare mtime if duplicate
-          end
-        end
-      end
-      -- second pass: resolve newest per label
-      for _, path in ipairs(files) do
-        if has_badd(path) then
-          local label = nil
-          for _, l in ipairs(vim.fn.readfile(path)) do local cd = l:match('^cd%s+(.+)$'); if cd then label = vim.fn.fnamemodify(vim.fn.expand(cd), ':p'):gsub('/+$',''); break end end
-          if label and seen[label] then
-            if vim.fn.getftime(path) > vim.fn.getftime(seen[label]) then seen[label] = path end
           end
         end
       end
