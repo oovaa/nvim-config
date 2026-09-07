@@ -51,6 +51,9 @@ vim.keymap.set('n', '<leader>ty', function()
   if not ok2 then vim.notify('theme picker failed: ' .. tostring(err), vim.log.levels.ERROR) end
 end, { desc = 'Switch [T]heme (preview)' })
 
+-- Flip dark/light background (most themes ship both variants)
+vim.keymap.set('n', '<leader>tb', function() vim.o.background = vim.o.background == 'dark' and 'light' or 'dark' end, { desc = '[T]oggle [B]ackground' })
+
 -- Terminal mode: exit with double <Esc>
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 

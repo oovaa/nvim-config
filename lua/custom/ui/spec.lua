@@ -44,9 +44,12 @@ function M.setup_lualine()
   vim.o.showmode = false
 
   local function define_hl()
+    -- ponytail: only use tokyonight palette when a tokyonight scheme is active;
+    -- otherwise derive accents from the active theme so statusline matches <leader>ty picks.
+    local is_tokyo = vim.g.colors_name and vim.g.colors_name:match '^tokyonight'
     local ok, mod = pcall(require, 'tokyonight.colors')
     local c
-    if ok then
+    if ok and is_tokyo then
       local style = vim.g.colors_name and vim.g.colors_name:match '%-(.+)$' or 'night'
       -- ponytail: tokyonight-moon vs night etc have different palettes; matching active style keeps statusline in sync
       if style ~= 'night' and style ~= 'storm' and style ~= 'moon' and style ~= 'day' then style = 'night' end
