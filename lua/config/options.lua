@@ -22,6 +22,7 @@
 vim.g.loaded_perl_provider = 0 -- Disable Perl provider (not used)
 vim.g.loaded_ruby_provider = 0 -- Disable Ruby provider (not used)
 vim.g.loaded_node_provider = 0 -- Disable Node provider (no :Node remote plugins used)
+vim.g.loaded_python3_provider = 1 -- Enable Python3 provider (required for molten-nvim)
 
 -- ============================================================================
 -- BUILT-IN PLUGIN DISABLES
@@ -192,12 +193,13 @@ vim.o.confirm = true
 -- ============================================================================
 -- WHAT: Configures how Neovim shows errors, warnings, and hints
 -- TO CHANGE: Set virtual_text = false to hide inline error text
+--          Use virtual_text = { current_line = true } to only show on current line
 -- EFFECT: Controls appearance of LSP/linter diagnostics
 vim.diagnostic.config {
   update_in_insert = false, -- Don't update diagnostics while typing
   severity_sort = true, -- Sort by severity (errors first)
   float = { border = 'rounded', source = 'if_many' }, -- Floating window style
   underline = { severity = { min = vim.diagnostic.severity.WARN } }, -- Underline warnings+
-  virtual_text = true, -- Inline error text at end of line
+  virtual_text = { current_line = true }, -- Only show inline error on current line
   jump = { on_jump = true }, -- Auto-open float when jumping to diagnostic
 }

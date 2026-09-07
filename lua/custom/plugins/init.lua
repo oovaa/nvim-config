@@ -6,6 +6,7 @@
 ---@module 'lazy'
 ---@type LazySpec
 return {
+  { import = 'custom.plugins.qol' },
   {
     'benlubas/molten-nvim',
     version = '^1',
@@ -41,7 +42,9 @@ return {
     -- time (before config() runs), so gating setup() alone can't silence it.
     -- cond=false means lazy never loads the module → no warning. Real terminals
     -- (tmux/SSH give a PTY) load normally.
-    cond = function() return vim.fn.has('tty') == 1 end,
+    cond = function()
+      return vim.fn.has('gui_running') == 0 and vim.env.TERM_PROGRAM ~= 'vscode'
+    end,
     -- Load on first file open; also a molten dependency so it's available
     -- when MoltenInit runs. (No trigger at all would load it at startup.)
     event = { 'BufReadPre', 'BufNewFile' },
@@ -49,7 +52,7 @@ return {
     -- TTY — image.nvim renders via terminal ioctl and is useless headless.
     -- (cond above already prevents module load; this is belt-and-suspenders.)
     config = function()
-      if vim.fn.has('tty') == 0 then return end
+      if vim.fn.has('gui_running') == 1 or vim.env.TERM_PROGRAM == 'vscode' then return end
       require('image').setup({
         backend = 'kitty',
         integrations = {

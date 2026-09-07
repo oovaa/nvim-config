@@ -1,5 +1,8 @@
 # kickstart.nvim
 
+> **New here?** Start with [`SETUP.md`](SETUP.md) — bootstrap, dependencies,
+> daily keys, and troubleshooting on one page.
+
 ## Introduction
 
 A starting point for Neovim that is:

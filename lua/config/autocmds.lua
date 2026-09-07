@@ -11,13 +11,19 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   callback = function() vim.hl.on_yank() end,
 })
 
--- Inline diagnostic text cannot wrap in nvim, so long errors get cut at the
--- window edge. Resting the cursor on an error opens a float with the full
--- message, which wraps to fit the window. Close it by moving the cursor.
+-- Idle upkeep (single CursorHold handler): external-change check + diagnostic
+-- float. One autocmd instead of two so idle work stays in one place.
 vim.api.nvim_create_autocmd('CursorHold', {
-  desc = 'Show diagnostic in a wrapping float',
+  desc = 'Idle upkeep: checktime + diagnostic float',
+  group = vim.api.nvim_create_augroup('idle-upkeep', { clear = true }),
   callback = function()
+    -- Classic kickstart pattern: :checktime on idle prompts Vim to reload
+    -- buffers changed on disk (vim loses track after external edits).
+    pcall(vim.cmd, 'silent! checktime')
     if vim.b.large_file_mode then return end
+    -- Inline diagnostic text cannot wrap in nvim, so long errors get cut at
+    -- the window edge. Resting the cursor on an error opens a float with the
+    -- full message, which wraps to fit the window. Close it by moving the cursor.
     -- Skip clean buffers: get(0) with a position costs little, the float
     -- render does not.
     local diag = vim.diagnostic.get(0, { lnum = vim.fn.line '.' - 1, col = vim.fn.col '.' - 1 })
@@ -84,10 +90,9 @@ vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
   end,
 })
 
--- Auto-reload files when changed on disk (vim loses track after external edits).
--- Classic kickstart pattern: :checktime on focus/enter/idle prompts Vim to
--- reload changed buffers with the stock "file changed on disk" dialog.
-vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold' }, {
+-- Auto-reload files when changed on disk on focus/enter (idle is covered by
+-- the idle-upkeep CursorHold handler above).
+vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter' }, {
   group = vim.api.nvim_create_augroup('auto-checktime', { clear = true }),
   callback = function() pcall(vim.cmd, 'silent! checktime') end,
 })

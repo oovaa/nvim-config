@@ -80,8 +80,6 @@ Press `<leader>e` to toggle the floating file explorer. Inside it:
 | `<leader>ls` | List functions/symbols in current file (Telescope, needs LSP) |
 | `<leader>lS` | List symbols in workspace (Telescope, needs LSP) |
 | `<leader>sn` | Search Neovim config files |
-| `<leader>s/` | Search in Open Files |
-| `<leader>fr` | Search & replace (VS Code style) | `nvim-spectre` |
 | `<leader><space>` | Search Existing Buffers |
 | `<leader>/` | Fuzzily search in current buffer |
 
@@ -117,7 +115,7 @@ Press `<leader>e` to toggle the floating file explorer. Inside it:
 | `<leader>f` | Format buffer | `conform.nvim` |
 | `<leader>fe` | File browser (Telescope) | `telescope-file-browser` |
 | `<leader>fE` | File browser in current dir | `telescope-file-browser` |
-| `:StartupTime` | Profile Neovim startup and list the 15 slowest sources | config |
+| `:StartupTime` | Profile startup (native timing + lazy.nvim plugin stats) | config |
 
 ### 💬 Messages & Cmdline (noice.nvim)
 
@@ -134,10 +132,6 @@ Press `<leader>e` to toggle the floating file explorer. Inside it:
 | `<leader>fg` | Open LazyGit (floating window) | `lazygit.nvim` |
 | `[c` | Previous Hunk | `gitsigns` |
 | `]c` | Next Hunk | `gitsigns` |
-| `<leader>hs` | Stage Hunk | `gitsigns` |
-| `<leader>hr` | Reset Hunk | `gitsigns` |
-| `<leader>hp` | Preview Hunk | `gitsigns` |
-| `<leader>hb` | Blame Line | `gitsigns` |
 
 ## 🧠 LSP (Language Server Protocol)
 
@@ -204,9 +198,35 @@ Press `<leader>e` to toggle the floating file explorer. Inside it:
 | `<leader>mp` | Previous Cell | `molten-nvim` |
 | `<leader>mo` | Open in Browser | `molten-nvim` |
 
-## 📝 Markdown Preview
+## 📝 Markdown
 
 `render-markdown.nvim` renders Markdown directly in the buffer — no keybinding needed, it just works when you open a `.md` file. Headings, bold, code blocks, etc. are displayed with proper formatting and colors.
+
+## ✨ QoL Plugins
+
+| Keybinding | Action | Plugin |
+| :--- | :--- | :--- |
+| `<leader>gb` | Toggle inline git blame | `blame.nvim` |
+| `<leader>rr` | Refactoring menu (normal + visual) | `refactoring.nvim` |
+| `<leader>tr` / `<leader>ts` / `<leader>to` | Run test / summary / output panel | `neotest` |
+| `<leader>hr` | Send HTTP request (in `.http` files) | `rest.nvim` |
+| `<leader>o` | Toggle outline sidebar | `aerial.nvim` |
+| `<leader>fr` | Project find & replace | `grug-far.nvim` |
+
+`dressing.nvim` (enhanced `vim.ui.select`/`input`) and `nvim-bqf` (quickfix preview) have no keybindings — they improve existing UI automatically.
+
+### 🔁 grug-far (project find & replace)
+
+Press `<leader>fr`, fill the fields, matches preview live below:
+
+| Key | Action |
+| :--- | :--- |
+| `<localleader>s` | Apply replacement to all matches |
+| `<localleader>l` | Apply replacement to matches on current line only |
+| `<localleader>c` | Close the panel |
+| `<localleader>t` | Browse/reuse search history |
+
+Limit scope with the files filter (e.g. `*.py`); `<CR>` on a match jumps to it.
 
 ## 🐚 Terminal Navigation
 

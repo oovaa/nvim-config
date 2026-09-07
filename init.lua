@@ -14,6 +14,11 @@ understand what it does, change it safely, and know the effect of your changes.
 
 MEASURED STARTUP TIME: ~120ms (clean headless --startuptime; was ~400-600ms)
 
+EXTERNAL BINARIES (outside mason — reinstall manually on a new machine):
+  brew: ueberzugpp (image.nvim backend), jupyter + jupytext (molten notebooks)
+  ~/.local/bin: nvim (bob), yazi, tokei, bottom, hyperfine
+  npm -g: none (all JS tooling via mason)
+
 GETTING STARTED:
   1. Read through this file top to bottom
   2. Try changing a setting and see what happens
@@ -110,11 +115,17 @@ require 'config.options'
 require 'config.keymaps'
 require 'config.autocmds'
 
--- :StartupTime — profile boot time and show the 15 slowest sources.
+-- :StartupTime — profile boot time and show the 15 slowest sources,
+-- then print lazy.nvim's own profile (loaded count + total ms).
 -- Writes a --startuptime log and prints the tail so you can spot regressions.
 vim.api.nvim_create_user_command('StartupTime', function()
   local log = vim.fn.stdpath 'cache' .. '/startup.log'
   vim.cmd('!nvim --startuptime ' .. log .. ' +q && sort -k2 ' .. log .. ' | tail -n 15')
+  local ok, lazy = pcall(require, 'lazy')
+  if ok then
+    local s = lazy.stats()
+    print(string.format('lazy.nvim: %d/%d plugins in %.1fms', s.loaded, s.count, s.startuptime))
+  end
 end, { desc = 'Profile Neovim startup time' })
 
 -- docker-compose files get the docker-compose LSP (docker_compose_language_service)
@@ -236,7 +247,7 @@ require('lazy').setup({
   {
     'folke/noice.nvim',
     event = 'VeryLazy',
-    dependencies = { 'MunifTanjim/nui.nvim' },
+     dependencies = { 'MunifTanjim/nui.nvim', 'folke/snacks.nvim' },
     opts = {
       presets = {
         -- keep search at the bottom like classic vim (floating search box off)
@@ -273,6 +284,13 @@ require('lazy').setup({
         { '<leader>d', group = '[D]ebug' },
         { '<leader>f', group = '[F]ormat / [F]ind' },
         { '<leader>r', group = '[R]un' },
+        { '<leader>g', group = '[G]it' },
+        { '<leader>h', group = '[H]TTP / HTTP' },
+        { '<leader>o', group = '[O]utline' },
+        { '<leader>tr', group = '[T]est [R]un' },
+        { '<leader>ts', group = '[T]est [S]ummary' },
+        { '<leader>to', group = '[T]est [O]utput' },
+        { '<leader>rr', group = '[R]e[f]actor' },
         { 'gr', group = 'LSP Actions', mode = { 'n' } },
       },
     },
@@ -308,8 +326,8 @@ require('lazy').setup({
         build = 'make',
 
         -- `cond` is a condition used to determine whether this plugin should be
-        -- installed and loaded.
-        cond = function() return vim.fn.executable 'make' == 1 end,
+        -- installed and loaded. Need both make and cmake on some systems.
+        cond = function() return vim.fn.executable 'make' == 1 and vim.fn.executable 'cmake' == 1 end,
       },
       { 'nvim-telescope/telescope-ui-select.nvim' },
 
@@ -444,6 +462,7 @@ require('lazy').setup({
 
   {
     'nvim-pack/nvim-spectre',
+    enabled = false, -- replaced by grug-far.nvim (faster, ripgrep-based)
     dependencies = { 'nvim-lua/plenary.nvim' },
     keys = {
       { '<leader>fr', function() require('spectre').open() end, desc = '[F]ind & [R]eplace' },
@@ -465,10 +484,9 @@ require('lazy').setup({
   -- PERFORMANCE: FileType autocmds save ~50-150ms startup time
   {
     'neovim/nvim-lspconfig',
-    -- Load on first file open (not at startup) to keep the LSP stack out of
-    -- the startup path; BufReadPre fires before FileType so the on-demand
-    -- enable-autocmds below still win.
-    event = { 'BufReadPre', 'BufNewFile' },
+    -- Load on FileType (not at startup) to keep the LSP stack out of
+    -- the startup path; FileType autocmds below enable servers on demand.
+    event = 'FileType',
     dependencies = {
       -- Mason: auto-installs LSP servers and tools
       -- TO CHANGE: Add tools to ensure_installed to auto-install them
@@ -603,9 +621,7 @@ require('lazy').setup({
         -- clangd = {},
         docker_compose_language_service = {},
         dockerls = {},
-        -- run='onSave': lint on save instead of every keystroke (pairs with
-        -- auto-save on InsertLeave); big CPU cut in large TS repos
-        eslint = { settings = { eslint = { run = 'onSave' } } },
+        -- oxlint handles JS/TS lint via nvim-lint (no eslint LSP daemon)
         -- gopls = {},
         pyrefly = {
           cmd = { 'pyrefly', 'lsp' },
@@ -665,6 +681,7 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_filter(function(name) return name ~= 'pyrefly' end, vim.tbl_keys(servers))
       vim.list_extend(ensure_installed, {
         'prettier', -- unified JS/TS/JSON/HTML/CSS formatter used by conform
+        'oxlint', -- fast Rust JS/TS linter used by nvim-lint
         'debugpy', -- Python debugger used by nvim-dap
       })
 
@@ -680,7 +697,6 @@ require('lazy').setup({
       local lsp_filetypes = {
         pyrefly = { 'python' },
         lua_ls = { 'lua' },
-        eslint = { 'javascript', 'typescript', 'javascriptreact', 'typescriptreact' },
         docker_compose_language_service = { 'yaml.docker-compose' },
         dockerls = { 'dockerfile' },
       }
@@ -724,6 +740,9 @@ require('lazy').setup({
     opts = {
       notify_on_error = false,
       format_after_save = function(bufnr)
+        -- Skip auto-format for large files (large_file_mode set by
+        -- config/autocmds.lua); manual <leader>f still works.
+        if vim.b[bufnr].large_file_mode then return nil end
         -- TO CHANGE: Add or remove filetypes from this table
         -- EFFECT: Only files matching these types will auto-format after save
         local enabled_filetypes = {
@@ -971,15 +990,27 @@ require('lazy').setup({
       -- gss<surrounding> to surround current line (e.g. gss" -> "line")
       vim.keymap.set('n', 'gss', 'gsa_', { remap = true })
 
-      -- Auto-pair brackets, parens, quotes: when you type ( it adds ), etc.
-      require('mini.pairs').setup {}
+       -- Auto-pair brackets, parens, quotes: when you type ( it adds ), etc.
+       -- LazyVim-style: skip next char, skip inside treesitter strings.
+       require('mini.pairs').setup {
+         modes = { insert = true, command = true, terminal = false },
+         skip_next = [=[[%w%%%'%[%"%.%`%$]]=],
+         skip_ts = { 'string' },
+         skip_unbalanced = true,
+         markdown = true,
+       }
 
-      -- Statusline is handled by lualine.nvim (see LUALINE plugin entry below).
+       -- Statusline is handled by lualine.nvim (see LUALINE plugin entry below).
 
-      -- ... and there is more!
-      --  Check out: https://github.com/nvim-mini/mini.nvim
-    end,
-  },
+       -- ... and there is more!
+       --  Check out: https://github.com/nvim-mini/mini.nvim
+     end,
+   },
+
+   -- TS-COMMENTS (#6 LazyVim gap): treesitter-aware commenting.
+   -- Without it `gc` uses one commentstring per filetype; with it embedded
+   -- languages get the right string (e.g. JS inside vue/svelte, lua docs).
+   { 'folke/ts-comments.nvim', event = 'VeryLazy', opts = {} },
 
   -- AUTO-SAVE
   -- WHAT: Automatically saves your file when you leave insert mode or stop typing
@@ -1037,7 +1068,7 @@ require('lazy').setup({
             -- 'auto' only when an import statement needs it (much cheaper).
             preferences = { includePackageJsonAutoImports = 'auto' },
             tsserver = {
-              maxTsServerMemory = 4096,
+              maxTsServerMemory = 2048,
               -- inotify-based watching instead of polling node_modules:
               -- keeps tsserver CPU flat in large repos.
               watchOptions = {
@@ -1068,39 +1099,46 @@ require('lazy').setup({
   {
     'nvim-treesitter/nvim-treesitter',
     branch = 'main',
-    build = ':TSUpdate',
     event = { 'BufReadPost', 'BufNewFile' },
     config = function()
-      -- main branch of nvim-treesitter only handles parser install dir
+      -- main branch setup only takes install_dir; highlighting/indent come from vim.treesitter.start below
       require('nvim-treesitter').setup {}
-      -- Install missing parsers on load (ensure_installed is unsupported in the rewrite)
-      for _, lang in ipairs { 'dockerfile', 'yaml' } do
-        local parser = vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser', lang .. '.so')
-        if vim.fn.filereadable(parser) ~= 1 then vim.cmd('TSInstall ' .. lang) end
-      end
+      -- Parsers install on-demand via FileType autocmd below
 
       -- Enable treesitter highlighting via Neovim built-in APIs (main branch doesn't support old config)
       vim.api.nvim_create_autocmd('FileType', {
         group = vim.api.nvim_create_augroup('treesitter-start', { clear = true }),
         callback = function(args)
+          -- ponytail: plugin/scratch buffers (snacks_notif, qf, help...) have
+          -- filetypes with no parser; skip them so TSInstall never warns.
+          if vim.bo[args.buf].buftype ~= '' then return end
           -- ponytail: skip treesitter on minified bundles / huge files (>200KB);
           -- the parser chokes on them. Legacy regex highlighting covers it.
           -- Raise/lower the size cap here if you want treesitter everywhere.
           local name = vim.api.nvim_buf_get_name(args.buf)
           local ok_stat, stat = pcall(vim.uv.fs_stat, name)
           if name:match '%.min%.' or (ok_stat and stat and stat.size > 200 * 1024) then return end
+          local ft = vim.bo[args.buf].filetype
+          if ft and ft ~= '' then
+            local parser = vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser', ft .. '.so')
+            if vim.fn.filereadable(parser) ~= 1 then
+              vim.cmd('TSInstall ' .. ft)
+            end
+          end
           pcall(vim.treesitter.start, args.buf)
         end,
       })
     end,
   },
 
-  -- ============================================================================
-  -- SECTION 6.9: UI COMPONENTS
-  -- ============================================================================
-  -- Plugins that add visual UI elements to Neovim.
+     { 'windwp/nvim-ts-autotag', ft = { 'html', 'javascriptreact', 'typescriptreact', 'svelte', 'vue', 'xml' }, config = function() require('nvim-ts-autotag').setup {} end },
 
-  -- NEO-TREE
+    -- ============================================================================
+    -- SECTION 6.9: UI COMPONENTS
+    -- ============================================================================
+    -- Plugins that add visual UI elements to Neovim.
+
+    -- NEO-TREE
   -- WHAT: A file explorer that shows your project's file tree
   -- TO CHANGE: Modify filesystem.hijack_netrw_behavior or keybindings
   -- EFFECT: Press <leader>e to toggle a floating file explorer
@@ -1137,16 +1175,72 @@ require('lazy').setup({
   -- statusline/tabline/dashboard via lua/custom/ui/spec.lua (pure nvim 0.12)
   -- keys S-h/S-l/<leader>bd preserved via builtin :bprev/:bnext/:bdelete
   {
-    'nvim-tree/nvim-web-devicons',
+    'nvim-mini/mini.icons',
     lazy = true,
+    opts = {},
   },
 
-  -- ============================================================================
-  -- SECTION 6.10: SESSIONS (builtin — replaces auto-session, zero loss)
-  -- ============================================================================
-  -- (builtin session handling is set up after lazy.nvim — see bottom of file)
+   -- SNACKS.NVIM (#1 LazyVim gap)
+   -- The swiss-army knife: picker, scratch buffer, dashboard,
+   -- notifier, terminal navigation, big-file, quick-file, words.
+   -- LazyVim wires it into which-key, lualine, lsp, treesitter, etc.
+   -- We keep it minimal here; expand opts as you adopt features.
+   {
+     'folke/snacks.nvim',
+      opts = {
+        indent = { enabled = false }, -- ponytail: hlchunk owns indent guides; snacks indent doubled them
+        input = { enabled = true },
+        notifier = { enabled = true },
+        scope = { enabled = true },
+        scroll = { enabled = false }, -- ponytail: vim.o.smoothscroll owns smooth scrolling; snacks scroll fought it
+        scratch = { ft = 'markdown' }, -- ponytail: always markdown, never inherits python/js ft (no pyrefly/eslint in scratch)
+        statuscolumn = { enabled = false },
+        toggle = { enabled = false },
+        words = { enabled = true },
+     },
+       keys = {
+       { '<leader>.', function() require('snacks').scratch() end, desc = 'Toggle Scratch Buffer' },
+       { '<leader>S', function() require('snacks').scratch.select() end, desc = 'Select Scratch Buffer' },
+       { '<leader>n', function()
+           if require('snacks.config').picker and require('snacks.config').picker.enabled then
+             require('snacks').picker.notifications()
+           else
+             require('snacks').notifier.show_history()
+           end
+         end, desc = 'Notification History' },
+       { '<leader>un', function() require('snacks').notifier.hide() end, desc = 'Dismiss All Notifications' },
+    },
+  },
 
-  -- ============================================================================
+  -- NVIM-LINT (#4): async linters complement conform (format) — oxlint/ruff via mason
+  {
+    'mfussenegger/nvim-lint',
+    event = { 'BufReadPost', 'BufNewFile' },
+    config = function()
+      local lint = require 'lint'
+      lint.linters_by_ft = {
+        -- ponytail: oxlint over eslint — ms per save, no daemon; type-aware rules don't fire (that's the RAM hog)
+        javascript = { 'oxlint' },
+        typescript = { 'oxlint' },
+        javascriptreact = { 'oxlint' },
+        typescriptreact = { 'oxlint' },
+        python = { 'ruff' },
+      }
+      vim.api.nvim_create_autocmd({ 'BufWritePost', 'InsertLeave' }, {
+        callback = function() pcall(lint.try_lint) end,
+      })
+    end,
+  },
+
+   -- SNACKS SCRATCH BUFFERS: create a named scratch via :lua Snacks.scratch { name = 'notes' }
+   -- Named scratches persist separately; pick all with <leader>S
+
+   -- ============================================================================
+   -- SECTION 6.10: SESSIONS (builtin — replaces auto-session, zero loss)
+   -- ============================================================================
+   -- (builtin session handling is set up after lazy.nvim — see bottom of file)
+
+   -- ============================================================================
   -- SECTION 6.11: NAVIGATION
   -- ============================================================================
   -- Plugins for jumping around your code and files.
@@ -1409,13 +1503,13 @@ do
     return false
   end
   local function session_file_for(cwd)
-    cwd = cwd and vim.fn.fnamemodify(cwd, ':p') or vim.fn.fnamemodify(vim.fn.getcwd(), ':p')
+    cwd = cwd and vim.fn.fnamemodify(vim.fn.resolve(cwd), ':p') or vim.fn.fnamemodify(vim.fn.resolve(vim.fn.getcwd()), ':p')
     return vim.fn.stdpath 'data' .. '/sessions/' .. cwd:gsub('[^%w]+', '%%') .. '.vim'
   end
   local function session_file() return session_file_for(nil) end
   -- find existing session for cwd by scanning cd line (supports legacy %2F names)
   local function find_session_for(cwd)
-    cwd = cwd and vim.fn.fnamemodify(cwd, ':p') or vim.fn.fnamemodify(vim.fn.getcwd(), ':p')
+    cwd = cwd and vim.fn.fnamemodify(vim.fn.resolve(cwd), ':p') or vim.fn.fnamemodify(vim.fn.resolve(vim.fn.getcwd()), ':p')
     local f = session_file_for(cwd)
     local function has_badd(p)
       if vim.fn.filereadable(p) ~= 1 then return false end
