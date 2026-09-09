@@ -7,3 +7,4 @@ spell/
 # lazy-lock.json is tracked for reproducible plugin versions
 
 .DS_Store
+lazy-lock.json
