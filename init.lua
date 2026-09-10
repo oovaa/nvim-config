@@ -1628,14 +1628,28 @@ do
   vim.keymap.set('n', '<leader>tn', function() new_horiz(vim.o.shell) end, { desc = '[T]erminal [N]ew' })
   local function toggle_last()
     -- ponytail: C-\ mirrors toggleterm — if any terminal visible, hide it; else reopen last kind
-    if is_win_valid(float.win) then vim.api.nvim_win_close(float.win, true); float.win = nil; return end
-    if is_win_valid(horiz.win) then vim.api.nvim_win_close(horiz.win, true); horiz.win = nil; return end
+    -- ponytail: neo-tree float focused → just dismiss the explorer, leave terminals alone
+    local cur = vim.api.nvim_get_current_win()
+    if vim.api.nvim_win_get_config(cur).relative ~= '' and vim.bo[vim.api.nvim_win_get_buf(cur)].filetype == 'neo-tree' then
+      pcall(vim.api.nvim_win_close, cur, true)
+      return
+    end
+    -- ponytail: every close is pcall — closing the last window errors (E444, e.g. terminal + neo-tree float only)
+    local seen = false
+    local function hide(win)
+      if not is_win_valid(win) then return false end
+      seen = true
+      return pcall(vim.api.nvim_win_close, win, true)
+    end
+    if hide(float.win) then float.win = nil; return end
+    if hide(horiz.win) then horiz.win = nil; return end
     -- also hunt for manually-opened wins still showing our bufs
     for _, w in ipairs(vim.api.nvim_list_wins()) do
       local b = vim.api.nvim_win_get_buf(w)
-      if b == float.buf then vim.api.nvim_win_close(w, true); return end
-      if b == horiz.buf then vim.api.nvim_win_close(w, true); horiz.win = nil; return end
+      if b == float.buf and hide(w) then return end
+      if b == horiz.buf and hide(w) then horiz.win = nil; return end
     end
+    if seen then return end -- terminal visible but unclosable (last window) — leave it
     if last == 'float' then toggle_float(vim.o.shell) else toggle_horiz(vim.o.shell) end
   end
   vim.keymap.set({ 'n', 't' }, '<c-\\>', toggle_last, { desc = 'Toggle Terminal' })
