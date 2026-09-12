@@ -902,7 +902,7 @@ require('lazy').setup({
   {
     'folke/tokyonight.nvim',
     priority = 1000,
-    lazy = false, -- EXP-LAZY-THEMES: stays eager (startup colorscheme)
+    lazy = false, -- startup colorscheme; the theme pack lazy-loads on preview
     config = function()
       ---@diagnostic disable-next-line: missing-fields
       require('tokyonight').setup {
@@ -1436,7 +1436,8 @@ require('lazy').setup({
   -- you can continue same window with `<space>sr` which resumes last telescope search
 }, { ---@diagnostic disable-line: missing-fields
   rocks = { enabled = false },
-  -- EXP-LAZY-THEMES: every trigger-less plugin (i.e. the theme pack) lazy-loads
+  -- Theme pack has no triggers so it lazy-loads on :colorscheme preview;
+  -- plugins with events/keys/commands are unaffected by this default.
   defaults = { lazy = true },
   performance = {
     -- Cache compiled plugin modules so lazy.nvim doesn't re-require them on

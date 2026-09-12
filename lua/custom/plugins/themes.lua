@@ -5,107 +5,107 @@
 ---@type LazySpec
 return {
   -- Catppuccin — 4 flavours: catppuccin-latte, frappe, macchiato, mocha (mocha is the dark one)
-  { 'catppuccin/nvim', name = 'catppuccin' },
+  { 'catppuccin/nvim', name = 'catppuccin' , lazy = true },
 
   -- Rosé Pine — main / moon / dawn (dawn is light)
-  { 'rose-pine/neovim', name = 'rose-pine' },
+  { 'rose-pine/neovim', name = 'rose-pine' , lazy = true },
 
   -- Gruvbox — retro, gruvbox
-  { 'ellisonleao/gruvbox.nvim' },
+  { 'ellisonleao/gruvbox.nvim' , lazy = true },
 
   -- Kanagawa — wave / dragon / lotus (lotus is light)
-  { 'rebelot/kanagawa.nvim' },
+  { 'rebelot/kanagawa.nvim' , lazy = true },
 
   -- OneDark — darker / dark / cool / deep / warm / warmer + onedark_vivid
-  { 'navarasu/onedark.nvim' },
+  { 'navarasu/onedark.nvim' , lazy = true },
 
   -- Nightfox — nightfox / dayfox / dawnfox / duskfox / nordfox / terafox / carbonfox
-  { 'EdenEast/nightfox.nvim' },
+  { 'EdenEast/nightfox.nvim' , lazy = true },
 
   -- Everforest — everforest (hard/medium/soft bg via setup)
-  { 'sainnhe/everforest' },
+  { 'sainnhe/everforest' , lazy = true },
 
   -- Dracula — dracula / dracula-soft
-  { 'Mofiqul/dracula.nvim' },
+  { 'Mofiqul/dracula.nvim' , lazy = true },
 
   -- Github — github_dark / github_light / github_dark_dimmed etc.
-  { 'projekt0n/github-nvim-theme', name = 'github-theme' },
+  { 'projekt0n/github-nvim-theme', name = 'github-theme' , lazy = true },
 
   -- Melange — warm, melange
-  { 'savq/melange-nvim' },
+  { 'savq/melange-nvim' , lazy = true },
 
   -- Poimandres — deep blue-green
-  { 'olivercederborg/poimandres.nvim' },
+  { 'olivercederborg/poimandres.nvim' , lazy = true },
 
   -- Cyberdream — modern neon (cyberdream / cyberdream-light)
-  { 'scottmckendry/cyberdream.nvim' },
+  { 'scottmckendry/cyberdream.nvim' , lazy = true },
 
   -- Vague — minimal neutral (vague)
-  { 'vague2k/vague.nvim' },
+  { 'vague2k/vague.nvim' , lazy = true },
 
   -- Flexoki — best light theme (flexoki-dark / flexoki-light)
-  { 'kepano/flexoki-neovim', name = 'flexoki' },
+  { 'kepano/flexoki-neovim', name = 'flexoki' , lazy = true },
 
   -- Lackluster — monochrome minimal (lackluster / lackluster-hack / lackluster-mint)
-  { 'slugbyte/lackluster.nvim' },
+  { 'slugbyte/lackluster.nvim' , lazy = true },
 
   -- Ayu — mirage/dark/light (ayu-mirage is the popular one)
-  { 'Shatur/neovim-ayu' },
+  { 'Shatur/neovim-ayu' , lazy = true },
 
   -- Material — oceanic/palenight/deep-ocean variants
-  { 'marko-cerovac/material.nvim' },
+  { 'marko-cerovac/material.nvim' , lazy = true },
 
   -- Monokai Pro — pro/classic/machine/ristretto/octagon/spectrum filters
-  { 'loctvl842/monokai-pro.nvim' },
+  { 'loctvl842/monokai-pro.nvim' , lazy = true },
 
   -- Nordic — nord-based, minimal
-  { 'AlexvZyl/nordic.nvim' },
+  { 'AlexvZyl/nordic.nvim' , lazy = true },
 
   -- Solarized Osaka — craftzdog's solarized take
-  { 'craftzdog/solarized-osaka.nvim' },
+  { 'craftzdog/solarized-osaka.nvim' , lazy = true },
 
   -- VSCode — familiar dark/light
-  { 'Mofiqul/vscode.nvim' },
+  { 'Mofiqul/vscode.nvim' , lazy = true },
 
   -- Eldritch — neon purple dark
-  { 'eldritch-theme/eldritch.nvim' },
+  { 'eldritch-theme/eldritch.nvim' , lazy = true },
 
   -- Sonokai / Edge / Gruvbox Material — sainnhe family
-  { 'sainnhe/sonokai' },
-  { 'sainnhe/edge' },
-  { 'sainnhe/gruvbox-material' },
+  { 'sainnhe/sonokai' , lazy = true },
+  { 'sainnhe/edge' , lazy = true },
+  { 'sainnhe/gruvbox-material' , lazy = true },
 
   -- Zenbones — warm low-contrast (+ rosebones/forestbones/neobones)
   -- ponytail: lush is a hard dep — without it every *bones scheme errors.
-  { 'rktjmp/lush.nvim' },
-  { 'mcchrish/zenbones.nvim' },
+  { 'rktjmp/lush.nvim' , lazy = true },
+  { 'mcchrish/zenbones.nvim' , lazy = true },
 
   -- Miasma — foggy green dark
-  { 'xero/miasma.nvim' },
+  { 'xero/miasma.nvim' , lazy = true },
 
   -- Oxocarbon — IBM carbon dark
-  { 'nyoom-engineering/oxocarbon.nvim' },
+  { 'nyoom-engineering/oxocarbon.nvim' , lazy = true },
 
   -- Modus — accessible operandi (light) / vivendi (dark)
-  { 'miikanissi/modus-themes.nvim' },
+  { 'miikanissi/modus-themes.nvim' , lazy = true },
 
   -- Bamboo — warm green dark/light
-  { 'ribru17/bamboo.nvim' },
+  { 'ribru17/bamboo.nvim' , lazy = true },
 
   -- Night Owl — vscode night-owl port
-  { 'oxfist/night-owl.nvim' },
+  { 'oxfist/night-owl.nvim' , lazy = true },
 
   -- Horizon — warm sunset
-  { 'akinsho/horizon.nvim' },
+  { 'akinsho/horizon.nvim' , lazy = true },
 
   -- Jellybeans — classic vivid
-  { 'wtfox/jellybeans.nvim' },
+  { 'wtfox/jellybeans.nvim' , lazy = true },
 
   -- Oldworld — minimal dark/light
-  { 'dgox16/oldworld.nvim' },
+  { 'dgox16/oldworld.nvim' , lazy = true },
 
   -- Adwaita — GNOME default look
-  { 'Mofiqul/adwaita.nvim' },
+  { 'Mofiqul/adwaita.nvim' , lazy = true },
 
   -- Themery — picker + persistence for <leader>ty. Theme list is derived
   -- from installed schemes at startup, so adding a plugin above is enough.
