@@ -1,45 +1,7 @@
 ---@module 'custom.ui.theme'
+-- Theme persistence is owned by themery.nvim (see custom/plugins/themes.lua);
+-- this module only handles translucent floats + mode-colored line numbers.
 local M = {}
-
--- Persistent colorscheme: the active theme is stored in stdpath('data')/theme.
--- Any :colorscheme change is saved automatically; restored on UIEnter at boot.
-local theme_file = vim.fn.stdpath 'data' .. '/theme'
-
-local function save_theme(name)
-  if name and name ~= '' then vim.fn.writefile({ name }, theme_file) end
-end
-
-local function load_theme()
-  if vim.fn.filereadable(theme_file) == 1 then
-    local ok, lines = pcall(vim.fn.readfile, theme_file)
-    if ok and lines[1] and lines[1] ~= '' then return lines[1] end
-  end
-  return 'tokyonight-night' -- default fallback
-end
-
-function M.setup_persistence()
-  -- Persist colorscheme changes, but only AFTER the saved theme has been
-  -- restored at startup. Otherwise the initial eager colorscheme apply
-  -- overwrites the persisted file with the default before we ever read it.
-  local theme_ready = false
-  vim.api.nvim_create_autocmd('ColorScheme', {
-    desc = 'Persist the active colorscheme to disk',
-    callback = function()
-      if theme_ready then save_theme(vim.g.colors_name) end
-    end,
-  })
-
-  -- Restore the saved theme once the UI is ready (after all theme plugins load).
-  vim.api.nvim_create_autocmd('UIEnter', {
-    once = true,
-    desc = 'Restore persisted colorscheme',
-    callback = function()
-      local saved = load_theme()
-      if saved ~= 'tokyonight-night' then pcall(vim.cmd.colorscheme, saved) end
-      theme_ready = true -- begin persisting only after the restore
-    end,
-  })
-end
 
 --- Setup translucent floats and inline color previews.
 ---@return nil
@@ -48,7 +10,6 @@ function M.setup()
   vim.opt.winblend = 10
   vim.opt.pumblend = 10
 
-  M.setup_persistence()
   M.setup_mode_line_colors()
 end
 

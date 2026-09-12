@@ -53,7 +53,7 @@ Leader is `<Space>`. Essentials:
 ## Manage plugins, themes, LSPs
 
 - **Plugins**: edit specs (`init.lua`, `lua/custom/plugins/`), then `:Lazy sync`. Check load cost with `:Lazy profile`.
-- **Themes**: `<leader>ty` to pick; choice persists. All except tokyonight load lazily.
+- **Themes**: `<leader>ty` to pick (Themery, list auto-derived from installed schemes); choice persists. To add one, add its plugin spec in `lua/custom/plugins/themes.lua`, then `:Lazy sync`.
 - **LSPs**: Mason auto-installs most servers on demand (`:Mason`). Exceptions installed manually: `vtsls`, `pyrefly` (see table above).
 - **Formatters**: conform.nvim per filetype in `init.lua`; auto-format skips files >1MB (`large_file_size` in `lua/config/options.lua`), manual `<leader>f` always works.
 - **Tests**: plenary.busted suites in `tests/` — `nvim --headless -c 'lua require("plenary.busted").run("tests/test_qol.lua")' -c 'qa!'`

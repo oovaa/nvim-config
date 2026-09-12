@@ -26,7 +26,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
 | `<leader>e` | Toggle Floating File Explorer | `neo-tree.nvim` |
-| `<leader>ty` | Switch Theme (Telescope colorscheme, choice persisted across restarts) | config |
+| `<leader>ty` | Switch Theme (Themery picker, choice persisted across restarts) | config |
 | `t` | Open file in new tab (in neo-tree) | `neo-tree.nvim` |
 | `<C-t>` | Open file in new tab (in Telescope) | `telescope.nvim` |
 | `<leader>tt` | Toggle bottom terminal | `toggleterm.nvim` |

@@ -39,17 +39,8 @@ end, { desc = '[G]ank diagnostic [Y]ank to clipboard' })
 -- Toggle inline color previews (colorizer plugin)
 vim.keymap.set('n', '<leader>uc', '<cmd>ColorizerToggle<cr>', { desc = '[U]I [C]olorizer toggle' })
 
--- Switch themes with a live Telescope preview; the selection persists via the
--- theme-management in custom/ui/theme.lua.
-vim.keymap.set('n', '<leader>ty', function()
-  local ok, builtin = pcall(require, 'telescope.builtin')
-  if not ok then
-    vim.notify('telescope not available: ' .. tostring(builtin), vim.log.levels.ERROR)
-    return
-  end
-  local ok2, err = pcall(builtin.colorscheme, { enable_preview = true })
-  if not ok2 then vim.notify('theme picker failed: ' .. tostring(err), vim.log.levels.ERROR) end
-end, { desc = 'Switch [T]heme (preview)' })
+-- Switch themes with Themery (live preview + persistence).
+vim.keymap.set('n', '<leader>ty', '<cmd>Themery<CR>', { desc = 'Switch [T]heme (Themery)' })
 
 -- Flip dark/light background (most themes ship both variants)
 vim.keymap.set('n', '<leader>tb', function() vim.o.background = vim.o.background == 'dark' and 'light' or 'dark' end, { desc = '[T]oggle [B]ackground' })

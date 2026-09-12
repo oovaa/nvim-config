@@ -44,37 +44,86 @@ function M.setup_lualine()
   vim.o.showmode = false
 
   local function define_hl()
-    -- ponytail: only use tokyonight palette when a tokyonight scheme is active;
-    -- otherwise derive accents from the active theme so statusline matches <leader>ty picks.
-    local is_tokyo = vim.g.colors_name and vim.g.colors_name:match '^tokyonight'
-    local ok, mod = pcall(require, 'tokyonight.colors')
-    local c
-    if ok and is_tokyo then
-      local style = vim.g.colors_name and vim.g.colors_name:match '%-(.+)$' or 'night'
-      -- ponytail: tokyonight-moon vs night etc have different palettes; matching active style keeps statusline in sync
-      if style ~= 'night' and style ~= 'storm' and style ~= 'moon' and style ~= 'day' then style = 'night' end
-      c = mod.setup { style = style }
-    else
-      c = {
-        blue = '#7aa2f7', green = '#9ece6a', yellow = '#e0af68', magenta = '#bb9af7',
-        red = '#f7768e', green1 = '#73daca', black = '#1d202f', fg_gutter = '#3b4261',
-        bg_statusline = '#16161e', fg_sidebar = '#a9b1d6',
-      }
+    -- ponytail: accents come from the active theme's live highlights, so the
+    -- statusline follows every <leader>ty pick; hexes are last-resort only.
+    -- Links are followed (gruvbox links Function -> GruvboxGreen etc).
+    local function raw_hl(name)
+      local ok, h = pcall(vim.api.nvim_get_hl, 0, { name = name })
+      if ok and h then return h end
+      return {}
     end
+    -- ponytail: nvim_get_hl sometimes returns color *names* ('none', 'bg'..);
+    -- resolve those, never let format() see a string (crashed melange).
+    local function hex(v)
+      if type(v) == 'string' then
+        if v == 'none' or v == 'bg' or v == 'fg' then return nil end
+        local ok, n = pcall(vim.api.nvim_get_color_by_name, v)
+        if not ok or type(n) ~= 'number' or n < 0 then return nil end
+        v = n
+      end
+      return v and string.format('#%06x', v) or nil
+    end
+    local function fg_of(name, depth)
+      if (depth or 0) > 4 then return nil end
+      local h = raw_hl(name)
+      local fg = hex(h.fg)
+      if fg then return fg end
+      if h.link then return fg_of(h.link, (depth or 0) + 1) end
+      return nil
+    end
+    local function bgfg_of(name, depth)
+      if (depth or 0) > 4 then return nil, nil end
+      local h = raw_hl(name)
+      local bg, fg = h.bg, h.fg
+      if h.link and (not bg or not fg) then
+        local lb, lf = bgfg_of(h.link, (depth or 0) + 1)
+        bg = bg or lb
+        fg = fg or lf
+      end
+      if h.reverse then bg, fg = fg, bg end
+      return hex(bg), hex(fg)
+    end
+    local function bar_colors()
+      local bg, fg = bgfg_of 'StatusLine'
+      if not bg or not fg then
+        local nbg, nfg = bgfg_of 'Normal'
+        bg = bg or nbg
+        fg = fg or nfg
+      end
+      return bg or '#16161e', fg or '#a9b1d6'
+    end
+    -- ponytail: no accent backgrounds — everything sits on the theme's own
+    -- StatusLine bg; mode/diffs show as accent *text* so the bar blends in.
+    local bar_bg, bar_fg = bar_colors()
+    local c = {
+      blue = fg_of 'Function' or '#7aa2f7',
+      green = fg_of 'String' or '#9ece6a',
+      magenta = fg_of 'Statement' or '#bb9af7',
+      red = fg_of 'DiagnosticError' or '#f7768e',
+      yellow = fg_of 'DiagnosticWarn' or '#e0af68',
+      cyan = fg_of 'Identifier' or '#73daca',
+      lsp = fg_of 'DiagnosticOk' or '#9ece6a',
+    }
+    local modes = {
+      normal = c.blue,
+      insert = c.green,
+      visual = c.magenta,
+      replace = c.red,
+      command = c.yellow,
+      terminal = c.cyan,
+    }
     local function hl(name, bg, fg, gui)
       vim.api.nvim_set_hl(0, name, { bg = bg, fg = fg, bold = gui == 'bold' })
     end
-    -- tokyonight lualine theme: a=mode pill, b=branch/diff/diag, c=filename
-    hl('SL_a_normal', c.blue, c.black, 'bold'); hl('SL_b_normal', c.fg_gutter, c.blue)
-    hl('SL_a_insert', c.green, c.black, 'bold'); hl('SL_b_insert', c.fg_gutter, c.green)
-    hl('SL_a_visual', c.magenta, c.black, 'bold'); hl('SL_b_visual', c.fg_gutter, c.magenta)
-    hl('SL_a_replace', c.red, c.black, 'bold'); hl('SL_b_replace', c.fg_gutter, c.red)
-    hl('SL_a_command', c.yellow, c.black, 'bold'); hl('SL_b_command', c.fg_gutter, c.yellow)
-    hl('SL_a_terminal', c.green1, c.black, 'bold'); hl('SL_b_terminal', c.fg_gutter, c.green1)
-    hl('SL_c', c.bg_statusline, c.fg_sidebar)
-    hl('SL_lsp', c.bg_statusline, '#9ece6a')
+    -- a=mode (accent text on bar bg), b=branch/diff/diag, c=filename
+    for key, accent in pairs(modes) do
+      hl('SL_a_' .. key, bar_bg, accent, 'bold')
+      hl('SL_b_' .. key, bar_bg, bar_fg)
+    end
+    hl('SL_c', bar_bg, bar_fg)
+    hl('SL_lsp', bar_bg, c.lsp)
     -- diff colors
-    hl('SL_diff_add', c.fg_gutter, '#449dab'); hl('SL_diff_change', c.fg_gutter, '#6183bb'); hl('SL_diff_delete', c.fg_gutter, '#914c54')
+    hl('SL_diff_add', bar_bg, c.lsp); hl('SL_diff_change', bar_bg, c.blue); hl('SL_diff_delete', bar_bg, c.red)
   end
   define_hl()
   vim.api.nvim_create_autocmd('ColorScheme', { callback = define_hl })
