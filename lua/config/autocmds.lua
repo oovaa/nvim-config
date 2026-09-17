@@ -100,7 +100,13 @@ vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter' }, {
 -- editing system files (/etc/hosts, nginx config, etc.) without leaving nvim.
 -- (ponytail: sudo://% needs suda.vim, which isn't installed — sudo tee is.)
 vim.api.nvim_create_user_command('SudoWrite', function(args)
-  vim.cmd('write' .. (args.bang and '!' or '') .. ' !sudo tee % > /dev/null')
+  local name = vim.api.nvim_buf_get_name(0)
+  if name == '' then
+    vim.notify('SudoWrite: unnamed buffer, save normally first', vim.log.levels.ERROR)
+    return
+  end
+  vim.cmd(('write%s !sudo tee %s >/dev/null'):format(args.bang and '!' or '', vim.fn.fnameescape(name)))
+  vim.cmd('edit!')
 end, { desc = 'Write current buffer via sudo', bang = true })
 
 -- HTTP buffer mapping: <leader>hr lives ONLY in http buffers (buffer-local).
