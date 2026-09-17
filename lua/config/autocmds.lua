@@ -11,6 +11,20 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   callback = function() vim.hl.on_yank() end,
 })
 
+-- Indent-guide colors (old hlchunk look): dim guides, purple current chunk.
+-- Re-applied on ColorScheme so :Themery switches keep them.
+local function indent_colors()
+  vim.api.nvim_set_hl(0, 'SnacksIndent', { fg = '#4a4560' })
+  vim.api.nvim_set_hl(0, 'SnacksIndentScope', { fg = '#806d9c' })
+  vim.api.nvim_set_hl(0, 'SnacksIndentChunk', { fg = '#806d9c' })
+end
+vim.api.nvim_create_autocmd('ColorScheme', {
+  desc = 'Keep hlchunk-style indent colors across theme switches',
+  group = vim.api.nvim_create_augroup('indent-colors', { clear = true }),
+  callback = indent_colors,
+})
+indent_colors()
+
 -- Idle upkeep (single CursorHold handler): external-change check + diagnostic
 -- float. One autocmd instead of two so idle work stays in one place.
 vim.api.nvim_create_autocmd('CursorHold', {

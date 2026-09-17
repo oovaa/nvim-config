@@ -149,6 +149,9 @@ describe('Phase 2: Performance Optimizations', function()
       local init_content = table.concat(vim.fn.readfile(init_path), '\n')
       local code = init_content:gsub('%-%-[^\n]*', '') -- strip comments: check code, not prose
       assert.is_nil(code:match('hlchunk'), 'hlchunk spec should be deleted (snacks.indent owns guides)')
+      -- chunk box + sticky scope replicate the old hlchunk look/behavior
+      assert.is_truthy(code:match("chunk%s*=%s*{[^}]*enabled%s*=%s*true"), 'snacks chunk box should be enabled')
+      assert.is_truthy(code:match("scope%s*=%s*{%s*cursor%s*=%s*false"), 'scope should follow the block, not the cursor column')
       -- scope assertions to each plugin's spec block (nearest closing `},`)
       local cz = code:match("'catgoose/nvim%-colorizer%.lua'.-\n  %},")
       assert.is_not_nil(cz, 'colorizer spec should exist')

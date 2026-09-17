@@ -1233,7 +1233,17 @@ require('lazy').setup({
      -- (only loaded transitively via noice); VeryLazy makes it self-sufficient.
      event = 'VeryLazy',
       opts = {
-        indent = { enabled = true }, -- ponytail: replaces hlchunk.nvim (deleted); scope highlight covers the current chunk
+        indent = {
+          enabled = true,
+          -- ponytail: chunk box replaces hlchunk.nvim (deleted); chars match the old chunk spec
+          chunk = {
+            enabled = true,
+            char = { corner_top = '╭', corner_bottom = '╰', horizontal = '─', vertical = '│', arrow = '─' },
+          },
+          -- ponytail: scope follows the code block, not the cursor column;
+          -- without this the chunk jumps to the outer scope on col-0/blank lines
+          scope = { cursor = false },
+        },
         input = { enabled = true },
         notifier = { enabled = true },
         scope = { enabled = true },
