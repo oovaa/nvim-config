@@ -127,6 +127,10 @@ return {
         miniwinter = true,
         minicyan = true,
         randomhue = true,
+        -- ponytail: horizon's colors file errors on load (tint(nil) assert
+        -- upstream); previewing it crashes Themery (its restore path then
+        -- concats the theme table). Drop it until upstream fixes it.
+        horizon = true,
       }
       for f, ft in vim.fs.dir(vim.env.VIMRUNTIME .. '/colors') do
         if ft == 'file' then
@@ -157,12 +161,6 @@ return {
         add(name)
       end
       table.sort(themes)
-      -- ponytail: horizon's light palette is missing syntax colors upstream
-      -- (tint(nil) assert) while light themes leave background=light behind,
-      -- so pin dark before applying instead of dropping the theme.
-      for i, name in ipairs(themes) do
-        if name == 'horizon' then themes[i] = { name = 'horizon', colorscheme = 'horizon', before = [[vim.opt.background = 'dark']] } end
-      end
       require('themery').setup { themes = themes, livePreview = true }
     end,
   },
