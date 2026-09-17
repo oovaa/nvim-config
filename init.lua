@@ -178,7 +178,7 @@ pcall(function() require('custom.ui.theme').setup() end)
 
 -- Bootstrap lazy.nvim (auto-install if not present)
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
-if not (vim.uv or vim.loop).fs_stat(lazypath) then
+if not vim.uv.fs_stat(lazypath) then
   local lazyrepo = 'https://github.com/folke/lazy.nvim.git'
   local out = vim.fn.system { 'git', 'clone', '--filter=blob:none', '--branch=stable', lazyrepo, lazypath }
   if vim.v.shell_error ~= 0 then error('Error cloning lazy.nvim:\n' .. out) end
@@ -401,7 +401,7 @@ require('lazy').setup({
       -- double-space alias: fastest way to find files
       vim.keymap.set('n', '<leader><leader>', builtin.find_files, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>sp', function()
-        local root = vim.fs.root(0, { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' }) or vim.fn.getcwd()
+        local root = vim.fs.root(0, { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' }) or vim.uv.cwd() or vim.fn.getcwd()
         require('telescope.builtin').find_files { cwd = root, prompt_title = 'Projects: ' .. vim.fn.fnamemodify(root, ':~') }
       end, { desc = '[S]earch [P]rojects (builtin root)' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
@@ -655,7 +655,7 @@ require('lazy').setup({
               },
             })
           end,
-          ---@type lspconfig.settings.lua_ls
+          ---@type vim.lsp.Config
           settings = {
             Lua = {
               format = { enable = false }, -- Disable formatting (formatting is done by stylua)
@@ -773,11 +773,11 @@ require('lazy').setup({
       },
       formatters = {
         prettier = {
-          prepend_args = { '--config', vim.fn.expand '~/.config/nvim/prettier.config.json' },
+          prepend_args = { '--config', vim.fs.normalize '~/.config/nvim/prettier.config.json' },
         },
         prettierd = {
           stdin = true,
-          prepend_args = { '--config=' .. vim.fn.expand '~/.config/nvim/prettier.config.json' },
+          prepend_args = { '--config=' .. vim.fs.normalize '~/.config/nvim/prettier.config.json' },
         },
       },
       -- You can also specify external formatters in here.
@@ -1126,7 +1126,7 @@ require('lazy').setup({
             -- TSInstall would error, so install/check the base language.
             local lang = ft:match '^[^.]+'
             local parser = vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser', lang .. '.so')
-            if vim.fn.filereadable(parser) ~= 1 then
+            if vim.uv.fs_stat(parser) == nil then
               pcall(vim.cmd, 'TSInstall ' .. lang)
             end
           end
@@ -1328,7 +1328,7 @@ require('lazy').setup({
       -- Python debugging with debugpy (Mason-installed venv). If debugpy isn't
       -- installed yet, skip setup so dap-python falls back to python3.
       local debugpy_path = vim.fn.stdpath 'data' .. '/mason/packages/debugpy/venv/bin/python'
-      if vim.fn.filereadable(debugpy_path) == 1 then require('dap-python').setup(debugpy_path) end
+      if vim.uv.fs_stat(debugpy_path) ~= nil then require('dap-python').setup(debugpy_path) end
     end,
   },
 
@@ -1439,7 +1439,9 @@ require('lazy').setup({
         group = vim.api.nvim_create_augroup('colorizer-size-guard', { clear = true }),
         callback = function(ev)
           local name = vim.api.nvim_buf_get_name(ev.buf)
-          if name ~= '' and vim.fn.getfsize(name) > 200 * 1024 then
+          -- getfsize returns -1/-2 on error; fs_stat nil-check is exact.
+          local ok, st = pcall(vim.uv.fs_stat, name)
+          if name ~= '' and ok and st and st.size > 200 * 1024 then
             pcall(vim.cmd, 'ColorizerDetachFromBuffer')
           end
         end,
@@ -1517,7 +1519,7 @@ do
   vim.o.sessionoptions = 'blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions'
   local suppressed = { ['~/'] = true, ['~/Downloads'] = true, ['/etc'] = true, ['/tmp'] = true }
   local function suppressed_dir(cwd)
-    cwd = (cwd or vim.fn.getcwd()):gsub('/+$', '')
+    cwd = (cwd or vim.uv.cwd() or vim.fn.getcwd()):gsub('/+$', '')
     if cwd == '' then cwd = '/' end
     for d in pairs(suppressed) do
       local e = vim.fn.expand(d):gsub('/+$', '')
@@ -1531,6 +1533,20 @@ do
     return vim.fn.stdpath 'data' .. '/sessions/' .. cwd:gsub('[^%w]+', '%%') .. '.vim'
   end
   local function session_file() return session_file_for(nil) end
+  -- one sessions-dir listing shared by find_session_for + dashboard picker.
+  -- (glob returns {} on a missing dir; fs.dir errors, so guard with fs_stat.)
+  local function session_files(dir)
+    local out = {}
+    if vim.uv.fs_stat(dir) == nil then return out end
+    for name, t in vim.fs.dir(dir) do
+      if t == 'file' and name:match('%.vim$') then
+        local st = vim.uv.fs_stat(dir .. '/' .. name)
+        out[#out + 1] = { path = dir .. '/' .. name, mtime = st and st.mtime.sec or 0 }
+      end
+    end
+    table.sort(out, function(a, b) return a.mtime > b.mtime end)
+    return out
+  end
   -- find existing session for cwd by scanning cd line (supports legacy %2F names)
   local function find_session_for(cwd)
     cwd = cwd and vim.fn.fnamemodify(vim.fn.resolve(cwd), ':p') or vim.fn.fnamemodify(vim.fn.resolve(vim.fn.getcwd()), ':p')
@@ -1545,7 +1561,8 @@ do
     if norm == '' then norm = '/' end
     local dir = vim.fn.stdpath('data') .. '/sessions'
     local best, best_time = nil, -1
-    for _, path in ipairs(vim.fn.glob(dir .. '/*.vim', false, true)) do
+    for _, e in ipairs(session_files(dir)) do
+      local path = e.path
       if has_badd(path) then
         for _, l in ipairs(vim.fn.readfile(path)) do
           local cd = l:match('^cd%s+(.+)$')
@@ -1553,8 +1570,7 @@ do
             cd = vim.fn.fnamemodify(vim.fn.expand(cd), ':p'):gsub('/+$', '')
             if cd == '' then cd = '/' end
             if cd == norm then
-              local t = vim.fn.getftime(path)
-              if t > best_time then best, best_time = path, t end
+              if e.mtime > best_time then best, best_time = path, e.mtime end
             end
             break
           end
@@ -1566,6 +1582,7 @@ do
   end
   -- expose for dashboard s picker
   _G._builtin_find_session = find_session_for
+  _G._builtin_session_files = session_files
   -- ponytail: no auto-restore on VimEnter; dashboard is default, `s` restores (see spec.lua)
   -- helpers kept for `s` (find_session_for / session_file)
   vim.api.nvim_create_autocmd('VimLeavePre', {
@@ -1629,7 +1646,7 @@ do
     else
       float.buf = vim.api.nvim_create_buf(false, true)
       float.win = vim.api.nvim_open_win(float.buf, true, { relative = 'editor', width = width, height = height, row = row, col = col, style = 'minimal', border = 'rounded' })
-      vim.fn.termopen(cmd, { on_exit = function() end })
+      vim.fn.jobstart(cmd, { term = true })
       vim.cmd.startinsert()
     end
   end

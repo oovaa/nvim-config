@@ -90,7 +90,7 @@ describe('Phase 2: Performance Optimizations', function()
       local content = table.concat(vim.fn.readfile(init_path), '\n')
 
       assert.is_truthy(content:match('treesitter%-start') or content:match('vim%.treesitter%.start'))
-      assert.is_truthy(content:match('filereadable.*parser') and content:match('TSInstall'),
+      assert.is_truthy(content:match('fs_stat%(parser%)') and content:match('TSInstall'),
         'Should check for parser and install on demand')
     end)
   end)

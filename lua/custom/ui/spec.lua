@@ -296,11 +296,13 @@ function M.setup_starter()
       local f = _G._builtin_find_session and _G._builtin_find_session(nil) or nil
       if not f then
         local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
-        f = sess_dir .. '/' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'
+        f = sess_dir .. '/' .. vim.fn.fnamemodify(vim.uv.cwd() or vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'
       end
       if has_badd(f) then pcall(vim.cmd, 'silent! Neotree close'); close_dashboard(); vim.cmd('source ' .. vim.fn.fnameescape(f)); return end
       local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
-      local files = vim.fn.glob(sess_dir .. '/*.vim', false, true)
+      local sess_files = _G._builtin_session_files and _G._builtin_session_files(sess_dir) or {}
+      local mtime, files = {}, {}
+      for _, e in ipairs(sess_files) do mtime[e.path] = e.mtime; files[#files + 1] = e.path end
       -- readable labels via `cd` line, dedup by dir (legacy %2F vs new %), skip empty.
       -- ponytail: one read per file (badd + cd label in a single scan, newest wins); split again only if session format changes.
       local seen, items, map = {}, {}, {}
@@ -315,7 +317,7 @@ function M.setup_starter()
             end
             if has_b and label then break end
           end
-          if has_b and label and (not seen[label] or vim.fn.getftime(path) > vim.fn.getftime(seen[label])) then
+          if has_b and label and (not seen[label] or mtime[path] > mtime[seen[label]]) then
             seen[label] = path
           end
         end
@@ -326,7 +328,7 @@ function M.setup_starter()
         map[disp] = path
       end
       table.sort(items)
-      if #items == 0 then vim.notify('No session for ' .. vim.fn.getcwd() .. ' — sessions are saved on quit (suppressed: ~, ~/Downloads, /etc, /tmp)', vim.log.levels.INFO) return end
+      if #items == 0 then vim.notify('No session for ' .. (vim.uv.cwd() or vim.fn.getcwd()) .. ' — sessions are saved on quit (suppressed: ~, ~/Downloads, /etc, /tmp)', vim.log.levels.INFO) return end
       local function do_pick(choice) if choice and map[choice] then pcall(vim.cmd, 'silent! Neotree close'); if vim.bo.filetype == 'dashboard' then pcall(vim.cmd, 'bwipeout!') end; vim.cmd('source ' .. vim.fn.fnameescape(map[choice])) end end
       local function pick()
         vim.ui.select(items, { prompt = 'Select session:' }, function(choice) do_pick(choice) end)

@@ -128,8 +128,11 @@ return {
         minicyan = true,
         randomhue = true,
       }
-      for _, f in ipairs(vim.fn.globpath(vim.env.VIMRUNTIME .. '/colors', '*.vim', false, true)) do
-        builtin[vim.fn.fnamemodify(f, ':t:r')] = true
+      for f, ft in vim.fs.dir(vim.env.VIMRUNTIME .. '/colors') do
+        if ft == 'file' then
+          local n = f:match('^(.+)%.vim$')
+          if n then builtin[n] = true end
+        end
       end
       local seen, themes = {}, {}
       local function add(name)
@@ -138,12 +141,16 @@ return {
           themes[#themes + 1] = name
         end
       end
-      for _, d in ipairs(vim.fn.globpath(vim.fn.stdpath 'data' .. '/lazy', '*/colors', false, true)) do
-        for _, f in ipairs(vim.fn.globpath(d, '*.vim', false, true)) do
-          add(vim.fn.fnamemodify(f, ':t:r'))
-        end
-        for _, f in ipairs(vim.fn.globpath(d, '*.lua', false, true)) do
-          add(vim.fn.fnamemodify(f, ':t:r'))
+      local lazy_dir = vim.fn.stdpath 'data' .. '/lazy'
+      for entry in vim.fs.dir(lazy_dir) do
+        local cd = lazy_dir .. '/' .. entry .. '/colors'
+        if vim.uv.fs_stat(cd) then
+          for f, ft in vim.fs.dir(cd) do
+            if ft == 'file' then
+              local n = f:match('^(.+)%.vim$') or f:match('^(.+)%.lua$')
+              if n then add(n) end
+            end
+          end
         end
       end
       for _, name in ipairs(vim.fn.getcompletion('', 'color')) do
