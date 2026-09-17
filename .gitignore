@@ -4,8 +4,7 @@ test.sh
 
 spell/
 
-# lazy-lock.json is tracked for reproducible plugin versions
-
+# lazy.nvim lockfile (local only, ignore version churn)
 .DS_Store
 package.json
 lazy-lock.json
