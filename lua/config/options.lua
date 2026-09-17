@@ -22,7 +22,9 @@
 vim.g.loaded_perl_provider = 0 -- Disable Perl provider (not used)
 vim.g.loaded_ruby_provider = 0 -- Disable Ruby provider (not used)
 vim.g.loaded_node_provider = 0 -- Disable Node provider (no :Node remote plugins used)
-vim.g.loaded_python3_provider = 1 -- Enable Python3 provider (required for molten-nvim)
+-- NOTE: python3 provider is intentionally NOT set here. `= 1` is a mistake
+-- (healthcheck errors on it); leaving it unset lets nvim auto-detect pynvim
+-- (required for molten-nvim). To disable, set to 0.
 
 -- ============================================================================
 -- BUILT-IN PLUGIN DISABLES

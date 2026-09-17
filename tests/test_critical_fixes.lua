@@ -91,15 +91,15 @@ describe('Phase 1: Critical Bug Fixes', function()
     end)
   end)
 
-  -- Test 6: Python3 provider enabled
+  -- Test 6: Python3 provider NOT force-set (auto-detect for molten)
   describe('providers', function()
-    it('has python3 provider explicitly enabled for molten', function()
+    it('leaves python3 provider unset so pynvim auto-detects', function()
       local options_path = vim.fn.stdpath('config') .. '/lua/config/options.lua'
       local content = table.concat(vim.fn.readfile(options_path), '\n')
 
-      -- Should have python3 provider enabled (not disabled)
-      assert.is_truthy(content:match('loaded_python3_provider%s*=%s*1'),
-        'Should have vim.g.loaded_python3_provider = 1')
+      -- =1 is a mistake vim.provider healthcheck errors on; unset = auto-detect
+      assert.is_falsy(content:match('loaded_python3_provider%s*=%s*1'),
+        'Must NOT have vim.g.loaded_python3_provider = 1')
     end)
   end)
 
