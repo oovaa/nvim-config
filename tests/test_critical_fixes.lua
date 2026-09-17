@@ -1,8 +1,6 @@
 -- Phase 1: Critical Bug Fixes Tests
 -- Run with: nvim --headless -c 'lua require("plenary.busted").run("tests/test_critical_fixes.lua")' -c 'qa!'
 
-local helpers = require('tests.helpers')
-
 describe('Phase 1: Critical Bug Fixes', function()
 
   -- Test 1: vtsls memory setting

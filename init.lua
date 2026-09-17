@@ -461,16 +461,6 @@ require('lazy').setup({
     end,
   },
 
-  {
-    'nvim-pack/nvim-spectre',
-    enabled = false, -- replaced by grug-far.nvim (faster, ripgrep-based)
-    dependencies = { 'nvim-lua/plenary.nvim' },
-    keys = {
-      { '<leader>fr', function() require('spectre').open() end, desc = '[F]ind & [R]eplace' },
-    },
-    opts = {},
-  },
-
   -- ============================================================================
   -- SECTION 6.3: LANGUAGE SERVER PROTOCOL (LSP)
   -- ============================================================================
@@ -1575,10 +1565,7 @@ do
     return f
   end
   -- expose for dashboard s picker
-  _G._builtin_session_file_for = session_file_for
-  _G._builtin_session_file = session_file
   _G._builtin_find_session = find_session_for
-  _G._builtin_suppressed_dir = suppressed_dir
   -- ponytail: no auto-restore on VimEnter; dashboard is default, `s` restores (see spec.lua)
   -- helpers kept for `s` (find_session_for / session_file)
   vim.api.nvim_create_autocmd('VimLeavePre', {

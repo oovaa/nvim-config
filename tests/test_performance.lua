@@ -1,8 +1,6 @@
 -- Phase 2: Performance Optimizations Tests
 -- Run with: nvim --headless -c 'lua require("plenary.busted").run("tests/test_performance.lua")' -c 'qa!'
 
-local helpers = require('tests.helpers')
-
 describe('Phase 2: Performance Optimizations', function()
 
   -- Test 1: Themes load lazily except tokyonight

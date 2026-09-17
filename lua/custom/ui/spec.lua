@@ -284,7 +284,7 @@ function M.setup_starter()
     { key = 'e', icon = '', label = 'New File', action = '<cmd>ene<CR>' },
     { key = 'f', icon = '', label = 'Find File', action = '<cmd>Telescope find_files<CR>' },
     { key = 'r', icon = '', label = 'File Explorer', action = '<cmd>Neotree toggle<CR>' },
-    { key = 'g', icon = '', label = 'Git (LazyGit)', action = function() if vim.fn.exists ':LazyGit' == 2 then vim.cmd 'LazyGit' else vim.cmd 'terminal lazygit' end end },
+    { key = 'g', icon = '', label = 'Git (LazyGit)', action = function() vim.cmd 'terminal lazygit' end },
     { key = 's', icon = '', label = 'Recent Sessions', action = function()
       -- ponytail: restore current cwd session; if none, pick from sessions dir (readable `cd` dir, deduped)
       local function has_badd(path)
