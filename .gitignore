@@ -8,3 +8,4 @@ spell/
 
 .DS_Store
 package.json
+lazy-lock.json
