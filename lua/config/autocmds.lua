@@ -24,12 +24,18 @@ vim.api.nvim_create_autocmd('CursorHold', {
     -- Inline diagnostic text cannot wrap in nvim, so long errors get cut at
     -- the window edge. Resting the cursor on an error opens a float with the
     -- full message, which wraps to fit the window. Close it by moving the cursor.
-    -- Skip clean buffers: get(0) with a position costs little, the float
-    -- render does not.
-    local diag = vim.diagnostic.get(0, { lnum = vim.fn.line '.' - 1, col = vim.fn.col '.' - 1 })
-    if #diag == 0 then return end
+    -- Skip clean lines: get() with a position costs little, the float
+    -- render does not. (col is not a valid get() filter — line scope only.)
+    -- Skip when a float is already open so idle CursorHolds don't re-render
+    -- and flicker ~4x/s on the same error line.
+    local lnum = vim.api.nvim_win_get_cursor(0)[1] - 1
+    if #vim.diagnostic.get(0, { lnum = lnum }) == 0 then return end
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      if vim.api.nvim_win_get_config(win).relative ~= '' then return end
+    end
     vim.diagnostic.open_float(nil, {
       focusable = false,
+      scope = 'line',
       close_events = { 'CursorMoved', 'BufLeave', 'InsertEnter' },
     })
   end,
