@@ -82,10 +82,9 @@ vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
   callback = function(args)
     local first_line = vim.api.nvim_buf_get_lines(args.buf, 0, 1, false)[1] or ''
     if first_line:match '^#!.*bin.*[ /]bun%s*$' or first_line:match '^#!.*bin.*[ /]bun ' then
+      -- ponytail: setting filetype fires FileType by itself; the manual
+      -- exec_autocmds used to double-fire the whole FileType cascade (measured).
       vim.bo[args.buf].filetype = 'typescript'
-
-      -- Trigger FileType autocommands so LSPs attach after filetype is set
-      vim.api.nvim_exec_autocmds('FileType', { buffer = args.buf })
     end
   end,
 })
@@ -99,7 +98,7 @@ vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter' }, {
 
 -- :SudoWrite — write the current buffer as root via sudo. Classic QOL for
 -- editing system files (/etc/hosts, nginx config, etc.) without leaving nvim.
+-- (ponytail: sudo://% needs suda.vim, which isn't installed — sudo tee is.)
 vim.api.nvim_create_user_command('SudoWrite', function(args)
-  local bang = args.bang and '!' or ''
-  vim.cmd('write! sudo://%' .. bang)
+  vim.cmd('write' .. (args.bang and '!' or '') .. ' !sudo tee % > /dev/null')
 end, { desc = 'Write current buffer via sudo', bang = true })

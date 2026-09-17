@@ -43,6 +43,11 @@ return {
     -- cond=false means lazy never loads the module → no warning. Real terminals
     -- (tmux/SSH give a PTY) load normally.
     cond = function()
+      -- ponytail: --headless has no TTY; without this the module loads on
+      -- BufReadPre and warns "cannot query terminal size" (reproduced).
+      for _, a in ipairs(vim.v.argv) do
+        if a == '--headless' then return false end
+      end
       return vim.fn.has('gui_running') == 0 and vim.env.TERM_PROGRAM ~= 'vscode'
     end,
     -- Load on first file open; also a molten dependency so it's available

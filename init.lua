@@ -1131,9 +1131,12 @@ require('lazy').setup({
           if name:match '%.min%.' or (ok_stat and stat and stat.size > 200 * 1024) then return end
           local ft = vim.bo[args.buf].filetype
           if ft and ft ~= '' then
-            local parser = vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser', ft .. '.so')
+            -- ponytail: compound fts (yaml.docker-compose) have no own parser;
+            -- TSInstall would error, so install/check the base language.
+            local lang = ft:match '^[^.]+'
+            local parser = vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser', lang .. '.so')
             if vim.fn.filereadable(parser) ~= 1 then
-              vim.cmd('TSInstall ' .. ft)
+              pcall(vim.cmd, 'TSInstall ' .. lang)
             end
           end
           pcall(vim.treesitter.start, args.buf)
@@ -1185,19 +1188,19 @@ require('lazy').setup({
   -- BUILTIN UI (replaces bufferline/lualine/alpha — no plugin, zero loss)
   -- statusline/tabline/dashboard via lua/custom/ui/spec.lua (pure nvim 0.12)
   -- keys S-h/S-l/<leader>bd preserved via builtin :bprev/:bnext/:bdelete
-  {
-    'nvim-mini/mini.icons',
-    lazy = true,
-    opts = {},
-  },
+  -- (ponytail: mini.icons spec deleted — zero requires anywhere; neo-tree
+  -- uses nvim-web-devicons, which-key degrades gracefully without it.)
 
    -- SNACKS.NVIM (#1 LazyVim gap)
    -- The swiss-army knife: picker, scratch buffer, dashboard,
    -- notifier, terminal navigation, big-file, quick-file, words.
    -- LazyVim wires it into which-key, lualine, lsp, treesitter, etc.
    -- We keep it minimal here; expand opts as you adopt features.
-   {
+    {
      'folke/snacks.nvim',
+     -- ponytail: keys-only meant notifier/input stayed dead until first keypress
+     -- (only loaded transitively via noice); VeryLazy makes it self-sufficient.
+     event = 'VeryLazy',
       opts = {
         indent = { enabled = false }, -- ponytail: hlchunk owns indent guides; snacks indent doubled them
         input = { enabled = true },
