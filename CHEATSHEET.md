@@ -213,7 +213,7 @@ Press `<leader>e` to toggle the floating file explorer. Inside it:
 | `<leader>o` | Toggle outline sidebar | `aerial.nvim` |
 | `<leader>fr` | Project find & replace | `grug-far.nvim` |
 
-`dressing.nvim` (enhanced `vim.ui.select`/`input`) and `nvim-bqf` (quickfix preview) have no keybindings — they improve existing UI automatically.
+`snacks.nvim` (`vim.ui.input`) and `nvim-bqf` (quickfix preview) have no keybindings — they improve existing UI automatically.
 
 ### 🔁 grug-far (project find & replace)
 

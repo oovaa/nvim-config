@@ -17,8 +17,8 @@ return {
   -- Outline sidebar (aerial.nvim)
   { 'stevearc/aerial.nvim', keys = { { '<leader>o', '<cmd>AerialToggle<cr>', desc = 'Outline' } }, opts = { layout = { min_width = 28 }, attach_mode = 'global', backends = { 'lsp', 'treesitter', 'markdown', 'man' } } },
 
-  -- Command palette (dressing.nvim - enhances vim.ui.select/input with telescope)
-  { 'stevearc/dressing.nvim', event = 'VeryLazy', opts = { input = { enabled = true }, select = { enabled = true, backend = { 'telescope', 'builtin' } } } },
+  -- Command palette: vim.ui.input via snacks.nvim, vim.ui.select via
+  -- telescope-ui-select (both lazy-loaded with their owners).
 
   -- Better quickfix (bqf.nvim)
   { 'kevinhwang91/nvim-bqf', ft = 'qf', opts = { preview = { win_height = 15, win_vheight = 15, delay_syntax = 50, border_chars = { '│', '│', '─', '─', '╭', '╮', '╰', '╯' } } } },

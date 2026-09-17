@@ -1233,7 +1233,7 @@ require('lazy').setup({
      -- (only loaded transitively via noice); VeryLazy makes it self-sufficient.
      event = 'VeryLazy',
       opts = {
-        indent = { enabled = false }, -- ponytail: hlchunk owns indent guides; snacks indent doubled them
+        indent = { enabled = true }, -- ponytail: replaces hlchunk.nvim (deleted); scope highlight covers the current chunk
         input = { enabled = true },
         notifier = { enabled = true },
         scope = { enabled = true },
@@ -1391,44 +1391,6 @@ require('lazy').setup({
   -- ============================================================================
   -- Plugins that enhance the visual appearance of code.
 
-  -- HLCHUNK
-  -- WHAT: Shows colored indent lines and highlights the current code chunk
-  -- TO CHANGE: Modify colors in opts.chunk.style or opts.indent.style
-  -- EFFECT: Purple/red chunk highlighting for the current block
-  --         Dimmed indent lines (│) for visual structure
-  -- LOADING: VeryLazy = loads after UI is ready
-  {
-    'shellRaining/hlchunk.nvim',
-    event = { 'VeryLazy' },
-    config = function()
-      require('hlchunk').setup {
-        chunk = {
-          enable = true,
-          -- treesitter is available, but indentation-based detection is
-          -- lighter and works uniformly without parser-specific quirks.
-          use_treesitter = false,
-          style = {
-            { fg = '#806d9c' },
-            { fg = '#c21f30' },
-          },
-          chars = {
-            horizontal_line = '─',
-            vertical_line = '│',
-            left_top = '╭',
-            left_bottom = '╰',
-            right_arrow = '─',
-          },
-        },
-        indent = {
-          enable = true,
-          delay = 300,
-          chars = { '│' },
-          style = { { fg = '#4a4560' } },
-        },
-      }
-    end,
-  },
-
   -- RENDER-MARKDOWN
   -- WHAT: Better markdown rendering with icons, boxes, and formatting
   -- TO CHANGE: Remove if you prefer plain markdown
@@ -1446,13 +1408,14 @@ require('lazy').setup({
   -- WHAT: Highlights hex (#ff00aa) and named colors inline
   -- TO CHANGE: <leader>uc to toggle
   -- EFFECT: Color swatches appear behind color codes in any buffer
-  -- LOADING: BufReadPost + cmd — loads when you open a file OR run the toggle command.
-  --         (BufRead alone misses the startup file because lazy bootstraps after BufRead fires.)
+  -- LOADING: ft = only loads for color-relevant filetypes; <leader>uc /
+  --         :ColorizerToggle loads it on demand elsewhere. (ft uses FileType
+  --         so the startup file is covered, unlike BufRead.)
   {
     -- Maintained drop-in fork of norcalli/nvim-colorizer.lua (the original is
     -- unmaintained and uses vim.tbl_flatten, removed in Nvim 0.13).
     'catgoose/nvim-colorizer.lua',
-    event = 'BufReadPost',
+    ft = { 'css', 'html', 'javascript', 'typescript', 'lua', 'vim', 'toml' },
     cmd = 'ColorizerToggle',
     config = function()
       require('colorizer').setup({ '*' }, {

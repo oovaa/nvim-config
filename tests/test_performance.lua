@@ -64,7 +64,7 @@ describe('Phase 2: Performance Optimizations', function()
 
   -- Test 3: snacks.nvim only enables needed modules
   describe('snacks.nvim', function()
-    it('only enables input, notifier, scratch, scope, words', function()
+    it('only enables input, notifier, scratch, scope, words, indent', function()
       local init_path = vim.fn.stdpath('config') .. '/init.lua'
       local content = table.concat(vim.fn.readfile(init_path), '\n')
 
@@ -78,7 +78,7 @@ describe('Phase 2: Performance Optimizations', function()
       assert.is_truthy(content:match("words%s*=%s*{%s*enabled%s*=%s*true"), 'words should be enabled')
 
       -- Check disabled modules
-      assert.is_truthy(content:match("indent%s*=%s*{%s*enabled%s*=%s*false"), 'indent should be disabled')
+      assert.is_truthy(content:match("indent%s*=%s*{%s*enabled%s*=%s*true"), 'indent should be enabled (replaces hlchunk)')
       assert.is_truthy(content:match("scroll%s*=%s*{%s*enabled%s*=%s*false"), 'scroll should be disabled')
       assert.is_truthy(content:match("statuscolumn%s*=%s*{%s*enabled%s*=%s*false"), 'statuscolumn should be disabled')
       assert.is_truthy(content:match("toggle%s*=%s*{%s*enabled%s*=%s*false"), 'toggle should be disabled')
@@ -139,6 +139,27 @@ describe('Phase 2: Performance Optimizations', function()
       assert.is_truthy(content:match('vim%.loader%.enable'))
       assert.is_truthy(content:match('cache%s*=%s*{%s*enabled%s*=%s*true'))
       assert.is_truthy(content:match('disabled_plugins'))
+    end)
+  end)
+
+  -- Test 8: hlchunk deleted, colorizer/image narrowly triggered
+  describe('hlchunk/colorizer/image triggers', function()
+    it('hlchunk spec is gone; colorizer+image load on ft only', function()
+      local init_path = vim.fn.stdpath('config') .. '/init.lua'
+      local init_content = table.concat(vim.fn.readfile(init_path), '\n')
+      local code = init_content:gsub('%-%-[^\n]*', '') -- strip comments: check code, not prose
+      assert.is_nil(code:match('hlchunk'), 'hlchunk spec should be deleted (snacks.indent owns guides)')
+      -- scope assertions to each plugin's spec block (nearest closing `},`)
+      local cz = code:match("'catgoose/nvim%-colorizer%.lua'.-\n  %},")
+      assert.is_not_nil(cz, 'colorizer spec should exist')
+      assert.is_truthy(cz:match("ft%s*=%s*{[^}]*'css'"), 'colorizer should load on ft, not every BufReadPost')
+      assert.is_falsy(cz:match("event%s*="), 'colorizer must not load on every file open')
+      local plugins_path = vim.fn.stdpath('config') .. '/lua/custom/plugins/init.lua'
+      local plugins_code = table.concat(vim.fn.readfile(plugins_path), '\n'):gsub('%-%-[^\n]*', '')
+      local img = plugins_code:match("'3rd/image%.nvim',.-\n  %},")
+      assert.is_not_nil(img, 'image.nvim spec should exist')
+      assert.is_truthy(img:match("ft%s*=%s*{[^}]*'markdown'"), 'image.nvim should load for markdown only')
+      assert.is_falsy(img:match("event%s*="), 'image.nvim must not load on every file open')
     end)
   end)
 

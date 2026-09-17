@@ -50,9 +50,10 @@ return {
       end
       return vim.fn.has('gui_running') == 0 and vim.env.TERM_PROGRAM ~= 'vscode'
     end,
-    -- Load on first file open; also a molten dependency so it's available
-    -- when MoltenInit runs. (No trigger at all would load it at startup.)
-    event = { 'BufReadPre', 'BufNewFile' },
+    -- Load for markdown rendering; also a molten dependency so it's available
+    -- when MoltenInit runs in any filetype. (No trigger at all would load
+    -- it at startup; BufReadPre loaded it for every file, incl. .py.)
+    ft = { 'markdown', 'vimwiki' },
     -- Use an explicit config (not opts) so we can skip setup() when there's no
     -- TTY — image.nvim renders via terminal ioctl and is useless headless.
     -- (cond above already prevents module load; this is belt-and-suspenders.)

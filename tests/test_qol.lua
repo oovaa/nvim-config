@@ -68,11 +68,9 @@ describe('Phase 3: QoL Plugins', function()
     assert.is_truthy(c:match('<leader>o'))
   end)
 
-  it('dressing.nvim VeryLazy with telescope backend', function()
+  it('dressing.nvim removed (snacks.input + ui-select cover it)', function()
     local c = read(qol_path)
-    assert.is_truthy(c:match('dressing%.nvim'))
-    assert.is_truthy(c:match("event%s*=%s*'VeryLazy'"))
-    assert.is_truthy(c:match('telescope'))
+    assert.is_nil(c:match('dressing%.nvim'), 'dressing spec should be deleted')
   end)
 
   it('nvim-bqf on ft=qf', function()
