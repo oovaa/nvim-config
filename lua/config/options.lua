@@ -42,6 +42,10 @@ vim.g.loaded_gzip = 1 -- Transparent .gz editing
 vim.g.loaded_tarPlugin = 1 -- Transparent .tar browsing
 vim.g.loaded_zipPlugin = 1 -- Transparent .zip browsing
 vim.g.loaded_tutor_mode_plugin = 1 -- :Tutor
+vim.g.loaded_matchit = 1 -- Extended % matching (replaced by mini.ai)
+-- NOTE: source of truth for built-in disables; the lazy.nvim
+-- `disabled_plugins` list in init.lua mirrors this (naming differs:
+-- tarPlugin/zipPlugin/tutor_mode_plugin/tohtml vs lazy's basenames).
 
 -- ============================================================================
 -- LEADER KEY
@@ -83,7 +87,10 @@ vim.o.showmode = false
 -- WHAT: Syncs Neovim's clipboard with your system clipboard
 -- TO CHANGE: Set to 'unnamed' for primary selection (Linux) or 'unnamedplus' for clipboard
 -- EFFECT: You can paste system clipboard with p and copy to system clipboard with y
-vim.o.clipboard = 'unnamedplus'
+-- Skipped over SSH (no forwarding): every yank would hit a missing clipboard.
+if vim.env.SSH_CONNECTION == nil then
+  vim.o.clipboard = 'unnamedplus'
+end
 
 -- BREAK INDENT
 -- WHAT: Indents wrapped lines to match the first line's indent

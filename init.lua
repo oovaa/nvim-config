@@ -83,6 +83,8 @@ Key Mappings Reference:
 -- BYTECODE CACHE (fastest, safest startup win)
 -- Caches compiled Lua modules so Neovim doesn't re-parse every file on boot.
 -- Requires Neovim >= 0.9. Pairs well with lazy.nvim's own module cache below.
+-- NOTE: floor is effectively 0.11 — `smoothscroll` (0.10+) and `winborder`
+-- (0.11+) in lua/config/options.lua are set unguarded.
 -- ============================================================================
 vim.loader.enable()
 
@@ -131,8 +133,12 @@ end, { desc = 'Profile Neovim startup time' })
 -- docker-compose files get the docker-compose LSP (docker_compose_language_service)
 vim.filetype.add {
   pattern = {
+    -- NOTE: vim.filetype.add anchors patterns as ^pat$ itself, so no $ here.
+    -- Bare `compose` is exact-matched (else composer.yaml etc. would hit);
+    -- docker-compose keeps .* for .override.yml variants.
     ['docker%-compose.*%.ya?ml'] = 'yaml.docker-compose',
-    ['compose.*%.ya?ml'] = 'yaml.docker-compose',
+    ['compose%.ya?ml'] = 'yaml.docker-compose',
+    ['compose%.override%.ya?ml'] = 'yaml.docker-compose',
   },
 }
 
@@ -1468,16 +1474,19 @@ require('lazy').setup({
     },
     rtp = {
       -- Disable unused built-in Neovim plugins for faster startup (saves 10-20ms)
+      -- Names must match $VIMRUNTIME/plugin/<name>.vim (lazy skips those
+      -- files); mirrors the loaded_* disables in lua/config/options.lua,
+      -- which is the source of truth. tohtml is an opt package now, so it
+      -- is covered by loaded_2html_plugin there, not here.
       disabled_plugins = {
         'gzip', -- Gzip file reading/writing (not needed)
-        'tar', -- Tar file reading/writing (not needed)
-        'tohtml', -- Convert to HTML (not needed)
+        'tarPlugin', -- Tar file reading/writing (not needed)
         'tutor', -- Vim tutorial (not needed)
         'netrwPlugin', -- Netrw file browser (replaced by neo-tree)
         'matchit', -- Extended % matching (replaced by mini.ai)
         -- matchparen is kept: mini.ai/mini.surround don't replicate its
         -- matching-paren highlight under the cursor.
-        'zip', -- Zip archive reading/writing (not needed)
+        'zipPlugin', -- Zip archive reading/writing (not needed)
       },
     },
   },

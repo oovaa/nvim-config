@@ -1,5 +1,5 @@
 ---@module 'config.health'
--- Custom health check: `:checkhealth config.health`
+-- Custom health check: `:checkhealth config`
 -- Verifies external tools this config depends on. Add a row when you add a
 -- hard dependency; keep it to things that break workflows when missing.
 
