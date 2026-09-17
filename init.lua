@@ -1172,6 +1172,19 @@ require('lazy').setup({
       { '<leader>fE', '<cmd>Neotree reveal<cr>', desc = '[F]ile [E]xplorer (reveal)' },
     },
     opts = {
+      window = {
+        mappings = {
+          -- ponytail: nil-guard for upstream toggle_auto_expand_width crash
+          -- (passes nil last_user_width to nvim_win_set_width when the
+          -- pre-render path never recorded one). Pre-seed, then delegate.
+          ['e'] = function(state)
+            if state.window.last_user_width == nil then
+              state.window.last_user_width = require('neo-tree.utils').resolve_width(state.window.width)
+            end
+            require('neo-tree.sources.common.commands').toggle_auto_expand_width(state)
+          end,
+        },
+      },
       filesystem = {
         hijack_netrw_behavior = 'open_default',
         filtered_items = {
