@@ -38,17 +38,27 @@ describe('Phase 2: Performance Optimizations', function()
     end)
   end)
 
-  -- Test 2: LSP config loads on FileType, not BufReadPre
-  describe('lspconfig', function()
-    it('loads on FileType event', function()
+  -- Test 2: LSP uses native vim.lsp.config (nvim-lspconfig removed)
+  describe('lspconfig (removed)', function()
+    it('has no nvim-lspconfig dependency; servers defined natively', function()
       local init_path = vim.fn.stdpath('config') .. '/init.lua'
       local content = table.concat(vim.fn.readfile(init_path), '\n')
+      content = content:gsub('%-%-[^\n]*', '') -- strip comments: check code, not prose
 
-      -- Find nvim-lspconfig plugin spec and check its event
-      assert.is_truthy(content:match("nvim%-lspconfig.-event%s*=%s*['\"]FileType"),
-        'nvim-lspconfig should load on FileType')
-      assert.is_falsy(content:match("nvim%-lspconfig.-event%s*=%s*['\"]BufReadPre"),
-        'nvim-lspconfig should NOT load on BufReadPre')
+      -- nvim-lspconfig and its mason bridge must be gone
+      assert.is_falsy(content:match('nvim%-lspconfig'),
+        'should not depend on nvim-lspconfig')
+      assert.is_falsy(content:match('mason%-lspconfig'),
+        'should not depend on mason-lspconfig')
+      assert.is_falsy(content:match("require%s*%(?%s*['\"]lspconfig"),
+        'should not require lspconfig anywhere')
+      -- ...with native definitions carrying their own cmd/filetypes
+      assert.is_truthy(content:match("vim%.lsp%.config%('vtsls'"),
+        'vtsls should be defined via vim.lsp.config')
+      assert.is_truthy(content:match('docker%-langserver'),
+        'dockerls cmd should be defined natively')
+      assert.is_truthy(content:match('docker%-compose%-langserver'),
+        'docker_compose_language_service cmd should be defined natively')
     end)
   end)
 

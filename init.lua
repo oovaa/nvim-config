@@ -467,30 +467,22 @@ require('lazy').setup({
   -- LSP provides code intelligence: go-to-definition, find references,
   -- autocompletion, diagnostics, and more.
 
-  -- NVIM-LSPCONFIG
-  -- WHAT: Configures language servers for Neovim (the main LSP plugin)
+  -- LSP + MASON (native vim.lsp — lspconfig plugin removed)
+  -- WHAT: Mason auto-installs servers; vim.lsp.config defines them
   -- TO CHANGE: Add/remove servers in the `servers` table below
-  -- EFFECT: Each server provides language-specific features (e.g., pyright for Python)
+  -- EFFECT: Each server provides language-specific features (e.g., pyrefly for Python)
   --         Servers are loaded on-demand via FileType autocmds for performance
   -- PERFORMANCE: FileType autocmds save ~50-150ms startup time
   {
-    'neovim/nvim-lspconfig',
+    'mason-org/mason.nvim',
     -- Load on FileType (not at startup) to keep the LSP stack out of
     -- the startup path; FileType autocmds below enable servers on demand.
     event = 'FileType',
+    ---@module 'mason.settings'
+    ---@type MasonSettings
+    ---@diagnostic disable-next-line: missing-fields
+    opts = {},
     dependencies = {
-      -- Mason: auto-installs LSP servers and tools
-      -- TO CHANGE: Add tools to ensure_installed to auto-install them
-      -- EFFECT: Mason downloads and manages language servers for you
-      {
-        'mason-org/mason.nvim',
-        ---@module 'mason.settings'
-        ---@type MasonSettings
-        ---@diagnostic disable-next-line: missing-fields
-        opts = {},
-      },
-      -- Bridges mason.nvim with nvim-lspconfig
-      'mason-org/mason-lspconfig.nvim',
       -- Auto-installs tools listed in ensure_installed
       'WhoIsSethDaniel/mason-tool-installer.nvim',
 
@@ -498,6 +490,10 @@ require('lazy').setup({
       { 'j-hui/fidget.nvim', opts = {} },
     },
     config = function()
+      -- NOTE: opts = {} above is passed here, NOT auto-setup (a spec with
+      -- an explicit config never gets lazy's automatic require('mason').setup).
+      -- Call it ourselves: setup prepends Mason's bin/ to PATH so servers resolve.
+      require('mason').setup {}
       -- Brief aside: **What is LSP?**
       --
       -- LSP is an initialism you've probably heard, but might not understand what it is.
@@ -613,8 +609,16 @@ require('lazy').setup({
       ---@type table<string, vim.lsp.Config>
       local servers = {
         -- clangd = {},
-        docker_compose_language_service = {},
-        dockerls = {},
+        docker_compose_language_service = {
+          cmd = { 'docker-compose-langserver', '--stdio' },
+          filetypes = { 'yaml.docker-compose' },
+          root_markers = { 'docker-compose.yaml', 'docker-compose.yml', 'compose.yaml', 'compose.yml' },
+        },
+        dockerls = {
+          cmd = { 'docker-langserver', '--stdio' },
+          filetypes = { 'dockerfile' },
+          root_markers = { 'Dockerfile' },
+        },
         -- oxlint handles JS/TS lint via nvim-lint (no eslint LSP daemon)
         -- gopls = {},
         pyrefly = {
@@ -631,6 +635,19 @@ require('lazy').setup({
 
         -- Special Lua Config, as recommended by neovim help docs
         lua_ls = {
+          cmd = { 'lua-language-server' },
+          filetypes = { 'lua' },
+          root_markers = {
+            '.emmyrc.json',
+            '.luarc.json',
+            '.luarc.jsonc',
+            '.luacheckrc',
+            '.stylua.toml',
+            'stylua.toml',
+            'selene.toml',
+            'selene.yml',
+            '.git',
+          },
           on_init = function(client)
             client.server_capabilities.documentFormattingProvider = false -- Disable formatting (formatting is done by stylua)
 
@@ -1046,25 +1063,21 @@ require('lazy').setup({
   -- LOADING: ft = only loads for JavaScript/TypeScript files
   {
     'yioneko/nvim-vtsls',
-    dependencies = { 'nvim-lua/plenary.nvim', 'neovim/nvim-lspconfig' },
+    dependencies = { 'nvim-lua/plenary.nvim' },
     ft = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
     config = function()
-      require('lspconfig.configs').vtsls = require('vtsls').lspconfig
-      local lspconfig = require 'lspconfig'
       local capabilities = require('blink.cmp').get_lsp_capabilities()
-      lspconfig.vtsls.setup {
+      -- Native equivalent of the old require('vtsls').lspconfig bridge:
+      -- same cmd/filetypes/root priority, same settings (user's plus the
+      -- updateImportsOnFileMove/enableMoveToFileCodeAction defaults lspconfig merged in).
+      vim.lsp.config('vtsls', {
+        cmd = { 'vtsls', '--stdio' },
+        filetypes = { 'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx' },
+        root_markers = { 'tsconfig.json', 'jsconfig.json', 'package.json', '.git' },
         capabilities = capabilities,
         settings = {
-          vtsls = {
-            autoUseWorkspaceTsdk = true,
-            experimental = {
-              completion = {
-                enableServerSideFuzzyMatch = true,
-                entriesLimit = 30,
-              },
-            },
-          },
           typescript = {
+            updateImportsOnFileMove = 'always',
             suggest = { completeFunctionCalls = true },
             -- 'on' forces a package.json dependency scan on every completion;
             -- 'auto' only when an import statement needs it (much cheaper).
@@ -1080,8 +1093,22 @@ require('lazy').setup({
               },
             },
           },
+          javascript = {
+            updateImportsOnFileMove = 'always',
+          },
+          vtsls = {
+            autoUseWorkspaceTsdk = true,
+            enableMoveToFileCodeAction = true,
+            experimental = {
+              completion = {
+                enableServerSideFuzzyMatch = true,
+                entriesLimit = 30,
+              },
+            },
+          },
         },
-      }
+      })
+      vim.lsp.enable 'vtsls'
     end,
   },
 

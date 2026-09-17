@@ -60,7 +60,7 @@ describe('Phase 1: Critical Bug Fixes', function()
     end)
   end)
 
-  -- Test 4: nvim-lspconfig uses modern API
+  -- Test 4: native vim.lsp uses modern API
   describe('lspconfig API', function()
     it('uses vim.lsp.get_client_by_id or vim.lsp.get_clients({bufnr}) not deprecated buf_get_clients', function()
       local init_path = vim.fn.stdpath('config') .. '/init.lua'
