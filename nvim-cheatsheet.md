@@ -52,7 +52,7 @@
 
 | Keybinding | Action |
 |------------|--------|
-| `<leader>r` | Run code |
+| `<leader>R` | Run code |
 | `<leader>rf` | Run file |
 
 ## Commenting

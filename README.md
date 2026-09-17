@@ -101,7 +101,7 @@ running Neovim for the first time.
   ```
 
 **Recommended:**
-- [bun](https://bun.sh) — `<leader>r` (code_runner) executes JS/TS with `bun`.
+- [bun](https://bun.sh) — `<leader>R` (code_runner) executes JS/TS with `bun`.
 
 > [!NOTE]
 > See [Install Recipes](#Install-Recipes) for copy-paste install snippets for

@@ -50,11 +50,16 @@ describe('Phase 3: QoL Plugins', function()
     assert.is_truthy(c:match('<leader>to'))
   end)
 
-  it('rest.nvim on ft=http', function()
+  it('rest.nvim on ft=http with buffer-local hr mapping', function()
     local c = read(qol_path)
     assert.is_truthy(c:match('rest%.nvim'))
     assert.is_truthy(c:match("ft%s*=%s*'http'"))
-    assert.is_truthy(c:match('<leader>hr'))
+    -- hr must NOT be a lazy `keys` shim (registers globally); it lives in
+    -- the http FileType autocmd in lua/config/autocmds.lua instead
+    assert.is_falsy(c:match('<leader>hr'), 'hr must not be a lazy keys entry')
+    local autocmds = read(vim.fn.stdpath('config') .. '/lua/config/autocmds.lua')
+    assert.is_truthy(autocmds:match("pattern%s*=%s*'http'"))
+    assert.is_truthy(autocmds:match('<leader>hr'))
   end)
 
   it('aerial.nvim on <leader>o', function()
@@ -86,10 +91,16 @@ describe('Phase 3: QoL Plugins', function()
     assert.is_truthy(spectre, 'spectre should be disabled (enabled = false)')
   end)
 
-  it('which-key documents new groups', function()
+  it('which-key documents groups without shadowing actions', function()
     local init = read(init_path)
-    for _, g in ipairs({ 'g', 'h', 'o', 'tr', 'ts', 'to', 'rr' }) do
+    for _, g in ipairs({ 'g', 'h', 'r', 's', 't', 'f', 'd', 'm' }) do
       assert.is_truthy(init:match("<leader>" .. g), 'Missing which-key group: ' .. g)
+    end
+    -- empty groups that shadowed real actions must stay gone:
+    -- neotest tr/ts/to, refactoring rr, aerial o
+    for _, g in ipairs({ 'tr', 'ts', 'to', 'rr' }) do
+      assert.is_falsy(init:match("<leader>" .. g .. "'%s*,%s*group"),
+        'Group <leader>' .. g .. ' shadows a real action')
     end
   end)
 end)

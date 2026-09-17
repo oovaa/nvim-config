@@ -280,17 +280,12 @@ require('lazy').setup({
       spec = {
         { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
         { '<leader>t', group = '[T]oggle & [T]erminal' },
-        { '<leader>m', group = '[B]ookmarks & [M]olten' },
+        { '<leader>m', group = '[M]olten & Book[m]arks' },
         { '<leader>d', group = '[D]ebug' },
         { '<leader>f', group = '[F]ormat / [F]ind' },
         { '<leader>r', group = '[R]un' },
         { '<leader>g', group = '[G]it' },
-        { '<leader>h', group = '[H]TTP / HTTP' },
-        { '<leader>o', group = '[O]utline' },
-        { '<leader>tr', group = '[T]est [R]un' },
-        { '<leader>ts', group = '[T]est [S]ummary' },
-        { '<leader>to', group = '[T]est [O]utput' },
-        { '<leader>rr', group = '[R]e[f]actor' },
+        { '<leader>h', group = '[H]TTP' },
         { 'gr', group = 'LSP Actions', mode = { 'n' } },
       },
     },
@@ -1649,7 +1644,7 @@ do
   end
   vim.keymap.set('n', '<leader>tt', function() toggle_horiz(vim.o.shell) end, { desc = '[T]oggle [T]erminal' })
   vim.keymap.set('n', '<leader>tf', function() toggle_float(vim.o.shell) end, { desc = '[T]erminal [F]loat' })
-  vim.keymap.set('n', '<leader>fg', function() toggle_float('lazygit') end, { desc = '[F]ile [G]it (LazyGit)' })
+  vim.keymap.set('n', '<leader>fg', function() toggle_float('lazygit') end, { desc = '[F]ind Lazy[G]it' })
   vim.keymap.set('n', '<leader>tm', function() toggle_float('tmux new -s float 2>/dev/null || tmux attach -t float') end, { desc = '[T]erminal t[M]ux' })
   vim.keymap.set('n', '<leader>ht', function() toggle_float('herdr') end, { desc = '[H]erdr [T]erminal' })
   vim.keymap.set('n', '<leader>t1', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [1]' })
@@ -1714,7 +1709,7 @@ do
     vim.cmd 'wincmd J | resize 15'
     vim.cmd.startinsert()
   end
-  vim.keymap.set('n', '<leader>r', run_file, { desc = '[R]un [C]ode' })
+  vim.keymap.set('n', '<leader>R', run_file, { desc = '[R]un [C]ode' })
   vim.keymap.set('n', '<leader>rf', run_file, { desc = '[R]un [F]ile' })
 end
 
