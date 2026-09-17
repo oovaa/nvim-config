@@ -558,7 +558,10 @@ require('lazy').setup({
 
           -- Execute a code action, usually your cursor needs to be on top of an error
           -- or a suggestion from your LSP for this to activate.
-          map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
+          -- ponytail: both code-action keys go through actions-preview (diff preview, telescope UI)
+          local preview_action = function() require('actions-preview').code_actions() end
+          map('gra', preview_action, '[G]oto Code [A]ction', { 'n', 'x' })
+          map('<leader>ca', preview_action, '[C]ode [A]ction', { 'n', 'x' })
 
           -- WARN: This is not Goto Definition, this is Goto Declaration.
           --  For example, in C this would take you to the header.
@@ -715,6 +718,13 @@ require('lazy').setup({
   -- SECTION 6.4: FORMATTING
   -- ============================================================================
   -- Plugins that auto-format your code on save.
+
+  -- ACTIONS-PREVIEW: code-action picker with diff preview (same actions, readable UI)
+  {
+    'aznhe21/actions-preview.nvim',
+    event = 'LspAttach',
+    opts = { backend = { 'telescope' } },
+  },
 
   -- CONFORM.NVIM
   -- WHAT: Auto-formats your code when you save (uses external formatters)
