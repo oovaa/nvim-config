@@ -102,3 +102,14 @@ vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter' }, {
 vim.api.nvim_create_user_command('SudoWrite', function(args)
   vim.cmd('write' .. (args.bang and '!' or '') .. ' !sudo tee % > /dev/null')
 end, { desc = 'Write current buffer via sudo', bang = true })
+
+-- HTTP buffer mapping: <leader>hr lives ONLY in http buffers (buffer-local).
+-- A lazy.nvim `keys` entry would register a global load-shim instead.
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'http',
+  desc = 'HTTP buffer mappings',
+  group = vim.api.nvim_create_augroup('http-keymaps', { clear = true }),
+  callback = function(args)
+    vim.keymap.set('n', '<leader>hr', '<cmd>Rest run<cr>', { buffer = args.buf, desc = 'HTTP Request' })
+  end,
+})

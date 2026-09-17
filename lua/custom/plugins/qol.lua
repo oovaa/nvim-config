@@ -12,7 +12,7 @@ return {
   { 'nvim-neotest/neotest', dependencies = { 'nvim-lua/plenary.nvim', 'nvim-treesitter/nvim-treesitter', 'antoinemadec/FixCursorHold.nvim', 'nvim-neotest/neotest-python' }, keys = { { '<leader>tr', function() require('neotest').run.run() end, desc = 'Test Run' }, { '<leader>ts', function() require('neotest').summary.toggle() end, desc = 'Test Summary' }, { '<leader>to', function() require('neotest').output_panel.toggle() end, desc = 'Test Output' } }, config = function() require('neotest').setup { adapters = { require('neotest-python')({ dap = { justMyCode = false } }) } } end },
 
   -- HTTP client (rest.nvim)
-  { 'rest-nvim/rest.nvim', ft = 'http', dependencies = { 'nvim-lua/plenary.nvim' }, keys = { { '<leader>hr', '<cmd>Rest run<cr>', ft = 'http', desc = 'HTTP Request' } }, config = function() require('rest-nvim').setup({ result = { split = { horizontal = false } } }) end },
+  { 'rest-nvim/rest.nvim', ft = 'http', dependencies = { 'nvim-lua/plenary.nvim' }, config = function() require('rest-nvim').setup({ result = { split = { horizontal = false } } }) end },
 
   -- Outline sidebar (aerial.nvim)
   { 'stevearc/aerial.nvim', keys = { { '<leader>o', '<cmd>AerialToggle<cr>', desc = 'Outline' } }, opts = { layout = { min_width = 28 }, attach_mode = 'global', backends = { 'lsp', 'treesitter', 'markdown', 'man' } } },
