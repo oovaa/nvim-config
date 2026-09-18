@@ -2,12 +2,22 @@
 name: Check Lua Formatting
 on:
   push:
+    paths: ['**.lua', '.stylua.toml', '.github/workflows/stylua.yml']
   pull_request:
+    paths: ['**.lua', '.stylua.toml', '.github/workflows/stylua.yml']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   stylua-check:
     name: Stylua Check
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
@@ -15,5 +25,5 @@ jobs:
         uses: JohnnyMorganz/stylua-action@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          version: latest
+          version: v2.1.0
           args: --check .
