@@ -689,7 +689,16 @@ require('lazy').setup({
       --
       -- You can press `g?` for help in this menu.
       -- NOTE: pyrefly is installed globally via brew (not managed by Mason); skip it.
-      local ensure_installed = vim.tbl_filter(function(name) return name ~= 'pyrefly' end, vim.tbl_keys(servers))
+      -- ponytail: mason package names use dashes; lspconfig uses underscores — map them
+      local lsp_to_mason = {
+        docker_compose_language_service = 'docker-compose-language-service',
+        dockerls = 'dockerfile-language-server',
+        lua_ls = 'lua-language-server',
+      }
+      local ensure_installed = {}
+      for name in pairs(servers) do
+        if name ~= 'pyrefly' then table.insert(ensure_installed, lsp_to_mason[name] or name) end
+      end
       vim.list_extend(ensure_installed, {
         'prettier', -- unified JS/TS/JSON/HTML/CSS formatter used by conform
         'oxlint', -- fast Rust JS/TS linter used by nvim-lint
