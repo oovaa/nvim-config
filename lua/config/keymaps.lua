@@ -19,6 +19,10 @@ vim.keymap.set({ 'n', 'i' }, '<C-BS>', '<C-w>', { desc = 'Delete previous word' 
 -- TO CHANGE: Map to a different key like <leader>x
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
+-- Jump between errors/warnings (e.g. jsonls flags in a json file)
+vim.keymap.set('n', '[d', function() vim.diagnostic.jump { count = -1, float = true } end, { desc = 'Previous [D]iagnostic' })
+vim.keymap.set('n', ']d', function() vim.diagnostic.jump { count = 1, float = true } end, { desc = 'Next [D]iagnostic' })
+
 -- Copy the full diagnostic message under the cursor to the system clipboard
 -- WHAT: Yanks the LSP/linter message at the cursor so you can paste it elsewhere
 -- TO CHANGE: Use 'y' instead of '+' to copy into the default register
