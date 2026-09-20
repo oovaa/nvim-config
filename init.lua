@@ -620,6 +620,12 @@ require('lazy').setup({
           root_markers = { 'Dockerfile' },
         },
         -- oxlint handles JS/TS lint via nvim-lint (no eslint LSP daemon)
+        -- jsonls: syntax errors + schema validation for json/jsonc
+        -- (answers "is my json broken?" with red squiggles)
+        jsonls = {
+          cmd = { 'vscode-json-language-server', '--stdio' },
+          filetypes = { 'json', 'jsonc' },
+        },
         -- gopls = {},
         pyrefly = {
           cmd = { 'pyrefly', 'lsp' },
@@ -693,6 +699,7 @@ require('lazy').setup({
       local lsp_to_mason = {
         docker_compose_language_service = 'docker-compose-language-service',
         dockerls = 'dockerfile-language-server',
+        jsonls = 'json-lsp',
         lua_ls = 'lua-language-server',
       }
       local ensure_installed = {}
@@ -717,6 +724,7 @@ require('lazy').setup({
       local lsp_filetypes = {
         pyrefly = { 'python' },
         lua_ls = { 'lua' },
+        jsonls = { 'json', 'jsonc' },
         docker_compose_language_service = { 'yaml.docker-compose' },
         dockerls = { 'dockerfile' },
       }
@@ -765,7 +773,9 @@ require('lazy').setup({
     ---@module 'conform'
     ---@type conform.setupOpts
     opts = {
-      notify_on_error = false,
+      -- ponytail: true so formatter failures (e.g. broken json) notify
+      -- instead of silently skipping the format
+      notify_on_error = true,
       format_after_save = function(bufnr)
         -- Skip auto-format for large files (large_file_mode set by
         -- config/autocmds.lua); manual <leader>f still works.
