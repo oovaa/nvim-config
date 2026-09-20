@@ -139,3 +139,16 @@ vim.api.nvim_create_autocmd('FileType', {
     vim.keymap.set('n', '<leader>hr', '<cmd>Rest run<cr>', { buffer = args.buf, desc = 'HTTP Request' })
   end,
 })
+
+-- which-key hides hints while recording/playing macros (upstream hard-code in
+-- state.lua/triggers.lua via util.in_macro(), no config knob). Force it on —
+-- popup is display-only, recorded keys are unaffected.
+-- ponytail: monkey-patch; re-check after which-key updates (grep in_macro).
+vim.api.nvim_create_autocmd('RecordingEnter', {
+  desc = 'Keep which-key hints visible while recording macros',
+  group = vim.api.nvim_create_augroup('which-key-in-macro', { clear = true }),
+  callback = function()
+    local ok, util = pcall(require, 'which-key.util')
+    if ok then util.in_macro = function() return false end end
+  end,
+})

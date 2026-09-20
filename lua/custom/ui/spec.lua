@@ -127,6 +127,9 @@ function M.setup_lualine()
   end
   define_hl()
   vim.api.nvim_create_autocmd('ColorScheme', { callback = define_hl })
+  vim.api.nvim_create_autocmd({ 'RecordingEnter', 'RecordingLeave' }, {
+    callback = function() vim.cmd('redrawstatus') end,
+  })
 
   local mode_map = {
     n = 'NORMAL', i = 'INSERT', v = 'VISUAL', V = 'V-LINE', ['\22'] = 'V-BLOCK',
@@ -185,6 +188,10 @@ function M.setup_lualine()
     if diag_s ~= '' then b_parts[#b_parts + 1] = diag_s end
     local b_s = table.concat(b_parts, '  ')
 
+    -- macro recording — vim.fn.reg_recording() is '' when idle, register when recording
+    local rec = vim.fn.reg_recording()
+    local macro_s = rec ~= '' and ('%#SL_diff_delete#◉ @' .. rec .. hl_b) or ''
+
     -- filename path=1 with symbols
     local fname = vim.fn.expand '%:~:.'
     if fname == '' then fname = '[No Name]' end
@@ -201,7 +208,7 @@ function M.setup_lualine()
 
     -- sections mirror lualine: a=mode | b=branch/diff/diag | c=filename | x=lsp/enc/ff/ft | y=progress | z=location
     -- lualine had no separators
-    local left = hl_a .. ' ' .. mode .. ' ' .. hl_b .. (b_s ~= '' and ' ' .. b_s .. ' ' or ' ')
+    local left = hl_a .. ' ' .. mode .. ' ' .. hl_b .. (macro_s ~= '' and ' ' .. macro_s .. ' ' or '') .. (b_s ~= '' and ' ' .. b_s .. ' ' or ' ')
     local center = hl_c .. ' ' .. fname .. ' '
     local right_x = hl_c .. (lsp_s ~= '' and ' ' .. lsp_s .. ' ' or ' ') .. enc .. ' ' .. ff .. (ft_s ~= '' and ' ' .. ft_s or '') .. ' '
     local right_y = hl_b .. ' %p%% '
