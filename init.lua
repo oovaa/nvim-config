@@ -149,7 +149,7 @@ pcall(function() require('custom.ui.theme').setup() end)
 -- A file the formatter can't handle (e.g. badly broken json) fails on
 -- EVERY auto-save, and notify_on_error would re-notify every few
 -- keystrokes. First notice shows; identical repeats within 15s are
--- dropped. Manual <leader>F still notifies when you ask for it.
+-- dropped. Manual <leader>ff still notifies when you ask for it.
 -- ponytail: narrow match (only conform's failure string), global helpers
 -- like this stay in init.lua so the behavior is visible in one place.
 do
@@ -722,9 +722,9 @@ require('lazy').setup({
     cmd = { 'ConformInfo' },
     keys = {
       {
-        -- ponytail: <leader>F (not f) — bare `f` is a prefix for
+        -- ponytail: <leader>ff (not f) — bare `f` is a prefix for
         -- fe/fE/fg/fr, so a bare-f action delayed every one of them.
-        '<leader>F',
+        '<leader>ff',
         function() require('conform').format { async = true } end,
         mode = '',
         desc = '[F]ormat buffer',
@@ -738,7 +738,7 @@ require('lazy').setup({
       notify_on_error = true,
       format_after_save = function(bufnr)
         -- Skip auto-format for large files (large_file_mode set by
-        -- config/autocmds.lua); manual <leader>F still works.
+        -- config/autocmds.lua); manual <leader>ff still works.
         if vim.b[bufnr].large_file_mode then return nil end
         -- TO CHANGE: Add or remove filetypes from this table
         -- EFFECT: Only files matching these types will auto-format after save

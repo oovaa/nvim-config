@@ -112,7 +112,7 @@ Press `<leader>e` to toggle the file explorer (`:Neotree` fallback). Inside it:
 | `<leader>mj` | Jump to next bookmark | `vim-bookmarks` |
 | `<leader>mk` | Jump to previous bookmark | `vim-bookmarks` |
 | `<leader>mb` | List all bookmarks | `telescope-vim-bookmarks` |
-| `<leader>F` | Format buffer | `conform.nvim` |
+| `<leader>ff` | Format buffer | `conform.nvim` |
 | `<leader>fe` | File explorer | `snacks.nvim` |
 | `<leader>fE` | File explorer (reveal current file) | `snacks.nvim` |
 | `:StartupTime` | Profile startup (native timing + lazy.nvim plugin stats) | config |

@@ -68,7 +68,7 @@
 
 | Keybinding | Action |
 |------------|--------|
-| `<leader>F` | Format buffer |
+| `<leader>ff` | Format buffer |
 | `<leader>tt` | Toggle terminal |
 | `<C-\>` | Toggle terminal (last used) |
 | `<leader>ty` | Switch theme (persisted across restarts) |
