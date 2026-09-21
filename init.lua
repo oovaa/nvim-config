@@ -717,8 +717,13 @@ require('lazy').setup({
       notify_on_error = true,
       format_after_save = function(bufnr)
         -- Skip auto-format for large files (large_file_mode set by
-        -- config/autocmds.lua); manual <leader>f still works.
+        -- config/autocmds.lua); manual <leader>F still works.
         if vim.b[bufnr].large_file_mode then return nil end
+        -- ponytail: skip auto-format when the buffer already shows ERRORS.
+        -- A broken file (e.g. bad json) makes the formatter fail, and with
+        -- auto-save on that error spams every few keystrokes. The LSP
+        -- already flags the problem; manual <leader>F still reports it.
+        if #vim.diagnostic.get(bufnr, { severity = vim.diagnostic.severity.ERROR }) > 0 then return nil end
         -- TO CHANGE: Add or remove filetypes from this table
         -- EFFECT: Only files matching these types will auto-format after save
         local enabled_filetypes = {
