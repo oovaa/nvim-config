@@ -242,27 +242,19 @@ require('lazy').setup({
     },
   },
 
-  -- NOICE
-  -- WHAT: Replaces the default UI for messages, cmdline and popupmenu.
-  --       :messages become a scrollable popup, search/cmdline get floating
-  --       boxes, LSP hover/docs render as markdown with a rounded border.
-  -- TO CHANGE: `:Noice` opens the message history; :Noice errors for errors.
-  -- EFFECT: Nicer message UX. If anything looks off, `:Noice disable`
-  --         temporarily reverts to stock UI without uninstalling.
-  -- LOADING: VeryLazy = after UI is ready (recommended by upstream)
-  {
-    'folke/noice.nvim',
-    event = 'VeryLazy',
-     dependencies = { 'MunifTanjim/nui.nvim', 'folke/snacks.nvim' },
-    opts = {
-      presets = {
-        -- keep search at the bottom like classic vim (floating search box off)
-        bottom_search = true,
-        -- rounded border on hover/signature docs (matches diagnostic floats)
-        lsp_doc_border = true,
-      },
-    },
-  },
+  -- NOICE (removed — snacks notifier+input cover messages/cmdline/search;
+  -- no heavy UI layer, no macro/notify interception. One-line revert below.)
+  -- {
+  --   'folke/noice.nvim',
+  --   event = 'VeryLazy',
+  --   dependencies = { 'MunifTanjim/nui.nvim', 'folke/snacks.nvim' },
+  --   opts = {
+  --     presets = {
+  --       bottom_search = true,
+  --       lsp_doc_border = true,
+  --     },
+  --   },
+  -- },
 
   -- WHICH-KEY
   -- WHAT: Shows a popup with available keybindings after you press a key
@@ -316,59 +308,9 @@ require('lazy').setup({
     -- it’s best to remove the Telescope plugin config entirely
     -- instead of just disabling it here, to keep your config clean.
     enabled = true,
-    -- ponytail: keys/cmd only — VeryLazy loaded plenary+telescope at every
-    -- boot even when no picker is used. Keymaps live here (not config) so
-    -- each one lazy-loads the plugin on first press.
+    -- ponytail: cmd-only library now — daily <leader>s*/ls keys moved to
+    -- snacks.picker above. Kept for vim_bookmarks (<leader>mb) + ui-select.
     cmd = 'Telescope',
-    keys = {
-      { '<leader>sh', function() require('telescope.builtin').help_tags() end, desc = '[S]earch [H]elp' },
-      { '<leader>sk', function() require('telescope.builtin').keymaps() end, desc = '[S]earch [K]eymaps' },
-      { '<leader>sf', function() require('telescope.builtin').find_files() end, desc = '[S]earch [F]iles' },
-      { '<leader><leader>', function() require('telescope.builtin').find_files() end, desc = '[S]earch [F]iles' },
-      { '<leader>sp', function()
-        local root = vim.fs.root(0, { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' }) or vim.uv.cwd() or vim.fn.getcwd()
-        require('telescope.builtin').find_files { cwd = root, prompt_title = 'Projects: ' .. vim.fn.fnamemodify(root, ':~') }
-      end, desc = '[S]earch [P]rojects (builtin root)' },
-      { '<leader>ss', function() require('telescope.builtin').builtin() end, desc = '[S]earch [S]elect Telescope' },
-      { '<leader>sw', function() require('telescope.builtin').grep_string() end, mode = { 'n', 'v' }, desc = '[S]earch current [W]ord' },
-      { '<leader>sg', function() require('telescope.builtin').live_grep() end, desc = '[S]earch by [G]rep' },
-      { '<leader>sd', function()
-        require('telescope.builtin').diagnostics {
-          layout_strategy = 'vertical',
-          layout_config = { height = 0.9, width = 0.9, preview_height = 0.6 },
-          attach_mappings = function(_, map)
-            -- <C-y> copies the full message of the diagnostic under the selection.
-            map({ 'i', 'n' }, '<C-y>', function(prompt_bufnr)
-              local entry = require('telescope.actions.state').get_selected_entry()
-              require('telescope.actions').close(prompt_bufnr)
-              if not entry then return end
-              vim.fn.setreg('+', entry.text)
-              vim.notify('Copied diagnostic: ' .. entry.text:gsub('\n', ' '):sub(1, 60), vim.log.levels.INFO)
-            end)
-            return true
-          end,
-        }
-      end, desc = '[S]earch [D]iagnostics (navigate + <C-y> copy)' },
-      { '<leader>sr', function() require('telescope.builtin').resume() end, desc = '[S]earch [R]esume' },
-      { '<leader>s.', function() require('telescope.builtin').oldfiles() end, desc = '[S]earch Recent Files ("." for repeat)' },
-      { '<leader>sc', function() require('telescope.builtin').commands() end, desc = '[S]earch [C]ommands' },
-      { '<leader>/', function()
-        require('telescope.builtin').current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
-          winblend = 10,
-          previewer = false,
-        })
-      end, desc = '[/] Fuzzily search in current buffer' },
-      { '<leader>s/', function()
-        require('telescope.builtin').live_grep {
-          grep_open_files = true,
-          prompt_title = 'Live Grep in Open Files',
-        }
-      end, desc = '[S]earch [/] in Open Files' },
-      { '<leader>sn', function() require('telescope.builtin').find_files { cwd = vim.fn.stdpath 'config' } end, desc = '[S]earch [N]eovim files' },
-      -- <leader>fe/fE live in the neo-tree spec's `keys` so the plugin loads on first press
-      { '<leader>ls', function() require('telescope.builtin').lsp_document_symbols() end, desc = '[L]ist [S]ymbols in file' },
-      { '<leader>lS', function() require('telescope.builtin').lsp_workspace_symbols() end, desc = '[L]ist [S]ymbols in workspace' },
-    },
     dependencies = {
       'nvim-lua/plenary.nvim',
       { -- If encountering errors, see telescope-fzf-native README for installation instructions
@@ -578,21 +520,21 @@ require('lazy').setup({
             map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
           end
 
-          -- Telescope LSP keymaps. Telescope is keys/cmd-lazy, so it may
-          -- not be loaded when LSP attaches (attach is fast, ~1s). Shims
-          -- load it on first press instead of dropping the maps.
-          local function tpick(fn)
+          -- Snacks picker owns LSP nav now (telescope kept cmd-only for
+          -- vim_bookmarks + ui-select). snacks is VeryLazy so loaded by
+          -- attach time in practice; lazy.load covers cold paths.
+          local function spick(fn)
             return function()
-              require('lazy').load { plugins = { 'telescope.nvim' } }
-              fn(require 'telescope.builtin')
+              require('lazy').load { plugins = { 'snacks.nvim' } }
+              fn(require('snacks').picker)
             end
           end
-          vim.keymap.set('n', 'grr', tpick(function(b) b.lsp_references() end), { buffer = event.buf, desc = '[G]oto [R]eferences' })
-          vim.keymap.set('n', 'gri', tpick(function(b) b.lsp_implementations() end), { buffer = event.buf, desc = '[G]oto [I]mplementation' })
-          vim.keymap.set('n', 'grd', tpick(function(b) b.lsp_definitions() end), { buffer = event.buf, desc = '[G]oto [D]efinition' })
-          vim.keymap.set('n', 'gO', tpick(function(b) b.lsp_document_symbols() end), { buffer = event.buf, desc = 'Open Document Symbols' })
-          vim.keymap.set('n', 'gW', tpick(function(b) b.lsp_dynamic_workspace_symbols() end), { buffer = event.buf, desc = 'Open Workspace Symbols' })
-          vim.keymap.set('n', 'grt', tpick(function(b) b.lsp_type_definitions() end), { buffer = event.buf, desc = '[G]oto [T]ype Definition' })
+          vim.keymap.set('n', 'grr', spick(function(p) p.lsp_references() end), { buffer = event.buf, desc = '[G]oto [R]eferences' })
+          vim.keymap.set('n', 'gri', spick(function(p) p.lsp_implementations() end), { buffer = event.buf, desc = '[G]oto [I]mplementation' })
+          vim.keymap.set('n', 'grd', spick(function(p) p.lsp_definitions() end), { buffer = event.buf, desc = '[G]oto [D]efinition' })
+          vim.keymap.set('n', 'gO', spick(function(p) p.lsp_symbols() end), { buffer = event.buf, desc = 'Open Document Symbols' })
+          vim.keymap.set('n', 'gW', spick(function(p) p.lsp_workspace_symbols() end), { buffer = event.buf, desc = 'Open Workspace Symbols' })
+          vim.keymap.set('n', 'grt', spick(function(p) p.lsp_type_definitions() end), { buffer = event.buf, desc = '[G]oto [T]ype Definition' })
         end,
       })
 
@@ -1191,9 +1133,9 @@ require('lazy').setup({
     -- NEO-TREE
   -- WHAT: A file explorer that shows your project's file tree
   -- TO CHANGE: Modify filesystem.hijack_netrw_behavior or keybindings
-  -- EFFECT: Press <leader>e to toggle a floating file explorer
-  --         Replaces netrw (the built-in file browser)
-  -- LOADING: keys = only loads when you press <leader>e
+  -- EFFECT: fallback explorer — daily <leader>e/fe/fE moved to snacks.explorer
+  --         (faster, no plenary). :Neotree still works; delete next release.
+  -- LOADING: cmd = only loads on explicit :Neotree
   {
     'nvim-neo-tree/neo-tree.nvim',
     branch = 'v3.x',
@@ -1202,11 +1144,7 @@ require('lazy').setup({
       'nvim-tree/nvim-web-devicons',
       'MunifTanjim/nui.nvim',
     },
-    keys = {
-      { '<leader>e', '<cmd>Neotree float toggle<cr>', desc = 'Toggle File [E]xplorer (float)' },
-      { '<leader>fe', '<cmd>Neotree toggle<cr>', desc = '[F]ile [E]xplorer (Neo-tree)' },
-      { '<leader>fE', '<cmd>Neotree reveal<cr>', desc = '[F]ile [E]xplorer (reveal)' },
-    },
+    cmd = 'Neotree',
     opts = {
       window = {
         mappings = {
@@ -1264,6 +1202,11 @@ require('lazy').setup({
         },
         input = { enabled = true },
         notifier = { enabled = true },
+        -- ponytail: picker + explorer own daily search/files (migrated from
+        -- telescope/neo-tree — no plenary, faster; telescope stays cmd-only
+        -- for vim_bookmarks + ui-select, neo-tree cmd-only as fallback).
+        picker = { enabled = true },
+        explorer = { enabled = true },
         scope = { enabled = true },
         scroll = { enabled = false }, -- ponytail: vim.o.smoothscroll owns smooth scrolling; snacks scroll fought it
         scratch = { ft = 'markdown' }, -- ponytail: always markdown, never inherits python/js ft (no pyrefly/eslint in scratch)
@@ -1281,8 +1224,33 @@ require('lazy').setup({
              require('snacks').notifier.show_history()
            end
          end, desc = 'Notification History' },
-       { '<leader>un', function() require('snacks').notifier.hide() end, desc = 'Dismiss All Notifications' },
-    },
+        { '<leader>un', function() require('snacks').notifier.hide() end, desc = 'Dismiss All Notifications' },
+        -- Picker: daily search, migrated from telescope (keys identical).
+        { '<leader>sh', function() require('snacks').picker.help() end, desc = '[S]earch [H]elp' },
+        { '<leader>sk', function() require('snacks').picker.keymaps() end, desc = '[S]earch [K]eymaps' },
+        { '<leader>sf', function() require('snacks').picker.files() end, desc = '[S]earch [F]iles' },
+        { '<leader><leader>', function() require('snacks').picker.files() end, desc = '[S]earch [F]iles' },
+        { '<leader>sp', function()
+          local root = vim.fs.root(0, { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' }) or vim.uv.cwd() or vim.fn.getcwd()
+          require('snacks').picker.files { cwd = root }
+        end, desc = '[S]earch [P]rojects (builtin root)' },
+        { '<leader>ss', function() require('snacks').picker() end, desc = '[S]earch [S]elect picker' },
+        { '<leader>sw', function() require('snacks').picker.grep_word() end, mode = { 'n', 'x' }, desc = '[S]earch current [W]ord' },
+        { '<leader>sg', function() require('snacks').picker.grep() end, desc = '[S]earch by [G]rep' },
+        { '<leader>sd', function() require('snacks').picker.diagnostics() end, desc = '[S]earch [D]iagnostics' },
+        { '<leader>sr', function() require('snacks').picker.resume() end, desc = '[S]earch [R]esume' },
+        { '<leader>s.', function() require('snacks').picker.recent() end, desc = '[S]earch Recent Files ("." for repeat)' },
+        { '<leader>sc', function() require('snacks').picker.commands() end, desc = '[S]earch [C]ommands' },
+        { '<leader>/', function() require('snacks').picker.lines() end, desc = '[/] Fuzzily search in current buffer' },
+        { '<leader>s/', function() require('snacks').picker.grep_buffers() end, desc = '[S]earch [/] in Open Files' },
+        { '<leader>sn', function() require('snacks').picker.files { cwd = vim.fn.stdpath 'config' } end, desc = '[S]earch [N]eovim files' },
+        { '<leader>ls', function() require('snacks').picker.lsp_symbols() end, desc = '[L]ist [S]ymbols in file' },
+        { '<leader>lS', function() require('snacks').picker.lsp_workspace_symbols() end, desc = '[L]ist [S]ymbols in workspace' },
+        -- Explorer trial (neo-tree kept cmd-only one release as fallback).
+        { '<leader>e', function() require('snacks').explorer() end, desc = 'Toggle File [E]xplorer' },
+        { '<leader>fe', function() require('snacks').explorer() end, desc = '[F]ile [E]xplorer' },
+        { '<leader>fE', function() require('snacks').explorer.reveal() end, desc = '[F]ile [E]xplorer (reveal)' },
+     },
   },
 
   -- NVIM-LINT (#4): async linters complement conform (format) — oxlint/ruff via mason

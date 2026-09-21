@@ -40,72 +40,54 @@ return {
   -- Cyberdream — modern neon (cyberdream / cyberdream-light)
   { 'scottmckendry/cyberdream.nvim' , lazy = true },
 
-  -- Vague — minimal neutral (vague)
-  { 'vague2k/vague.nvim' , lazy = true },
-
   -- Flexoki — best light theme (flexoki-dark / flexoki-light)
   { 'kepano/flexoki-neovim', name = 'flexoki' , lazy = true },
 
-  -- Lackluster — monochrome minimal (lackluster / lackluster-hack / lackluster-mint)
-  { 'slugbyte/lackluster.nvim' , lazy = true },
-
-  -- Ayu — mirage/dark/light (ayu-mirage is the popular one)
-  { 'Shatur/neovim-ayu' , lazy = true },
-
-  -- Material — oceanic/palenight/deep-ocean variants
-  { 'marko-cerovac/material.nvim' , lazy = true },
-
-  -- Monokai Pro — pro/classic/machine/ristretto/octagon/spectrum filters
-  { 'loctvl842/monokai-pro.nvim' , lazy = true },
-
-  -- Nordic — nord-based, minimal
-  { 'AlexvZyl/nordic.nvim' , lazy = true },
-
-  -- Solarized Osaka — craftzdog's solarized take
-  { 'craftzdog/solarized-osaka.nvim' , lazy = true },
-
-  -- VSCode — familiar dark/light
-  { 'Mofiqul/vscode.nvim' , lazy = true },
-
-  -- Eldritch — neon purple dark
-  { 'eldritch-theme/eldritch.nvim' , lazy = true },
-
-  -- Sonokai / Edge / Gruvbox Material — sainnhe family
-  { 'sainnhe/sonokai' , lazy = true },
-  { 'sainnhe/edge' , lazy = true },
-  { 'sainnhe/gruvbox-material' , lazy = true },
-
-  -- Zenbones — warm low-contrast (+ rosebones/forestbones/neobones)
-  -- ponytail: lush is a hard dep — without it every *bones scheme errors.
-  { 'rktjmp/lush.nvim' , lazy = true },
-  { 'mcchrish/zenbones.nvim' , lazy = true },
-
-  -- Miasma — foggy green dark
-  { 'xero/miasma.nvim' , lazy = true },
-
-  -- Oxocarbon — IBM carbon dark
-  { 'nyoom-engineering/oxocarbon.nvim' , lazy = true },
-
-  -- Modus — accessible operandi (light) / vivendi (dark)
-  { 'miikanissi/modus-themes.nvim' , lazy = true },
-
-  -- Bamboo — warm green dark/light
-  { 'ribru17/bamboo.nvim' , lazy = true },
-
-  -- Night Owl — vscode night-owl port
-  { 'oxfist/night-owl.nvim' , lazy = true },
-
-  -- Horizon — warm sunset
-  { 'akinsho/horizon.nvim' , lazy = true },
-
-  -- Jellybeans — classic vivid
-  { 'wtfox/jellybeans.nvim' , lazy = true },
-
-  -- Oldworld — minimal dark/light
-  { 'dgox16/oldworld.nvim' , lazy = true },
-
-  -- Adwaita — GNOME default look
-  { 'Mofiqul/adwaita.nvim' , lazy = true },
+  -- Trimmed 2026-09: 36 → 13 schemes (faster sync, smaller Themery scan).
+  -- Restore any line below to re-add (uncomment + `:Lazy sync`).
+  -- -- Vague — minimal neutral (vague)
+  -- { 'vague2k/vague.nvim' , lazy = true },
+  -- -- Lackluster — monochrome minimal
+  -- { 'slugbyte/lackluster.nvim' , lazy = true },
+  -- -- Ayu — mirage/dark/light
+  -- { 'Shatur/neovim-ayu' , lazy = true },
+  -- -- Material — oceanic/palenight/deep-ocean variants
+  -- { 'marko-cerovac/material.nvim' , lazy = true },
+  -- -- Monokai Pro — pro/classic/machine/ristretto/octagon/spectrum filters
+  -- { 'loctvl842/monokai-pro.nvim' , lazy = true },
+  -- -- Nordic — nord-based, minimal
+  -- { 'AlexvZyl/nordic.nvim' , lazy = true },
+  -- -- Solarized Osaka — craftzdog's solarized take
+  -- { 'craftzdog/solarized-osaka.nvim' , lazy = true },
+  -- -- VSCode — familiar dark/light
+  -- { 'Mofiqul/vscode.nvim' , lazy = true },
+  -- -- Eldritch — neon purple dark
+  -- { 'eldritch-theme/eldritch.nvim' , lazy = true },
+  -- -- Sonokai / Edge / Gruvbox Material — sainnhe family
+  -- { 'sainnhe/sonokai' , lazy = true },
+  -- { 'sainnhe/edge' , lazy = true },
+  -- { 'sainnhe/gruvbox-material' , lazy = true },
+  -- -- Zenbones — warm low-contrast (lush is a hard dep, keep both)
+  -- { 'rktjmp/lush.nvim' , lazy = true },
+  -- { 'mcchrish/zenbones.nvim' , lazy = true },
+  -- -- Miasma — foggy green dark
+  -- { 'xero/miasma.nvim' , lazy = true },
+  -- -- Oxocarbon — IBM carbon dark
+  -- { 'nyoom-engineering/oxocarbon.nvim' , lazy = true },
+  -- -- Modus — accessible operandi (light) / vivendi (dark)
+  -- { 'miikanissi/modus-themes.nvim' , lazy = true },
+  -- -- Bamboo — warm green dark/light
+  -- { 'ribru17/bamboo.nvim' , lazy = true },
+  -- -- Night Owl — vscode night-owl port
+  -- { 'oxfist/night-owl.nvim' , lazy = true },
+  -- -- Horizon — warm sunset (also excluded from Themery: colors file errors)
+  -- { 'akinsho/horizon.nvim' , lazy = true },
+  -- -- Jellybeans — classic vivid
+  -- { 'wtfox/jellybeans.nvim' , lazy = true },
+  -- -- Oldworld — minimal dark/light
+  -- { 'dgox16/oldworld.nvim' , lazy = true },
+  -- -- Adwaita — GNOME default look
+  -- { 'Mofiqul/adwaita.nvim' , lazy = true },
 
   -- Themery — picker + persistence for <leader>ty. Theme list is derived
   -- from installed schemes at startup, so adding a plugin above is enough.

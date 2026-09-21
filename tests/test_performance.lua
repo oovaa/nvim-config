@@ -5,7 +5,7 @@ describe('Phase 2: Performance Optimizations', function()
 
   -- Test 1: Themes load lazily except tokyonight
   describe('themes', function()
-    it('11 extra themes are lazy=true, only tokyonight is eager', function()
+    it('kept themes are lazy=true, trimmed ones stay commented, only tokyonight is eager', function()
       local themes_path = vim.fn.stdpath('config') .. '/lua/custom/plugins/themes.lua'
       print('DEBUG test: themes_path =', themes_path)
       local content = table.concat(vim.fn.readfile(themes_path), '\n')
@@ -17,7 +17,7 @@ describe('Phase 2: Performance Optimizations', function()
 
       local theme_names = {'catppuccin','rose-pine','gruvbox','kanagawa','onedark',
                            'nightfox','everforest','dracula','github-theme',
-                           'melange','poimandres'}
+                           'melange','poimandres','cyberdream','flexoki'}
       for _, name in ipairs(theme_names) do
         -- Each theme should have lazy = true
         -- Escape magic characters in name for Lua pattern matching
@@ -26,6 +26,12 @@ describe('Phase 2: Performance Optimizations', function()
         local match = content_single_line:match(pattern)
         print('DEBUG test: name =', name, 'match =', match and 'YES' or 'NO')
         assert.is_truthy(match, name .. ' should have lazy = true')
+      end
+      -- Trimmed themes must stay commented out (one-line restore only)
+      for _, line in ipairs(vim.fn.readfile(themes_path)) do
+        if line:match('vague%.nvim') or line:match('zenbones%.nvim') or line:match('eldritch') then
+          assert.is_truthy(line:match('^%s*%-%-'), line .. ' should stay commented')
+        end
       end
       -- tokyonight should NOT be lazy (it's in init.lua with lazy=false or default eager loading)
       local init_path = vim.fn.stdpath('config') .. '/init.lua'
@@ -64,7 +70,7 @@ describe('Phase 2: Performance Optimizations', function()
 
   -- Test 3: snacks.nvim only enables needed modules
   describe('snacks.nvim', function()
-    it('only enables input, notifier, scratch, scope, words, indent', function()
+    it('enables input, notifier, scratch, scope, words, indent, picker, explorer', function()
       local init_path = vim.fn.stdpath('config') .. '/init.lua'
       local content = table.concat(vim.fn.readfile(init_path), '\n')
 
@@ -77,6 +83,9 @@ describe('Phase 2: Performance Optimizations', function()
       assert.is_truthy(content:match("scope%s*=%s*{%s*enabled%s*=%s*true"), 'scope should be enabled')
       assert.is_truthy(content:match("words%s*=%s*{%s*enabled%s*=%s*true"), 'words should be enabled')
 
+      -- picker + explorer own daily search/files (migrated from telescope/neo-tree)
+      assert.is_truthy(content:match("picker%s*=%s*{%s*enabled%s*=%s*true"), 'picker should be enabled')
+      assert.is_truthy(content:match("explorer%s*=%s*{%s*enabled%s*=%s*true"), 'explorer should be enabled')
       -- Check disabled modules
       assert.is_truthy(content:match("indent%s*=%s*{%s*enabled%s*=%s*true"), 'indent should be enabled (replaces hlchunk)')
       assert.is_truthy(content:match("scroll%s*=%s*{%s*enabled%s*=%s*false"), 'scroll should be disabled')
@@ -163,6 +172,25 @@ describe('Phase 2: Performance Optimizations', function()
       assert.is_not_nil(img, 'image.nvim spec should exist')
       assert.is_truthy(img:match("ft%s*=%s*{[^}]*'markdown'"), 'image.nvim should load for markdown only')
       assert.is_falsy(img:match("event%s*="), 'image.nvim must not load on every file open')
+    end)
+  end)
+
+  -- Test 9: noice removed, telescope cmd-only, daily keys on snacks
+  describe('picker migration', function()
+    it('noice spec is commented; telescope has no keys; search keys live on snacks', function()
+      local init_path = vim.fn.stdpath('config') .. '/init.lua'
+      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      local code = content:gsub('%-%-[^\n]*', '') -- strip comments: check code, not prose
+      assert.is_nil(code:match("'folke/noice%.nvim'"), 'noice spec should be removed (commented)')
+      local tspec = code:match("'nvim%-telescope/telescope%.nvim'.-\n  %},")
+      assert.is_not_nil(tspec, 'telescope spec should exist')
+      assert.is_falsy(tspec:match('keys%s*='), 'telescope must be cmd-only (daily keys moved to snacks)')
+      assert.is_truthy(tspec:match("cmd%s*=%s*'Telescope'"), 'telescope keeps :Telescope cmd for vim_bookmarks + ui-select')
+      local sspec = code:match("'folke/snacks%.nvim'.-\n  %},")
+      assert.is_not_nil(sspec, 'snacks spec should exist')
+      for _, k in ipairs({ '<leader>sf', '<leader>sg', '<leader>sd', '<leader>e', '<leader>fe' }) do
+        assert.is_truthy(sspec:find(k, 1, true), k .. ' should be a snacks key')
+      end
     end)
   end)
 

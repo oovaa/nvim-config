@@ -289,8 +289,8 @@ function M.setup_starter()
   }
   local buttons = {
     { key = 'e', icon = '', label = 'New File', action = '<cmd>ene<CR>' },
-    { key = 'f', icon = '', label = 'Find File', action = '<cmd>Telescope find_files<CR>' },
-    { key = 'r', icon = '', label = 'File Explorer', action = '<cmd>Neotree toggle<CR>' },
+    { key = 'f', icon = '', label = 'Find File', action = function() require('snacks').picker.files() end },
+    { key = 'r', icon = '', label = 'File Explorer', action = function() require('snacks').explorer() end },
     { key = 'g', icon = '', label = 'Git (LazyGit)', action = function() vim.cmd 'terminal lazygit' end },
     { key = 's', icon = '', label = 'Recent Sessions', action = function()
       -- ponytail: restore current cwd session; if none, pick from sessions dir (readable `cd` dir, deduped)
