@@ -316,7 +316,59 @@ require('lazy').setup({
     -- it’s best to remove the Telescope plugin config entirely
     -- instead of just disabling it here, to keep your config clean.
     enabled = true,
-    event = 'VeryLazy',
+    -- ponytail: keys/cmd only — VeryLazy loaded plenary+telescope at every
+    -- boot even when no picker is used. Keymaps live here (not config) so
+    -- each one lazy-loads the plugin on first press.
+    cmd = 'Telescope',
+    keys = {
+      { '<leader>sh', function() require('telescope.builtin').help_tags() end, desc = '[S]earch [H]elp' },
+      { '<leader>sk', function() require('telescope.builtin').keymaps() end, desc = '[S]earch [K]eymaps' },
+      { '<leader>sf', function() require('telescope.builtin').find_files() end, desc = '[S]earch [F]iles' },
+      { '<leader><leader>', function() require('telescope.builtin').find_files() end, desc = '[S]earch [F]iles' },
+      { '<leader>sp', function()
+        local root = vim.fs.root(0, { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' }) or vim.uv.cwd() or vim.fn.getcwd()
+        require('telescope.builtin').find_files { cwd = root, prompt_title = 'Projects: ' .. vim.fn.fnamemodify(root, ':~') }
+      end, desc = '[S]earch [P]rojects (builtin root)' },
+      { '<leader>ss', function() require('telescope.builtin').builtin() end, desc = '[S]earch [S]elect Telescope' },
+      { '<leader>sw', function() require('telescope.builtin').grep_string() end, mode = { 'n', 'v' }, desc = '[S]earch current [W]ord' },
+      { '<leader>sg', function() require('telescope.builtin').live_grep() end, desc = '[S]earch by [G]rep' },
+      { '<leader>sd', function()
+        require('telescope.builtin').diagnostics {
+          layout_strategy = 'vertical',
+          layout_config = { height = 0.9, width = 0.9, preview_height = 0.6 },
+          attach_mappings = function(_, map)
+            -- <C-y> copies the full message of the diagnostic under the selection.
+            map({ 'i', 'n' }, '<C-y>', function(prompt_bufnr)
+              local entry = require('telescope.actions.state').get_selected_entry()
+              require('telescope.actions').close(prompt_bufnr)
+              if not entry then return end
+              vim.fn.setreg('+', entry.text)
+              vim.notify('Copied diagnostic: ' .. entry.text:gsub('\n', ' '):sub(1, 60), vim.log.levels.INFO)
+            end)
+            return true
+          end,
+        }
+      end, desc = '[S]earch [D]iagnostics (navigate + <C-y> copy)' },
+      { '<leader>sr', function() require('telescope.builtin').resume() end, desc = '[S]earch [R]esume' },
+      { '<leader>s.', function() require('telescope.builtin').oldfiles() end, desc = '[S]earch Recent Files ("." for repeat)' },
+      { '<leader>sc', function() require('telescope.builtin').commands() end, desc = '[S]earch [C]ommands' },
+      { '<leader>/', function()
+        require('telescope.builtin').current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
+          winblend = 10,
+          previewer = false,
+        })
+      end, desc = '[/] Fuzzily search in current buffer' },
+      { '<leader>s/', function()
+        require('telescope.builtin').live_grep {
+          grep_open_files = true,
+          prompt_title = 'Live Grep in Open Files',
+        }
+      end, desc = '[S]earch [/] in Open Files' },
+      { '<leader>sn', function() require('telescope.builtin').find_files { cwd = vim.fn.stdpath 'config' } end, desc = '[S]earch [N]eovim files' },
+      -- <leader>fe/fE live in the neo-tree spec's `keys` so the plugin loads on first press
+      { '<leader>ls', function() require('telescope.builtin').lsp_document_symbols() end, desc = '[L]ist [S]ymbols in file' },
+      { '<leader>lS', function() require('telescope.builtin').lsp_workspace_symbols() end, desc = '[L]ist [S]ymbols in workspace' },
+    },
     dependencies = {
       'nvim-lua/plenary.nvim',
       { -- If encountering errors, see telescope-fzf-native README for installation instructions
@@ -392,72 +444,7 @@ require('lazy').setup({
       pcall(require('telescope').load_extension, 'ui-select')
       -- NOTE: projects & file_browser extensions loaded lazily on <leader>sp, <leader>fe, <leader>fE
       -- vim_bookmarks extension loaded lazily on <leader>mb (see telescope-vim-bookmarks spec)
-
-      -- See `:help telescope.builtin`
-      local builtin = require 'telescope.builtin'
-      vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
-      vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
-      -- double-space alias: fastest way to find files
-      vim.keymap.set('n', '<leader><leader>', builtin.find_files, { desc = '[S]earch [F]iles' })
-      vim.keymap.set('n', '<leader>sp', function()
-        local root = vim.fs.root(0, { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' }) or vim.uv.cwd() or vim.fn.getcwd()
-        require('telescope.builtin').find_files { cwd = root, prompt_title = 'Projects: ' .. vim.fn.fnamemodify(root, ':~') }
-      end, { desc = '[S]earch [P]rojects (builtin root)' })
-      vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
-      vim.keymap.set({ 'n', 'v' }, '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
-      vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
-      vim.keymap.set('n', '<leader>sd', function()
-        builtin.diagnostics {
-          layout_strategy = 'vertical',
-          layout_config = { height = 0.9, width = 0.9, preview_height = 0.6 },
-          attach_mappings = function(_, map)
-            -- <C-y> copies the full message of the diagnostic under the selection.
-            -- Bound in insert mode too, since the picker starts in insert mode.
-            map({ 'i', 'n' }, '<C-y>', function(prompt_bufnr)
-              local entry = require('telescope.actions.state').get_selected_entry()
-              require('telescope.actions').close(prompt_bufnr)
-              if not entry then return end
-              vim.fn.setreg('+', entry.text)
-              vim.notify('Copied diagnostic: ' .. entry.text:gsub('\n', ' '):sub(1, 60), vim.log.levels.INFO)
-            end)
-            return true
-          end,
-        }
-      end, { desc = '[S]earch [D]iagnostics (navigate + <C-y> copy)' })
-      vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
-      vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
-      vim.keymap.set('n', '<leader>sc', builtin.commands, { desc = '[S]earch [C]ommands' })
-
-      -- Override default behavior and theme when searching
-      vim.keymap.set('n', '<leader>/', function()
-        -- You can pass additional configuration to Telescope to change the theme, layout, etc.
-        builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
-          winblend = 10,
-          previewer = false,
-        })
-      end, { desc = '[/] Fuzzily search in current buffer' })
-
-      -- It's also possible to pass additional configuration options.
-      --  See `:help telescope.builtin.live_grep()` for information about particular keys
-      vim.keymap.set(
-        'n',
-        '<leader>s/',
-        function()
-          builtin.live_grep {
-            grep_open_files = true,
-            prompt_title = 'Live Grep in Open Files',
-          }
-        end,
-        { desc = '[S]earch [/] in Open Files' }
-      )
-
-      -- Shortcut for searching your Neovim configuration files
-      vim.keymap.set('n', '<leader>sn', function() builtin.find_files { cwd = vim.fn.stdpath 'config' } end, { desc = '[S]earch [N]eovim files' })
-      -- <leader>fe/fE live in the neo-tree spec's `keys` so the plugin loads on first press
-      -- List functions/symbols in the current file via Telescope (requires LSP)
-      vim.keymap.set('n', '<leader>ls', builtin.lsp_document_symbols, { desc = '[L]ist [S]ymbols in file' })
-      vim.keymap.set('n', '<leader>lS', builtin.lsp_workspace_symbols, { desc = '[L]ist [S]ymbols in workspace' })
+      -- (picker keymaps live in the spec `keys` above so each loads the plugin on first press)
     end,
   },
 
@@ -591,16 +578,21 @@ require('lazy').setup({
             map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
           end
 
-          -- Telescope LSP keymaps (moved from telescope-lsp-attach autocmd)
-          local ok, builtin = pcall(require, 'telescope.builtin')
-          if ok then
-            vim.keymap.set('n', 'grr', builtin.lsp_references, { buffer = event.buf, desc = '[G]oto [R]eferences' })
-            vim.keymap.set('n', 'gri', builtin.lsp_implementations, { buffer = event.buf, desc = '[G]oto [I]mplementation' })
-            vim.keymap.set('n', 'grd', builtin.lsp_definitions, { buffer = event.buf, desc = '[G]oto [D]efinition' })
-            vim.keymap.set('n', 'gO', builtin.lsp_document_symbols, { buffer = event.buf, desc = 'Open Document Symbols' })
-            vim.keymap.set('n', 'gW', builtin.lsp_dynamic_workspace_symbols, { buffer = event.buf, desc = 'Open Workspace Symbols' })
-            vim.keymap.set('n', 'grt', builtin.lsp_type_definitions, { buffer = event.buf, desc = '[G]oto [T]ype Definition' })
+          -- Telescope LSP keymaps. Telescope is keys/cmd-lazy, so it may
+          -- not be loaded when LSP attaches (attach is fast, ~1s). Shims
+          -- load it on first press instead of dropping the maps.
+          local function tpick(fn)
+            return function()
+              require('lazy').load { plugins = { 'telescope.nvim' } }
+              fn(require 'telescope.builtin')
+            end
           end
+          vim.keymap.set('n', 'grr', tpick(function(b) b.lsp_references() end), { buffer = event.buf, desc = '[G]oto [R]eferences' })
+          vim.keymap.set('n', 'gri', tpick(function(b) b.lsp_implementations() end), { buffer = event.buf, desc = '[G]oto [I]mplementation' })
+          vim.keymap.set('n', 'grd', tpick(function(b) b.lsp_definitions() end), { buffer = event.buf, desc = '[G]oto [D]efinition' })
+          vim.keymap.set('n', 'gO', tpick(function(b) b.lsp_document_symbols() end), { buffer = event.buf, desc = 'Open Document Symbols' })
+          vim.keymap.set('n', 'gW', tpick(function(b) b.lsp_dynamic_workspace_symbols() end), { buffer = event.buf, desc = 'Open Workspace Symbols' })
+          vim.keymap.set('n', 'grt', tpick(function(b) b.lsp_type_definitions() end), { buffer = event.buf, desc = '[G]oto [T]ype Definition' })
         end,
       })
 
@@ -767,7 +759,9 @@ require('lazy').setup({
     cmd = { 'ConformInfo' },
     keys = {
       {
-        '<leader>f',
+        -- ponytail: <leader>F (not f) — bare `f` is a prefix for
+        -- fe/fE/fg/fr, so a bare-f action delayed every one of them.
+        '<leader>F',
         function() require('conform').format { async = true } end,
         mode = '',
         desc = '[F]ormat buffer',

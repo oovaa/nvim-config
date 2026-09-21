@@ -111,7 +111,10 @@ return {
   -- from installed schemes at startup, so adding a plugin above is enough.
   {
     'zaldih/themery.nvim',
-    lazy = false,
+    -- ponytail: cmd/keys lazy — boot is always tokyonight-night anyway
+    -- (no saved state restores at startup); picker loads on first use.
+    cmd = 'Themery',
+    keys = { { '<leader>ty', '<cmd>Themery<CR>', desc = 'Switch [T]heme (Themery)' } },
     config = function()
       -- ponytail: scan plugin dirs on disk — most theme plugins aren't on
       -- rtp yet when this config runs (149 schemes after boot vs 14 via
