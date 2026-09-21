@@ -39,7 +39,7 @@ function M.check()
     end
   end
   local mason_bin = vim.fn.stdpath('data') .. '/mason/bin/'
-  for _, bin in ipairs({ 'stylua', 'oxlint', 'prettier', 'ruff' }) do
+  for _, bin in ipairs({ 'stylua', 'oxlint', 'prettier', 'prettierd', 'ruff' }) do
     if vim.fn.executable(mason_bin .. bin) == 1 then
       vim.health.ok('mason: ' .. bin .. ' found')
     else

@@ -109,6 +109,24 @@ else
   have python3 && ok "pynvim python module"
 fi
 
+# pip + venv bootstrap (Mason's debugpy package builds a venv; without
+# python3-venv ensurepip wheels the install fails with `spawn: python3`).
+if have python3 && ! python3 -m pip --version &>/dev/null; then
+  fail "python3 pip/venv — Mason debugpy needs it"
+  if (( ! CHECK_ONLY )); then
+    case "$PM" in
+      apt) pm_install python3-pip python3-venv || true ;;
+      dnf) pm_install python3-pip || true ;;
+      brew) brew install python3 && ok "python3 (brew, ships pip)" || true ;;
+      pacman) pm_install python-pip || true ;;
+      *) warn "install pip for python3 by hand, then re-run" ;;
+    esac
+    python3 -m pip --version &>/dev/null && ok "pip available" || warn "still no pip — debugpy will fail, DAP falls back to python3"
+  fi
+else
+  have python3 && ok "pip python module"
+fi
+
 # --- 3. language servers outside Mason -------------------------------------
 step "3/7  Manual LSPs (vtsls, pyrefly)"
 if have vtsls; then ok "vtsls $(vtsls --version 2>/dev/null || true)"
@@ -161,7 +179,7 @@ if have nvim && (( ! CHECK_ONLY )); then
   info "health check:"
   nvim --headless -c 'checkhealth config.health' -c 'qa!' 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E '^(OK|WARNING|ERROR)|- (OK|WARNING|ERROR)' | head -12 || true
   info "test suites:"
-  for t in test_critical_fixes test_performance test_qol test_polish; do
+  for t in test_critical_fixes test_keymaps_autocmds test_lsp_servers test_performance test_qol test_polish; do
     res=$(nvim --headless -c "lua require(\"plenary.busted\").run(\"tests/$t.lua\")" -c 'qa!' 2>&1 \
       | sed 's/\x1b\[[0-9;]*m//g' | grep -E '^(Success|Failed)' | tr '\n' ' ')
     # shellcheck disable=SC2086
