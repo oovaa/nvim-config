@@ -145,6 +145,27 @@ vim.filetype.add {
 -- THEME: persistence + mode-colored line numbers live in custom/ui/theme.lua.
 pcall(function() require('custom.ui.theme').setup() end)
 
+-- NOTIFY THROTTLE (spam guard for auto-save + conform)
+-- A file the formatter can't handle (e.g. badly broken json) fails on
+-- EVERY auto-save, and notify_on_error would re-notify every few
+-- keystrokes. First notice shows; identical repeats within 15s are
+-- dropped. Manual <leader>F still notifies when you ask for it.
+-- ponytail: narrow match (only conform's failure string), global helpers
+-- like this stay in init.lua so the behavior is visible in one place.
+do
+  local orig_notify = vim.notify
+  local last_msg, last_time = nil, 0
+  ---@diagnostic disable-next-line: duplicate-set-field
+  function vim.notify(msg, level, opts)
+    if type(msg) == 'string' and msg:match '^Formatter failed' then
+      local now = vim.uv.now()
+      if msg == last_msg and now - last_time < 15000 then return end
+      last_msg, last_time = msg, now
+    end
+    return orig_notify(msg, level, opts)
+  end
+end
+
 -- ============================================================================
 -- SECTION 6: LAZY.NVIM PLUGIN MANAGER
 -- ============================================================================
@@ -719,11 +740,6 @@ require('lazy').setup({
         -- Skip auto-format for large files (large_file_mode set by
         -- config/autocmds.lua); manual <leader>F still works.
         if vim.b[bufnr].large_file_mode then return nil end
-        -- ponytail: skip auto-format when the buffer already shows ERRORS.
-        -- A broken file (e.g. bad json) makes the formatter fail, and with
-        -- auto-save on that error spams every few keystrokes. The LSP
-        -- already flags the problem; manual <leader>F still reports it.
-        if #vim.diagnostic.get(bufnr, { severity = vim.diagnostic.severity.ERROR }) > 0 then return nil end
         -- TO CHANGE: Add or remove filetypes from this table
         -- EFFECT: Only files matching these types will auto-format after save
         local enabled_filetypes = {
