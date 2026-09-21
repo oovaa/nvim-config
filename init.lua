@@ -12,7 +12,7 @@ understand what it does, change it safely, and know the effect of your changes.
 9. Node provider disabled (joins perl/ruby)
 
 
-MEASURED STARTUP TIME: ~120ms (clean headless --startuptime; was ~400-600ms)
+MEASURED STARTUP TIME: ~185ms (clean headless --startuptime; was ~250ms)
 
 EXTERNAL BINARIES (outside mason — reinstall manually on a new machine):
   brew: ueberzugpp (image.nvim backend), jupyter + jupytext (molten notebooks)
@@ -916,6 +916,8 @@ require('lazy').setup({
   {
     'folke/todo-comments.nvim',
     event = 'VeryLazy',
+    cmd = 'TodoTelescope',
+    keys = { { '<leader>st', '<cmd>TodoTelescope<cr>', desc = '[S]earch [T]odo comments' } },
     dependencies = { 'nvim-lua/plenary.nvim' },
     ---@module 'todo-comments'
     ---@type TodoOptions
@@ -971,15 +973,21 @@ require('lazy').setup({
 
        -- Auto-pair brackets, parens, quotes: when you type ( it adds ), etc.
        -- LazyVim-style: skip next char, skip inside treesitter strings.
-       require('mini.pairs').setup {
-         modes = { insert = true, command = true, terminal = false },
-         skip_next = [=[[%w%%%'%[%"%.%`%$]]=],
-         skip_ts = { 'string' },
-         skip_unbalanced = true,
-         markdown = true,
-       }
+        require('mini.pairs').setup {
+          modes = { insert = true, command = true, terminal = false },
+          skip_next = [=[[%w%%%'%[%"%.%`%$]]=],
+          skip_ts = { 'string' },
+          skip_unbalanced = true,
+          markdown = true,
+        }
 
-       -- Statusline is handled by lualine.nvim (see LUALINE plugin entry below).
+        -- Bracketed navigation: [b/]b buffers, [q/]q quickfix, [t/]t
+        -- treesitter, [u/]u undo states... (zero new dep — ships inside
+        -- mini.nvim). Diagnostic suffix disabled: [d/]d already jump with
+        -- a float in lua/config/keymaps.lua. See :help mini.bracketed.
+        require('mini.bracketed').setup { diagnostic = { suffix = '' } }
+
+       -- Statusline is builtin (see lua/custom/ui/spec.lua).
 
        -- ... and there is more!
        --  Check out: https://github.com/nvim-mini/mini.nvim

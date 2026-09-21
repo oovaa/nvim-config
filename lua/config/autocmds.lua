@@ -11,6 +11,23 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   callback = function() vim.hl.on_yank() end,
 })
 
+-- Restore cursor to last edit position when reopening a file.
+-- Skips gitcommit/diff greps (position marks mislead there) and files
+-- where the mark sits past EOF.
+vim.api.nvim_create_autocmd('BufReadPost', {
+  desc = 'Restore cursor to last position on file open',
+  group = vim.api.nvim_create_augroup('restore-cursor', { clear = true }),
+  callback = function(args)
+    local ft = vim.bo[args.buf].filetype
+    if ft == 'gitcommit' or ft == 'gitrebase' then return end
+    local mark = vim.api.nvim_buf_get_mark(args.buf, '"')
+    local lines = vim.api.nvim_buf_line_count(args.buf)
+    if mark[1] > 0 and mark[1] <= lines then
+      pcall(vim.api.nvim_win_set_cursor, 0, mark)
+    end
+  end,
+})
+
 -- Indent-guide colors (old hlchunk look): dim guides, purple current chunk.
 -- Re-applied on ColorScheme so :Themery switches keep them.
 local function indent_colors()

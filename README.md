@@ -15,16 +15,16 @@ A starting point for Neovim that is:
 
 ## Features
 
-* **LSP**: vtsls (fast TypeScript), pyrefly (Python), lua_ls, ESLint, Dockerfile + docker-compose servers — all with completions via [blink.cmp](https://github.com/Saghen/blink.cmp)
-* **Formatting**: [conform.nvim](https://github.com/stevearc/conform.nvim) on save (prettier, stylua, ruff, gofmt)
-* **Fuzzy finding**: Telescope — files, grep, symbols (`<leader>ls` document / `<leader>lS` workspace), projects
-* **Explorer**: neo-tree as a floating drawer on `<leader>e`
-* **UI**: tokyonight theme (persisted across restarts), lualine, bufferline, alpha dashboard, mode-colored line numbers
+* **LSP**: vtsls (fast TypeScript), pyrefly (Python), lua_ls, oxlint, Dockerfile + docker-compose servers — all with completions via [blink.cmp](https://github.com/Saghen/blink.cmp)
+* **Formatting**: [conform.nvim](https://github.com/stevearc/conform.nvim) on save (prettierd, stylua, ruff)
+* **Fuzzy finding**: snacks picker — files, grep, symbols (`<leader>ls` document / `<leader>lS` workspace), projects (Telescope kept for bookmarks + `vim.ui.select`)
+* **Explorer**: snacks explorer on `<leader>e` (`:Neotree` fallback)
+* **UI**: tokyonight theme (persisted across restarts), builtin statusline/tabline/dashboard, mode-colored line numbers
 * **Git**: gitsigns, LazyGit on `<leader>fg`
 * **Debugging**: nvim-dap for Python; molten-nvim + image.nvim for Jupyter-style notebooks
-* **Performance**: ~110ms startup — everything lazy-loaded except the colorscheme and session restore; `:StartupTime` command to profile regressions
+* **Performance**: ~185ms startup — everything lazy-loaded except the colorscheme; `:StartupTime` command to profile regressions
 
-See `CHEATSHEET.md` for the full keybinding reference and `PERFORMANCE_PLAN.md` for loading strategy details.
+See `CHEATSHEET.md` for the full keybinding reference.
 
 ## Installation
 

@@ -25,31 +25,31 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
-| `<leader>e` | Toggle Floating File Explorer | `neo-tree.nvim` |
+| `<leader>e` | Toggle File Explorer | `snacks.nvim` |
 | `<leader>ty` | Switch Theme (Themery picker, choice persisted across restarts) | config |
-| `t` | Open file in new tab (in neo-tree) | `neo-tree.nvim` |
-| `<C-t>` | Open file in new tab (in Telescope) | `telescope.nvim` |
-| `<leader>tt` | Toggle bottom terminal | `toggleterm.nvim` |
-| `<leader>tf` | Toggle floating terminal | `toggleterm.nvim` |
-| `<leader>tm` | Toggle floating terminal with tmux (multi-tab) | `toggleterm.nvim` |
-| `<leader>ht` | Toggle floating Herdr terminal | `toggleterm.nvim` |
+| `t` | Open file in new tab (in explorer) | `snacks.nvim` |
+| `<C-t>` | Open file in new tab (in picker) | `snacks.nvim` |
+| `<leader>tt` | Toggle bottom terminal | built-in |
+| `<leader>tf` | Toggle floating terminal | built-in |
+| `<leader>tm` | Toggle floating terminal with tmux (multi-tab) | built-in |
+| `<leader>ht` | Toggle floating Herdr terminal | built-in |
 | `<C-\>` | Toggle Terminal (Any mode) | `toggleterm.nvim` |
 | `<leader>tn` | New terminal window | `toggleterm.nvim` |
 | `<leader>t1/2/3`| Switch to Terminal 1, 2, or 3 | `toggleterm.nvim` |
-| `<S-h>` | Previous Tab / Buffer | `bufferline.nvim` |
-| `<S-l>` | Next Tab / Buffer | `bufferline.nvim` |
-| `<leader>bd` | Delete Current Buffer | `bufferline.nvim` |
+| `<S-h>` | Previous Buffer | built-in |
+| `<S-l>` | Next Buffer | built-in |
+| `<leader>bd` | Delete Current Buffer | built-in |
 | `s` | Fast Jump (Flash) | `flash.nvim` |
 | `S` | Fast Jump Treesitter Mode | `flash.nvim` |
 | `<C-h/j/k/l>` | Switch focus between windows (editor, terminal, explorer) | built-in |
 
-### 🗂️ neo-tree (Floating Explorer) Tricks
+### 🗂️ Explorer Tricks
 
-Press `<leader>e` to toggle the floating file explorer. Inside it:
+Press `<leader>e` to toggle the file explorer (`:Neotree` fallback). Inside it:
 
 | Key | Action |
 | :--- | :--- |
-| `?` | Show neo-tree help |
+| `?` | Show explorer help |
 | `<CR>` / `o` | Open file (or expand/collapse folder) |
 | `h` / `l` | Collapse / expand folder |
 | `<C-v>` | Open file in vertical split |
@@ -62,7 +62,7 @@ Press `<leader>e` to toggle the floating file explorer. Inside it:
 | `x` / `y` / `p` | Cut / copy / paste |
 | `q` | Close the explorer |
 
-## 🔍 Searching (Telescope)
+## 🔍 Searching (snacks picker)
 
 | Keybinding | Action |
 | :--- | :--- |
@@ -77,13 +77,13 @@ Press `<leader>e` to toggle the floating file explorer. Inside it:
 | `<leader>sr` | Search Resume (resume last search) |
 | `<leader>s.` | Search Recent Files |
 | `<leader>sc` | Search Commands |
-| `<leader>ls` | List functions/symbols in current file (Telescope, needs LSP) |
-| `<leader>lS` | List symbols in workspace (Telescope, needs LSP) |
+| `<leader>ls` | List functions/symbols in current file (picker, needs LSP) |
+| `<leader>lS` | List symbols in workspace (picker, needs LSP) |
 | `<leader>sn` | Search Neovim config files |
-| `<leader><space>` | Search Existing Buffers |
+| `<leader>st` | Search todo comments |
 | `<leader>/` | Fuzzily search in current buffer |
 
-**Telescope picker shortcuts (inside the picker):**
+**Picker shortcuts (inside the picker):**
 
 | Key | Action |
 | :--- | :--- |
@@ -112,18 +112,18 @@ Press `<leader>e` to toggle the floating file explorer. Inside it:
 | `<leader>mj` | Jump to next bookmark | `vim-bookmarks` |
 | `<leader>mk` | Jump to previous bookmark | `vim-bookmarks` |
 | `<leader>mb` | List all bookmarks | `telescope-vim-bookmarks` |
-| `<leader>f` | Format buffer | `conform.nvim` |
-| `<leader>fe` | File browser (Telescope) | `telescope-file-browser` |
-| `<leader>fE` | File browser in current dir | `telescope-file-browser` |
+| `<leader>F` | Format buffer | `conform.nvim` |
+| `<leader>fe` | File explorer | `snacks.nvim` |
+| `<leader>fE` | File explorer (reveal current file) | `snacks.nvim` |
 | `:StartupTime` | Profile startup (native timing + lazy.nvim plugin stats) | config |
 
-### 💬 Messages & Cmdline (noice.nvim)
+### 💬 Messages & Notifications (snacks notifier)
 
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
-| `:Noice` | Message history in a scrollable popup | `noice.nvim` |
-| `:Noice errors` | Recent error messages only | `noice.nvim` |
-| `:Noice dismiss` | Close all message windows | `noice.nvim` |
+| `<leader>n` | Notification history | `snacks.nvim` |
+| `<leader>un` | Dismiss all notifications | `snacks.nvim` |
+| `:messages` | Raw message history | built-in |
 
 ## 🌿 Git Integration
 

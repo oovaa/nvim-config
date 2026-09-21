@@ -1,15 +1,15 @@
 # Neovim Cheatsheet
 
-## File Search (Telescope)
+## File Search (snacks picker)
 
 | Keybinding | Action |
 |------------|--------|
 | `<leader>sf` (Space → s → f) | Fuzzy find files in project recursively |
-| `<leader>fe` | File explorer (browse files in tree) |
-| `<leader>fE` | File explorer (from current file's dir) |
+| `<leader>fe` | File explorer |
+| `<leader>fE` | File explorer (reveal current file) |
 | `<leader>sg` | Live grep (search text in all files) |
 | `<leader>sw` | Search word under cursor |
-| `<leader><leader>` | Switch between open buffers |
+| `<leader><leader>` | Fuzzy find files (fast alias) |
 | `<leader>s.` | Search recent files |
 | `<leader>/` | Fuzzy find in current buffer |
 | `<leader>s/` | Grep in open files only |
@@ -18,7 +18,7 @@
 
 | Keybinding | Action |
 |------------|--------|
-| `<leader>e` | Toggle Neo-tree file explorer |
+| `<leader>e` | Toggle file explorer (snacks) |
 
 ## Navigation
 
@@ -68,9 +68,8 @@
 
 | Keybinding | Action |
 |------------|--------|
-| `<leader>f` | Format buffer |
+| `<leader>F` | Format buffer |
 | `<leader>tt` | Toggle terminal |
-| `<C-\>` | Open terminal (toggleterm) |
-| `<C-r>` | Open recent projects |
+| `<C-\>` | Toggle terminal (last used) |
 | `<leader>ty` | Switch theme (persisted across restarts) |
 | `:StartupTime` | Profile Neovim startup time |
