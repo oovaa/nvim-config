@@ -2,6 +2,27 @@
 -- Editor options, leader key, provider disables, diagnostics config.
 -- Loaded from init.lua before lazy.nvim so <leader> and vim.o apply early.
 
+-- LAUNCH-PATH SELF-HEAL
+-- WHAT: GUI launchers/keybinds often start nvim without brew on PATH, so
+--        node-based servers (jsonls, vtsls) die with exit 127 (`env: 'node'`).
+-- TO CHANGE: Add your prefix if brew lives elsewhere.
+-- EFFECT: Prepends the first prefix containing node, once, only when node is
+--         otherwise unresolvable. Terminal launches (node already visible) skip it.
+if vim.fn.exepath('node') == '' then
+  local prefixes = {
+    vim.env.HOMEBREW_PREFIX and vim.env.HOMEBREW_PREFIX .. '/bin',
+    '/home/linuxbrew/.linuxbrew/bin', -- Linuxbrew default
+    '/opt/homebrew/bin', -- Apple Silicon
+    '/usr/local/bin', -- Intel Mac / manual installs
+  }
+  for _, dir in ipairs(prefixes) do
+    if dir and vim.fn.executable(dir .. '/node') == 1 then
+      vim.env.PATH = dir .. ':' .. vim.env.PATH
+      break
+    end
+  end
+end
+
 -- ============================================================================
 -- PROVIDER DISABLES
 -- ============================================================================
