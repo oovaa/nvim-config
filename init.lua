@@ -1234,7 +1234,18 @@ require('lazy').setup({
         -- ponytail: picker + explorer own daily search/files (migrated from
         -- telescope/neo-tree — no plenary, faster; telescope stays cmd-only
         -- for vim_bookmarks + ui-select, neo-tree cmd-only as fallback).
-        picker = { enabled = true },
+        picker = {
+          enabled = true,
+          -- ponytail: show dotfiles (.env, .gitignore) + gitignored in the
+          -- explorer by default; toggle at runtime with `h` / `i`.
+          sources = { explorer = { hidden = true, ignored = true } },
+          -- ponytail: builtin `yank` copies the full item text
+          -- (diagnostics items carry the untruncated message); free in both wins.
+          win = {
+            input = { keys = { ['<c-y>'] = { 'yank', mode = { 'i', 'n' } } } },
+            list = { keys = { ['<c-y>'] = 'yank' } },
+          },
+        },
         explorer = { enabled = true },
         scope = { enabled = true },
         scroll = { enabled = false }, -- ponytail: vim.o.smoothscroll owns smooth scrolling; snacks scroll fought it
