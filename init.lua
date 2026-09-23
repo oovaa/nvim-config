@@ -1238,7 +1238,13 @@ require('lazy').setup({
           enabled = true,
           -- ponytail: show dotfiles (.env, .gitignore) + gitignored in the
           -- explorer by default; toggle at runtime with `h` / `i`.
-          sources = { explorer = { hidden = true, ignored = true }, files = { hidden = true, ignored = true } },
+          -- ponytail: build/dependency dirs stay out of every picker (fd/rg/tree
+          -- all take the same glob; `i` toggling ignored can't bring them back).
+          sources = {
+            explorer = { hidden = true, ignored = true, exclude = { 'node_modules', 'dist', 'build', 'out', 'target', 'vendor', 'coverage', '__pycache__', '.venv', '.next', '.nuxt', '.git', '.turbo', '.pytest_cache' } },
+            files = { hidden = true, ignored = true, exclude = { 'node_modules', 'dist', 'build', 'out', 'target', 'vendor', 'coverage', '__pycache__', '.venv', '.next', '.nuxt', '.git', '.turbo', '.pytest_cache' } },
+            grep = { exclude = { 'node_modules', 'dist', 'build', 'out', 'target', 'vendor', 'coverage', '__pycache__', '.venv', '.next', '.nuxt', '.git', '.turbo', '.pytest_cache' } },
+          },
           -- ponytail: builtin `yank` copies the full item text
           -- (diagnostics items carry the untruncated message); free in both wins.
           win = {
