@@ -1238,7 +1238,7 @@ require('lazy').setup({
           enabled = true,
           -- ponytail: show dotfiles (.env, .gitignore) + gitignored in the
           -- explorer by default; toggle at runtime with `h` / `i`.
-          sources = { explorer = { hidden = true, ignored = true } },
+          sources = { explorer = { hidden = true, ignored = true }, files = { hidden = true, ignored = true } },
           -- ponytail: builtin `yank` copies the full item text
           -- (diagnostics items carry the untruncated message); free in both wins.
           win = {
@@ -1638,7 +1638,14 @@ do
   local function is_buf_valid(b) return b and vim.api.nvim_buf_is_valid(b) end
   local function toggle_horiz(cmd)
     last = 'horiz'
-    if is_win_valid(horiz.win) then vim.api.nvim_win_close(horiz.win, true); horiz.win = nil; return end
+    if is_win_valid(horiz.win) then
+      if vim.api.nvim_win_get_buf(horiz.win) == horiz.buf then
+        -- ponytail: pcall — hiding the last window errors E444; leave it visible
+        if pcall(vim.api.nvim_win_close, horiz.win, true) then horiz.win = nil end
+        return
+      end
+      horiz.win = nil -- stale: window survived (:bd) showing another buffer; fall through to re-show
+    end
     -- also handle case win was closed manually (buf still valid)
     if is_buf_valid(horiz.buf) then
       for _, w in ipairs(vim.api.nvim_list_wins()) do if vim.api.nvim_win_get_buf(w) == horiz.buf then vim.api.nvim_set_current_win(w); vim.cmd.startinsert(); horiz.win = w; return end end
@@ -1658,9 +1665,12 @@ do
   local function toggle_float(cmd)
     last = 'float'
     if is_win_valid(float.win) then
-      vim.api.nvim_win_close(float.win, true)
-      float.win = nil
-      return
+      if vim.api.nvim_win_get_buf(float.win) == float.buf then
+        pcall(vim.api.nvim_win_close, float.win, true)
+        float.win = nil
+        return
+      end
+      float.win = nil -- stale window; fall through to re-show
     end
     local width = math.floor(vim.o.columns * 0.85)
     local height = math.floor(vim.o.lines * 0.85)
@@ -1700,18 +1710,20 @@ do
     end
     -- ponytail: every close is pcall — closing the last window errors (E444, e.g. terminal + neo-tree float only)
     local seen = false
-    local function hide(win)
+    local function hide(win, buf)
       if not is_win_valid(win) then return false end
+      -- ponytail: stale win (:bd swapped in another buffer) must not be closed
+      if buf ~= nil and vim.api.nvim_win_get_buf(win) ~= buf then return false end
       seen = true
       return pcall(vim.api.nvim_win_close, win, true)
     end
-    if hide(float.win) then float.win = nil; return end
-    if hide(horiz.win) then horiz.win = nil; return end
+    if hide(float.win, float.buf) then float.win = nil; return end
+    if hide(horiz.win, horiz.buf) then horiz.win = nil; return end
     -- also hunt for manually-opened wins still showing our bufs
     for _, w in ipairs(vim.api.nvim_list_wins()) do
       local b = vim.api.nvim_win_get_buf(w)
-      if b == float.buf and hide(w) then return end
-      if b == horiz.buf and hide(w) then horiz.win = nil; return end
+      if b == float.buf and hide(w, float.buf) then return end
+      if b == horiz.buf and hide(w, horiz.buf) then horiz.win = nil; return end
     end
     if seen then return end -- terminal visible but unclosable (last window) — leave it
     if last == 'float' then toggle_float(vim.o.shell) else toggle_horiz(vim.o.shell) end
