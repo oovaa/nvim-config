@@ -32,7 +32,7 @@ SECTION INDEX:
   2.  Core Options             - lua/config/options.lua (leader key, editor settings)
   3.  Keymaps                  - lua/config/keymaps.lua (global mappings)
   4.  Autocommands             - lua/config/autocmds.lua (global autocmds)
-  5.  Theme & Filetypes        - Theme persistence, docker-compose filetype
+   5.  Theme & Filetypes        - docker-compose filetype; theme pack in custom/plugins
   6.  Plugins (lazy.nvim)      - All plugin configurations
      6.1  UI & Visual         - Indent, git signs, which-key, telescope
      6.3  LSP                 - Language servers, Mason, vtsls
@@ -142,7 +142,7 @@ vim.filetype.add {
   },
 }
 
--- THEME: persistence + mode-colored line numbers live in custom/ui/theme.lua.
+-- THEME: mode-colored line numbers + boot default live in custom/ui/theme.lua.
 pcall(function() require('custom.ui.theme').setup() end)
 
 -- NOTIFY THROTTLE (spam guard for auto-save + conform)

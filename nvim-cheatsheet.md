@@ -71,5 +71,5 @@
 | `<leader>ff` | Format buffer |
 | `<leader>tt` | Toggle terminal |
 | `<C-\>` | Toggle terminal (last used) |
-| `<leader>ty` | Switch theme (persisted across restarts) |
+| `<leader>ty` | Switch theme (snacks colorschemes; not persisted across restarts) |
 | `:StartupTime` | Profile Neovim startup time |
