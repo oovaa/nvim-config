@@ -52,8 +52,8 @@ vim.keymap.set('n', '<leader>tb', function() vim.o.background = vim.o.background
 vim.keymap.set('n', '<leader>gp', ':Gitsigns preview_hunk<CR>', { desc = '[G]it [P]review hunk' })
 vim.keymap.set('n', '<leader>gd', ':Gitsigns diffthis<CR>', { desc = '[G]it [D]iff split' })
 vim.keymap.set('n', '<leader>gt', ':Gitsigns toggle_deleted<CR>', { desc = '[G]it [T]oggle deleted' })
-vim.keymap.set('n', ']c', function() require('gitsigns').nav_hunk('next') end, { desc = 'Next git hunk' })
-vim.keymap.set('n', '[c', function() require('gitsigns').nav_hunk('prev') end, { desc = 'Prev git hunk' })
+vim.keymap.set('n', ']c', function() require('gitsigns').nav_hunk 'next' end, { desc = 'Next git hunk' })
+vim.keymap.set('n', '[c', function() require('gitsigns').nav_hunk 'prev' end, { desc = 'Prev git hunk' })
 
 -- Terminal mode: exit with double <Esc>
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })

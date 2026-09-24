@@ -22,9 +22,7 @@ vim.api.nvim_create_autocmd('BufReadPost', {
     if ft == 'gitcommit' or ft == 'gitrebase' then return end
     local mark = vim.api.nvim_buf_get_mark(args.buf, '"')
     local lines = vim.api.nvim_buf_line_count(args.buf)
-    if mark[1] > 0 and mark[1] <= lines then
-      pcall(vim.api.nvim_win_set_cursor, 0, mark)
-    end
+    if mark[1] > 0 and mark[1] <= lines then pcall(vim.api.nvim_win_set_cursor, 0, mark) end
   end,
 })
 
@@ -143,7 +141,7 @@ vim.api.nvim_create_user_command('SudoWrite', function(args)
     return
   end
   vim.cmd(('write%s !sudo tee %s >/dev/null'):format(args.bang and '!' or '', vim.fn.fnameescape(name)))
-  vim.cmd('edit!')
+  vim.cmd 'edit!'
 end, { desc = 'Write current buffer via sudo', bang = true })
 
 -- HTTP buffer mapping: <leader>hr lives ONLY in http buffers (buffer-local).
@@ -152,9 +150,7 @@ vim.api.nvim_create_autocmd('FileType', {
   pattern = 'http',
   desc = 'HTTP buffer mappings',
   group = vim.api.nvim_create_augroup('http-keymaps', { clear = true }),
-  callback = function(args)
-    vim.keymap.set('n', '<leader>hr', '<cmd>Rest run<cr>', { buffer = args.buf, desc = 'HTTP Request' })
-  end,
+  callback = function(args) vim.keymap.set('n', '<leader>hr', '<cmd>Rest run<cr>', { buffer = args.buf, desc = 'HTTP Request' }) end,
 })
 
 -- which-key hides hints while recording/playing macros (upstream hard-code in

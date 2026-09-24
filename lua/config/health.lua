@@ -38,25 +38,24 @@ function M.check()
       vim.health.warn(t.bin .. ' missing — ' .. t.why, 'Install ' .. t.bin)
     end
   end
-  local mason_bin = vim.fn.stdpath('data') .. '/mason/bin/'
-  for _, bin in ipairs({ 'stylua', 'oxlint', 'prettier', 'prettierd', 'ruff' }) do
+  local mason_bin = vim.fn.stdpath 'data' .. '/mason/bin/'
+  for _, bin in ipairs { 'stylua', 'oxlint', 'prettier', 'prettierd', 'ruff' } do
     if vim.fn.executable(mason_bin .. bin) == 1 then
       vim.health.ok('mason: ' .. bin .. ' found')
     else
       vim.health.warn('mason: ' .. bin .. ' missing', 'Run :Mason to install')
     end
   end
-  local debugpy = vim.fn.stdpath('data') .. '/mason/packages/debugpy/venv/bin/python'
+  local debugpy = vim.fn.stdpath 'data' .. '/mason/packages/debugpy/venv/bin/python'
   if vim.fn.executable(debugpy) == 1 then
-    vim.health.ok('mason: debugpy venv found')
+    vim.health.ok 'mason: debugpy venv found'
   else
     vim.health.warn('mason: debugpy venv missing', 'Run :Mason to install debugpy')
   end
-  if vim.fn.executable('ueberzugpp') == 1 then
-    vim.health.ok('image backend: ueberzugpp found')
+  if vim.fn.executable 'ueberzugpp' == 1 then
+    vim.health.ok 'image backend: ueberzugpp found'
   else
-    vim.health.warn('image backend: ueberzugpp missing — image.nvim falls back to kitty graphics',
-      'Install ueberzugpp for terminals without kitty graphics')
+    vim.health.warn('image backend: ueberzugpp missing — image.nvim falls back to kitty graphics', 'Install ueberzugpp for terminals without kitty graphics')
   end
   if (tonumber(vim.g.large_file_size) or 0) > 0 then
     vim.health.ok('large_file_size = ' .. vim.g.large_file_size)

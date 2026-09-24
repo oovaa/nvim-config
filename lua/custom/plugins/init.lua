@@ -48,7 +48,7 @@ return {
       for _, a in ipairs(vim.v.argv) do
         if a == '--headless' then return false end
       end
-      return vim.fn.has('gui_running') == 0 and vim.env.TERM_PROGRAM ~= 'vscode'
+      return vim.fn.has 'gui_running' == 0 and vim.env.TERM_PROGRAM ~= 'vscode'
     end,
     -- Load for markdown rendering; also a molten dependency so it's available
     -- when MoltenInit runs in any filetype. (No trigger at all would load
@@ -58,8 +58,8 @@ return {
     -- TTY — image.nvim renders via terminal ioctl and is useless headless.
     -- (cond above already prevents module load; this is belt-and-suspenders.)
     config = function()
-      if vim.fn.has('gui_running') == 1 or vim.env.TERM_PROGRAM == 'vscode' then return end
-      require('image').setup({
+      if vim.fn.has 'gui_running' == 1 or vim.env.TERM_PROGRAM == 'vscode' then return end
+      require('image').setup {
         backend = 'kitty',
         integrations = {
           markdown = {
@@ -81,7 +81,7 @@ return {
         editor_only_render_when_focused = true,
         tmux_show_only_in_active_window = false,
         hijack_filetype_patterns = { 'rendermarkdown.*' },
-      })
+      }
     end,
   },
 }
