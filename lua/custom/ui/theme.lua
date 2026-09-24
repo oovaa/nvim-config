@@ -1,6 +1,6 @@
 ---@module 'custom.ui.theme'
--- Theme persistence is owned by themery.nvim (see custom/plugins/themes.lua);
--- this module only handles translucent floats + mode-colored line numbers.
+-- Theme choice: snacks colorschemes picker (<leader>ty); boot default stays
+-- tokyonight-night (see init.lua). This module: translucent floats + mode line numbers.
 local M = {}
 
 --- Setup translucent floats and inline color previews.

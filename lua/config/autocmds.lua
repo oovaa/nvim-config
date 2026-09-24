@@ -29,7 +29,7 @@ vim.api.nvim_create_autocmd('BufReadPost', {
 })
 
 -- Indent-guide colors (old hlchunk look): dim guides, purple current chunk.
--- Re-applied on ColorScheme so :Themery switches keep them.
+-- Re-applied on ColorScheme so :colorscheme / snacks picker switches keep them.
 local function indent_colors()
   vim.api.nvim_set_hl(0, 'SnacksIndent', { fg = '#4a4560' })
   vim.api.nvim_set_hl(0, 'SnacksIndentScope', { fg = '#806d9c' })

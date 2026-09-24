@@ -43,8 +43,7 @@ end, { desc = '[G]ank diagnostic [Y]ank to clipboard' })
 -- Toggle inline color previews (colorizer plugin)
 vim.keymap.set('n', '<leader>uc', '<cmd>ColorizerToggle<cr>', { desc = '[U]I [C]olorizer toggle' })
 
--- Switch themes with Themery (live preview + persistence).
-vim.keymap.set('n', '<leader>ty', '<cmd>Themery<CR>', { desc = 'Switch [T]heme (Themery)' })
+-- <leader>ty is snacks.picker.colorschemes — defined on the snacks spec in init.lua.
 
 -- Flip dark/light background (most themes ship both variants)
 vim.keymap.set('n', '<leader>tb', function() vim.o.background = vim.o.background == 'dark' and 'light' or 'dark' end, { desc = '[T]oggle [B]ackground' })

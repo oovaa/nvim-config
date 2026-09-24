@@ -268,7 +268,7 @@ require('lazy').setup({
   -- {
   --   'folke/noice.nvim',
   --   event = 'VeryLazy',
-  --   dependencies = { 'MunifTanjim/nui.nvim', 'folke/snacks.nvim' },
+  --   dependencies = { 'MunifTanjim/nui.nvim', "folke/snacks.nvim" },
   --   opts = {
   --     presets = {
   --       bottom_search = true,
@@ -1263,6 +1263,7 @@ require('lazy').setup({
        keys = {
        { '<leader>.', function() require('snacks').scratch() end, desc = 'Toggle Scratch Buffer' },
        { '<leader>S', function() require('snacks').scratch.select() end, desc = 'Select Scratch Buffer' },
+       { '<leader>ty', function() require('snacks').picker.colorschemes() end, desc = 'Switch [T]heme (colorschemes)' },
        { '<leader>n', function()
            if require('snacks.config').picker and require('snacks.config').picker.enabled then
              require('snacks').picker.notifications()

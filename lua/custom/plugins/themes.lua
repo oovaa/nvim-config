@@ -1,6 +1,6 @@
--- Themes — extra colorschemes (eager rtp only, ~0.2ms each).
--- Picker is <leader>ty via themery (live preview + persistence); its list is
--- derived from installed schemes, so adding a plugin here is the only step.
+-- Themes — extra colorschemes (lazy until :colorscheme / preview).
+-- Picker is <leader>ty via snacks.picker.colorschemes (init.lua snacks keys);
+-- adding a plugin here is the only step to make a scheme available.
 ---@module 'lazy'
 ---@type LazySpec
 return {
@@ -43,7 +43,7 @@ return {
   -- Flexoki — best light theme (flexoki-dark / flexoki-light)
   { 'kepano/flexoki-neovim', name = 'flexoki' , lazy = true },
 
-  -- Trimmed 2026-09: 36 → 13 schemes (faster sync, smaller Themery scan).
+  -- Trimmed 2026-09: 36 → 13 schemes (faster sync).
   -- Restore any line below to re-add (uncomment + `:Lazy sync`).
   -- -- Vague — minimal neutral (vague)
   -- { 'vague2k/vague.nvim' , lazy = true },
@@ -80,7 +80,7 @@ return {
   -- { 'ribru17/bamboo.nvim' , lazy = true },
   -- -- Night Owl — vscode night-owl port
   -- { 'oxfist/night-owl.nvim' , lazy = true },
-  -- -- Horizon — warm sunset (also excluded from Themery: colors file errors)
+  -- -- Horizon — warm sunset (colors file errors on load; excluded from auto-load helpers)
   -- { 'akinsho/horizon.nvim' , lazy = true },
   -- -- Jellybeans — classic vivid
   -- { 'wtfox/jellybeans.nvim' , lazy = true },
@@ -88,65 +88,4 @@ return {
   -- { 'dgox16/oldworld.nvim' , lazy = true },
   -- -- Adwaita — GNOME default look
   -- { 'Mofiqul/adwaita.nvim' , lazy = true },
-
-  -- Themery — picker + persistence for <leader>ty. Theme list is derived
-  -- from installed schemes at startup, so adding a plugin above is enough.
-  {
-    'zaldih/themery.nvim',
-    -- ponytail: cmd/keys lazy — boot is always tokyonight-night anyway
-    -- (no saved state restores at startup); picker loads on first use.
-    cmd = 'Themery',
-    keys = { { '<leader>ty', '<cmd>Themery<CR>', desc = 'Switch [T]heme (Themery)' } },
-    config = function()
-      -- ponytail: scan plugin dirs on disk — most theme plugins aren't on
-      -- rtp yet when this config runs (149 schemes after boot vs 14 via
-      -- getcompletion here). Builtins (from $VIMRUNTIME) are excluded.
-      -- non_schemes are helper files under colors/ that fail :colorscheme
-      -- (mini.hues variants, zenbones randomhue) and crash Themery's preview.
-      local builtin = { ['catppuccin-nvim'] = true } -- helper file, not a pick
-      local non_schemes = {
-        minischeme = true,
-        miniautumn = true,
-        minispring = true,
-        minisummer = true,
-        miniwinter = true,
-        minicyan = true,
-        randomhue = true,
-        -- ponytail: horizon's colors file errors on load (tint(nil) assert
-        -- upstream); previewing it crashes Themery (its restore path then
-        -- concats the theme table). Drop it until upstream fixes it.
-        horizon = true,
-      }
-      for f, ft in vim.fs.dir(vim.env.VIMRUNTIME .. '/colors') do
-        if ft == 'file' then
-          local n = f:match('^(.+)%.vim$')
-          if n then builtin[n] = true end
-        end
-      end
-      local seen, themes = {}, {}
-      local function add(name)
-        if not builtin[name] and not non_schemes[name] and not seen[name] then
-          seen[name] = true
-          themes[#themes + 1] = name
-        end
-      end
-      local lazy_dir = vim.fn.stdpath 'data' .. '/lazy'
-      for entry in vim.fs.dir(lazy_dir) do
-        local cd = lazy_dir .. '/' .. entry .. '/colors'
-        if vim.uv.fs_stat(cd) then
-          for f, ft in vim.fs.dir(cd) do
-            if ft == 'file' then
-              local n = f:match('^(.+)%.vim$') or f:match('^(.+)%.lua$')
-              if n then add(n) end
-            end
-          end
-        end
-      end
-      for _, name in ipairs(vim.fn.getcompletion('', 'color')) do
-        add(name)
-      end
-      table.sort(themes)
-      require('themery').setup { themes = themes, livePreview = true }
-    end,
-  },
 }
