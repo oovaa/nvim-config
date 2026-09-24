@@ -19,10 +19,10 @@ A starting point for Neovim that is:
 * **Formatting**: [conform.nvim](https://github.com/stevearc/conform.nvim) on save (prettierd, stylua, ruff)
 * **Fuzzy finding**: snacks picker — files, grep, symbols (`<leader>ls` document / `<leader>lS` workspace), projects (Telescope kept for bookmarks + `vim.ui.select`)
 * **Explorer**: snacks explorer on `<leader>e` (`:Neotree` fallback)
-* **UI**: tokyonight theme (boot default `tokyonight-night`; `<leader>ty` snacks colorschemes picker, not persisted across restarts), builtin statusline/tabline/dashboard, mode-colored line numbers
+* **UI**: tokyonight theme by default, any `<leader>ty` pick persisted across restarts, builtin statusline/tabline/dashboard, mode-colored line numbers
 * **Git**: gitsigns, LazyGit on `<leader>fg`
 * **Debugging**: nvim-dap for Python; molten-nvim + image.nvim for Jupyter-style notebooks
-* **Performance**: ~185ms startup — everything lazy-loaded except the colorscheme; `:StartupTime` command to profile regressions
+* **Performance**: ~30-50ms headless startup warm (`:StartupTime` to profile; first boot after a config change is slower while caches rebuild) — everything lazy-loaded except the colorscheme
 
 See `CHEATSHEET.md` for the full keybinding reference.
 

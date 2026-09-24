@@ -1,7 +1,57 @@
 ---@module 'custom.ui.theme'
--- Theme choice: snacks colorschemes picker (<leader>ty); boot default stays
--- tokyonight-night (see init.lua). This module: translucent floats + mode line numbers.
+-- Theme persistence is builtin (one file under stdpath('data')); the picker
+-- is snacks.picker.colorschemes() on <leader>ty (see lua/config/keymaps.lua).
+-- This module restores the saved scheme, saves on switch, and handles
+-- translucent floats + mode-colored line numbers.
 local M = {}
+
+--- Path of the one-line file holding the saved colorscheme name.
+---@return string
+function M.theme_file() return vim.fn.stdpath 'data' .. '/theme.txt' end
+
+--- Read the saved scheme, migrating themery's state.json once if present.
+---@return string|nil
+function M.get_saved()
+  local f = io.open(M.theme_file(), 'r')
+  if f then
+    local name = f:read '*l'
+    f:close()
+    if type(name) == 'string' then name = name:match '^%s*(.-)%s*$' end
+    if name and name ~= '' then return name end
+  end
+  -- ponytail: one-time migration from themery (removed); state.json holds
+  -- { colorscheme = '...' }. Adopt it so existing users keep their theme.
+  local legacy = vim.fn.stdpath 'data' .. '/themery/state.json'
+  local lf = io.open(legacy, 'r')
+  if lf then
+    local raw = lf:read '*a'
+    lf:close()
+    local ok, data = pcall(vim.json.decode, raw)
+    if ok and type(data) == 'table' and data.colorscheme and data.colorscheme ~= '' then
+      pcall(M.save, data.colorscheme)
+      return data.colorscheme
+    end
+  end
+  return nil
+end
+
+--- Persist the scheme name (best-effort, never errors).
+---@param name string
+---@return nil
+function M.save(name)
+  local f = io.open(M.theme_file(), 'w')
+  if f then
+    f:write(name)
+    f:close()
+  end
+end
+
+--- Restore the saved scheme if it differs from the current one.
+---@return nil
+function M.restore()
+  local saved = M.get_saved()
+  if saved and saved ~= vim.g.colors_name then pcall(vim.cmd.colorscheme, saved) end
+end
 
 --- Setup translucent floats and inline color previews.
 ---@return nil
@@ -9,6 +59,15 @@ function M.setup()
   -- Translucent floating windows for a "glow" feel without terminal alpha.
   vim.opt.winblend = 10
   vim.opt.pumblend = 10
+
+  M.restore()
+  -- ponytail: save on every switch (one tiny write); restore above reads it.
+  vim.api.nvim_create_autocmd('ColorScheme', {
+    group = vim.api.nvim_create_augroup('ThemePersistence', { clear = true }),
+    callback = function(ev)
+      if ev.match then M.save(ev.match) end
+    end,
+  })
 
   M.setup_mode_line_colors()
 end

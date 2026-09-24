@@ -1,47 +1,48 @@
--- Themes — extra colorschemes (lazy until :colorscheme / preview).
--- Picker is <leader>ty via snacks.picker.colorschemes (init.lua snacks keys);
--- adding a plugin here is the only step to make a scheme available.
+-- Themes — extra colorschemes (eager rtp only, ~0.2ms each).
+-- Picker is <leader>ty via snacks.picker.colorschemes() (LazyVim default,
+-- live preview included); persistence is builtin in custom/ui/theme.lua.
+-- Adding a plugin here is the only step to offer a new scheme.
 ---@module 'lazy'
 ---@type LazySpec
 return {
   -- Catppuccin — 4 flavours: catppuccin-latte, frappe, macchiato, mocha (mocha is the dark one)
-  { 'catppuccin/nvim', name = 'catppuccin', lazy = true },
+  { 'catppuccin/nvim', name = 'catppuccin' , lazy = true },
 
   -- Rosé Pine — main / moon / dawn (dawn is light)
-  { 'rose-pine/neovim', name = 'rose-pine', lazy = true },
+  { 'rose-pine/neovim', name = 'rose-pine' , lazy = true },
 
   -- Gruvbox — retro, gruvbox
-  { 'ellisonleao/gruvbox.nvim', lazy = true },
+  { 'ellisonleao/gruvbox.nvim' , lazy = true },
 
   -- Kanagawa — wave / dragon / lotus (lotus is light)
-  { 'rebelot/kanagawa.nvim', lazy = true },
+  { 'rebelot/kanagawa.nvim' , lazy = true },
 
   -- OneDark — darker / dark / cool / deep / warm / warmer + onedark_vivid
-  { 'navarasu/onedark.nvim', lazy = true },
+  { 'navarasu/onedark.nvim' , lazy = true },
 
   -- Nightfox — nightfox / dayfox / dawnfox / duskfox / nordfox / terafox / carbonfox
-  { 'EdenEast/nightfox.nvim', lazy = true },
+  { 'EdenEast/nightfox.nvim' , lazy = true },
 
   -- Everforest — everforest (hard/medium/soft bg via setup)
-  { 'sainnhe/everforest', lazy = true },
+  { 'sainnhe/everforest' , lazy = true },
 
   -- Dracula — dracula / dracula-soft
-  { 'Mofiqul/dracula.nvim', lazy = true },
+  { 'Mofiqul/dracula.nvim' , lazy = true },
 
   -- Github — github_dark / github_light / github_dark_dimmed etc.
-  { 'projekt0n/github-nvim-theme', name = 'github-theme', lazy = true },
+  { 'projekt0n/github-nvim-theme', name = 'github-theme' , lazy = true },
 
   -- Melange — warm, melange
-  { 'savq/melange-nvim', lazy = true },
+  { 'savq/melange-nvim' , lazy = true },
 
   -- Poimandres — deep blue-green
-  { 'olivercederborg/poimandres.nvim', lazy = true },
+  { 'olivercederborg/poimandres.nvim' , lazy = true },
 
   -- Cyberdream — modern neon (cyberdream / cyberdream-light)
-  { 'scottmckendry/cyberdream.nvim', lazy = true },
+  { 'scottmckendry/cyberdream.nvim' , lazy = true },
 
   -- Flexoki — best light theme (flexoki-dark / flexoki-light)
-  { 'kepano/flexoki-neovim', name = 'flexoki', lazy = true },
+  { 'kepano/flexoki-neovim', name = 'flexoki' , lazy = true },
 
   -- Trimmed 2026-09: 36 → 13 schemes (faster sync).
   -- Restore any line below to re-add (uncomment + `:Lazy sync`).
@@ -80,7 +81,7 @@ return {
   -- { 'ribru17/bamboo.nvim' , lazy = true },
   -- -- Night Owl — vscode night-owl port
   -- { 'oxfist/night-owl.nvim' , lazy = true },
-  -- -- Horizon — warm sunset (colors file errors on load; excluded from auto-load helpers)
+  -- -- Horizon — warm sunset (colors file errors upstream, skipped)
   -- { 'akinsho/horizon.nvim' , lazy = true },
   -- -- Jellybeans — classic vivid
   -- { 'wtfox/jellybeans.nvim' , lazy = true },

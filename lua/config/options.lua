@@ -216,6 +216,14 @@ vim.o.winborder = 'rounded'
 -- EFFECT: true = asks "Save changes?" dialog instead of error
 vim.o.confirm = true
 
+-- DIFF ALGORITHM (smarter diffs: indent heuristic on top of the default
+-- linematch). Joins hunks whose gaps are only re-indented/moved lines.
+vim.opt.diffopt:append { 'indent-heuristic' }
+
+-- SPLIT KEEP (opening/closing a split keeps the topline stable)
+-- Without it the whole window scrolls when a horizontal split opens.
+vim.o.splitkeep = 'screen'
+
 -- ============================================================================
 -- DIAGNOSTIC CONFIGURATION
 -- ============================================================================

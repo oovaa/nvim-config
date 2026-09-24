@@ -2,8 +2,9 @@
 -- Run with: nvim --headless -c 'lua require("plenary.busted").run("tests/test_qol.lua")' -c 'qa!'
 
 describe('Phase 3: QoL Plugins', function()
+  -- ponytail: specs moved from init.lua to lua/plugins/ — assert location-agnostic
+  local H = require('tests.helpers')
   local qol_path = vim.fn.stdpath 'config' .. '/lua/custom/plugins/qol.lua'
-  local init_path = vim.fn.stdpath 'config' .. '/init.lua'
   local plugins_path = vim.fn.stdpath 'config' .. '/lua/custom/plugins/init.lua'
 
   local function read(path) return table.concat(vim.fn.readfile(path), '\n') end
@@ -81,12 +82,12 @@ describe('Phase 3: QoL Plugins', function()
     assert.is_truthy(qol:match 'grug%-far%.nvim')
     assert.is_truthy(qol:match '<leader>fr')
     assert.is_truthy(qol:match 'ripgrep')
-    local init = read(init_path)
+    local init = H.all()
     assert.is_nil(init:match 'nvim%-spectre', 'spectre spec should be deleted (grug-far owns <leader>fr)')
   end)
 
   it('which-key documents groups without shadowing actions', function()
-    local init = read(init_path)
+    local init = H.all()
     for _, g in ipairs { 'g', 'h', 'r', 's', 't', 'f', 'd', 'm' } do
       assert.is_truthy(init:match('<leader>' .. g), 'Missing which-key group: ' .. g)
     end

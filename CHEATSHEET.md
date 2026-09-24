@@ -18,7 +18,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 
 ## 🚀 Session Management
 
-- Sessions are saved/restored automatically via `auto-session.nvim` (excluded in `~/`, `~/Downloads`, `/etc`).
+- Sessions are saved on quit and restored from the dashboard (`s`) via builtin `:mksession` (suppressed in `~/`, `~/Downloads`, `/etc`, `/tmp`).
 - Switch projects with `<leader>sp`.
 
 ## 🗂️ UI & File Navigation
@@ -26,16 +26,16 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
 | `<leader>e` | Toggle File Explorer | `snacks.nvim` |
-| `<leader>ty` | Switch Theme (snacks colorschemes picker; boot default tokyonight-night) | snacks.nvim |
+| `<leader>ty` | Switch Theme (snacks colorscheme picker, choice persisted across restarts) | config |
 | `t` | Open file in new tab (in explorer) | `snacks.nvim` |
 | `<C-t>` | Open file in new tab (in picker) | `snacks.nvim` |
 | `<leader>tt` | Toggle bottom terminal | built-in |
 | `<leader>tf` | Toggle floating terminal | built-in |
 | `<leader>tm` | Toggle floating terminal with tmux (multi-tab) | built-in |
 | `<leader>ht` | Toggle floating Herdr terminal | built-in |
-| `<C-\>` | Toggle Terminal (Any mode) | `toggleterm.nvim` |
-| `<leader>tn` | New terminal window | `toggleterm.nvim` |
-| `<leader>t1/2/3`| Switch to Terminal 1, 2, or 3 | `toggleterm.nvim` |
+| `<C-\>` | Toggle Terminal (Any mode) | built-in |
+| `<leader>tn` | New terminal window | built-in |
+| `<leader>t1/2/3`| Switch to Terminal 1, 2, or 3 | built-in |
 | `<S-h>` | Previous Buffer | built-in |
 | `<S-l>` | Next Buffer | built-in |
 | `<leader>bd` | Delete Current Buffer | built-in |
@@ -106,7 +106,13 @@ Press `<leader>e` to toggle the file explorer (`:Neotree` fallback). Inside it:
 | `<C-space>` | Force show completion docs | `blink.cmp` |
 | `<C-BS>` | Delete previous word | built-in |
 | `<leader>q` | Open diagnostic quickfix list | built-in |
+| `gy` | Yank nearest diagnostic under cursor | built-in |
+| `<leader>yd` | Yank all diagnostics on current line | built-in |
 | `<leader>uc` | Toggle colorizer (inline color previews) | `colorizer` |
+| `<leader>us` | Toggle spell checking | built-in |
+| `<leader>ur` | Reload config | built-in |
+| `<leader>fy` | Yank file path (count = absolute) | built-in |
+| `:DiffOrig` | Diff buffer against saved file | built-in |
 | `<leader>mt` | Toggle bookmark on current line | `vim-bookmarks` |
 | `<leader>mc` | Annotate bookmark | `vim-bookmarks` |
 | `<leader>mj` | Jump to next bookmark | `vim-bookmarks` |
@@ -129,7 +135,7 @@ Press `<leader>e` to toggle the file explorer (`:Neotree` fallback). Inside it:
 
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
-| `<leader>fg` | Open LazyGit (floating window) | `lazygit.nvim` |
+| `<leader>fg` | Open LazyGit (floating window) | built-in |
 | `[c` | Previous Hunk | `gitsigns` |
 | `]c` | Next Hunk | `gitsigns` |
 

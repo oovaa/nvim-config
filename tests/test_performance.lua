@@ -2,6 +2,8 @@
 -- Run with: nvim --headless -c 'lua require("plenary.busted").run("tests/test_performance.lua")' -c 'qa!'
 
 describe('Phase 2: Performance Optimizations', function()
+  -- ponytail: specs moved from init.lua to lua/plugins/ — assert location-agnostic
+  local H = require('tests.helpers')
   -- Test 1: Themes load lazily except tokyonight
   describe('themes', function()
     it('kept themes are lazy=true, trimmed ones stay commented, only tokyonight is eager', function()
@@ -45,8 +47,8 @@ describe('Phase 2: Performance Optimizations', function()
         end
       end
       -- tokyonight should NOT be lazy (it's in init.lua with lazy=false or default eager loading)
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local init_content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local init_content = H.all()
       -- Check that tokyonight doesn't have lazy = true (meaning it loads eagerly)
       local tokyonight_section = init_content:match 'folke/tokyonight%.nvim[^}]*}'
       assert.is_not_nil(tokyonight_section, 'tokyonight should be in init.lua')
@@ -63,7 +65,7 @@ describe('Phase 2: Performance Optimizations', function()
       local keymaps = table.concat(vim.fn.readfile(vim.fn.stdpath 'config' .. '/lua/config/keymaps.lua'), '\n')
       assert.is_falsy(keymaps:match 'Themery', 'keymaps.lua must not map Themery')
 
-      local init = table.concat(vim.fn.readfile(vim.fn.stdpath 'config' .. '/init.lua'), '\n')
+      local init = H.all()
       local snacks = init:match "'folke/snacks%.nvim'.-\n  },"
       assert.is_not_nil(snacks, 'snacks spec should exist')
       assert.is_truthy(snacks:find('<leader>ty', 1, true), 'snacks should own <leader>ty')
@@ -74,8 +76,8 @@ describe('Phase 2: Performance Optimizations', function()
   -- Test 2: LSP uses native vim.lsp.config (nvim-lspconfig removed)
   describe('lspconfig (removed)', function()
     it('has no nvim-lspconfig dependency; servers defined natively', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
       content = content:gsub('%-%-[^\n]*', '') -- strip comments: check code, not prose
 
       -- nvim-lspconfig and its mason bridge must be gone
@@ -92,8 +94,8 @@ describe('Phase 2: Performance Optimizations', function()
   -- Test 3: snacks.nvim only enables needed modules
   describe('snacks.nvim', function()
     it('enables input, notifier, scratch, scope, words, indent, picker, explorer', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
 
       assert.is_truthy(content:match 'snacks%.nvim', 'snacks.nvim should exist')
 
@@ -118,16 +120,16 @@ describe('Phase 2: Performance Optimizations', function()
   -- Test 4: treesitter parsers install on-demand
   describe('treesitter', function()
     it('has no upfront TSInstall loop for 15 parsers', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
 
       local has_bulk_install = content:match 'for _, lang in ipairs%s*{' and content:match 'vim%.cmd%s*[\'"]TSInstall'
       assert.is_falsy(has_bulk_install, 'Should not have bulk TSInstall loop for 15 parsers')
     end)
 
     it('has FileType autocmd that triggers TSInstall for missing parsers', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
 
       assert.is_truthy(content:match 'treesitter%-start' or content:match 'vim%.treesitter%.start')
       assert.is_truthy(content:match 'fs_stat%(parser%)' and content:match 'TSInstall', 'Should check for parser and install on demand')
@@ -137,8 +139,8 @@ describe('Phase 2: Performance Optimizations', function()
   -- Test 5: fzf-native has cmake cond
   describe('telescope-fzf-native', function()
     it('has cond checking for make and cmake', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
 
       assert.is_truthy(content:match 'telescope%-fzf%-native%.nvim', 'fzf-native should be a dependency')
       assert.is_truthy(
@@ -151,8 +153,8 @@ describe('Phase 2: Performance Optimizations', function()
   -- Test 6: nvim-ts-autotag loads on ft
   describe('nvim-ts-autotag', function()
     it('loads on specific filetypes (html, jsx, tsx, etc.)', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
 
       assert.is_truthy(content:match 'nvim%-ts%-autotag', 'nvim-ts-autotag should exist')
       assert.is_truthy(content:match 'nvim%-ts%-autotag.-ft%s*=', 'Should have ft configuration')
@@ -164,8 +166,8 @@ describe('Phase 2: Performance Optimizations', function()
   -- Test 7: Startup performance target
   describe('startup performance', function()
     it('has vim.loader.enable and lazy.nvim cache enabled', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
 
       assert.is_truthy(content:match 'vim%.loader%.enable')
       assert.is_truthy(content:match 'cache%s*=%s*{%s*enabled%s*=%s*true')
@@ -176,10 +178,10 @@ describe('Phase 2: Performance Optimizations', function()
   -- Test 8: hlchunk deleted, colorizer/image narrowly triggered
   describe('hlchunk/colorizer/image triggers', function()
     it('hlchunk spec is gone; colorizer+image load on ft only', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local init_content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local init_content = H.all()
       local code = init_content:gsub('%-%-[^\n]*', '') -- strip comments: check code, not prose
-      assert.is_nil(code:match 'hlchunk', 'hlchunk spec should be deleted (snacks.indent owns guides)')
+      assert.is_nil(code:match 'hlchunk%.nvim', 'hlchunk spec should be deleted (snacks.indent owns guides)')
       -- chunk box + sticky scope replicate the old hlchunk look/behavior
       assert.is_truthy(code:match 'chunk%s*=%s*{[^}]*enabled%s*=%s*true', 'snacks chunk box should be enabled')
       assert.is_truthy(code:match 'scope%s*=%s*{%s*cursor%s*=%s*false', 'scope should follow the block, not the cursor column')
@@ -200,8 +202,8 @@ describe('Phase 2: Performance Optimizations', function()
   -- Test 9: noice removed, telescope cmd-only, daily keys on snacks
   describe('picker migration', function()
     it('noice spec is commented; telescope has no keys; search keys live on snacks', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
       local code = content:gsub('%-%-[^\n]*', '') -- strip comments: check code, not prose
       assert.is_nil(code:match "'folke/noice%.nvim'", 'noice spec should be removed (commented)')
       local tspec = code:match "'nvim%-telescope/telescope%.nvim'.-\n  %},"

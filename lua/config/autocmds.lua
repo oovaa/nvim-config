@@ -22,12 +22,14 @@ vim.api.nvim_create_autocmd('BufReadPost', {
     if ft == 'gitcommit' or ft == 'gitrebase' then return end
     local mark = vim.api.nvim_buf_get_mark(args.buf, '"')
     local lines = vim.api.nvim_buf_line_count(args.buf)
-    if mark[1] > 0 and mark[1] <= lines then pcall(vim.api.nvim_win_set_cursor, 0, mark) end
+    if mark[1] > 0 and mark[1] <= lines then
+      pcall(vim.api.nvim_win_set_cursor, 0, mark)
+    end
   end,
 })
 
 -- Indent-guide colors (old hlchunk look): dim guides, purple current chunk.
--- Re-applied on ColorScheme so :colorscheme / snacks picker switches keep them.
+-- Re-applied on ColorScheme so theme switches keep them.
 local function indent_colors()
   vim.api.nvim_set_hl(0, 'SnacksIndent', { fg = '#4a4560' })
   vim.api.nvim_set_hl(0, 'SnacksIndentScope', { fg = '#806d9c' })
@@ -131,6 +133,19 @@ vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter' }, {
   callback = function() pcall(vim.cmd, 'silent! checktime') end,
 })
 
+-- Auto-create missing parent dirs on save (e.g. editing a:new/file/that
+-- doesn't exist yet). Skips remote/terminal buffers.
+vim.api.nvim_create_autocmd('BufWritePre', {
+  desc = 'mkdir -p the parent dir before writing a new file',
+  group = vim.api.nvim_create_augroup('auto-mkdir', { clear = true }),
+  callback = function(args)
+    local dir = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(args.buf), ':p:h')
+    if dir ~= '' and vim.fn.isdirectory(dir) == 0 and not dir:match('^%w+://') then
+      vim.fn.mkdir(dir, 'p')
+    end
+  end,
+})
+
 -- :SudoWrite — write the current buffer as root via sudo. Classic QOL for
 -- editing system files (/etc/hosts, nginx config, etc.) without leaving nvim.
 -- (ponytail: sudo://% needs suda.vim, which isn't installed — sudo tee is.)
@@ -141,8 +156,15 @@ vim.api.nvim_create_user_command('SudoWrite', function(args)
     return
   end
   vim.cmd(('write%s !sudo tee %s >/dev/null'):format(args.bang and '!' or '', vim.fn.fnameescape(name)))
-  vim.cmd 'edit!'
+  vim.cmd('edit!')
 end, { desc = 'Write current buffer via sudo', bang = true })
+
+-- :DiffOrig — side-by-side diff of the buffer against the file on disk.
+-- Classic vim QoL for "what have I changed since :w?" (gitsigns covers git,
+-- this covers unsaved edits anywhere).
+vim.api.nvim_create_user_command('DiffOrig', function()
+  vim.cmd('vert new | set buftype=nofile | read ++edit # | 0d_ | diffthis | wincmd p | diffthis')
+end, { desc = 'Diff buffer against saved file' })
 
 -- HTTP buffer mapping: <leader>hr lives ONLY in http buffers (buffer-local).
 -- A lazy.nvim `keys` entry would register a global load-shim instead.
@@ -150,8 +172,23 @@ vim.api.nvim_create_autocmd('FileType', {
   pattern = 'http',
   desc = 'HTTP buffer mappings',
   group = vim.api.nvim_create_augroup('http-keymaps', { clear = true }),
-  callback = function(args) vim.keymap.set('n', '<leader>hr', '<cmd>Rest run<cr>', { buffer = args.buf, desc = 'HTTP Request' }) end,
+  callback = function(args)
+    vim.keymap.set('n', '<leader>hr', '<cmd>Rest run<cr>', { buffer = args.buf, desc = 'HTTP Request' })
+  end,
 })
+
+-- docker-compose files get the docker-compose LSP (docker_compose_language_service).
+-- Moved from init.lua (Section 5: Theme & Filetypes).
+vim.filetype.add {
+  pattern = {
+    -- NOTE: vim.filetype.add anchors patterns as ^pat$ itself, so no $ here.
+    -- Bare `compose` is exact-matched (else composer.yaml etc. would hit);
+    -- docker-compose keeps .* for .override.yml variants.
+    ['docker%-compose.*%.ya?ml'] = 'yaml.docker-compose',
+    ['compose%.ya?ml'] = 'yaml.docker-compose',
+    ['compose%.override%.ya?ml'] = 'yaml.docker-compose',
+  },
+}
 
 -- which-key hides hints while recording/playing macros (upstream hard-code in
 -- state.lua/triggers.lua via util.in_macro(), no config knob). Force it on —

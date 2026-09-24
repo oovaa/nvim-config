@@ -25,6 +25,7 @@ Checked by `:checkhealth config.health`. Install what's missing:
 | :--- | :--- | :--- |
 | `git` | plugins, blame, lazy updates | OS package manager |
 | `rg` | Telescope grep, grug-far | `brew install ripgrep` |
+| `fd` | Fast file finding (snacks/telescope pickers) | `brew install fd` |
 | `bun` | JS/TS runs, vtsls install | `curl -fsSL https://bun.sh/install \| bash` |
 | `node` | LSP servers | `brew install node` |
 | `python3` + `pynvim` | molten, neotest-python | `pip install pynvim jupyter ipykernel` |
@@ -42,7 +43,7 @@ Leader is `<Space>`. Essentials:
 | :--- | :--- |
 | `<leader>sf` / `<leader>sg` / `<leader><leader>` | Find files / grep / buffers |
 | `<leader>e` | File explorer |
-| `<leader>f` | Format buffer (auto-formats on save) |
+| `<leader>ff` | Format buffer (auto-formats on save) |
 | `<leader>fg` | LazyGit |
 | `<leader>gb` | Git blame |
 | `<leader>fr` | Project find & replace |
@@ -52,10 +53,10 @@ Leader is `<Space>`. Essentials:
 
 ## Manage plugins, themes, LSPs
 
-- **Plugins**: edit specs (`init.lua`, `lua/custom/plugins/`), then `:Lazy sync`. Check load cost with `:Lazy profile`.
-- **Themes**: `<leader>ty` opens the snacks colorschemes picker (list includes installed + lazy schemes). Boot default is `tokyonight-night`; the picker does not restore across restarts. To add one, add its plugin spec in `lua/custom/plugins/themes.lua`, then `:Lazy sync`.
+- **Plugins**: edit specs (`lua/plugins/` by section, `lua/custom/plugins/` for personal), then `:Lazy sync`. Check load cost with `:Lazy profile`.
+- **Themes**: `<leader>ty` to pick (snacks colorscheme picker with live preview); choice persists in `stdpath('data')/theme.txt`. To add one, add its plugin spec in `lua/custom/plugins/themes.lua`, then `:Lazy sync`.
 - **LSPs**: Mason auto-installs most servers on demand (`:Mason`). Exceptions installed manually: `vtsls`, `pyrefly` (see table above).
-- **Formatters**: conform.nvim per filetype in `init.lua`; auto-format skips files >1MB (`large_file_size` in `lua/config/options.lua`), manual `<leader>f` always works.
+- **Formatters**: conform.nvim per filetype in `lua/plugins/formatting.lua`; auto-format skips files >1MB (`large_file_size` in `lua/config/options.lua`), manual `<leader>ff` always works.
 - **Tests**: plenary.busted suites in `tests/` — `nvim --headless -c 'lua require("plenary.busted").run("tests/test_qol.lua")' -c 'qa!'`
 
 ## Troubleshooting
@@ -64,6 +65,6 @@ Leader is `<Space>`. Essentials:
 | :--- | :--- |
 | Icons are boxes | Install a Nerd Font, set terminal to use it |
 | No completions for TS/Python | `:Mason` — server missing? `vtsls`/`pyrefly` on `PATH`? `:LspInfo` |
-| Format-on-save silent on big file | Expected >1MB; use `<leader>f` |
+| Format-on-save silent on big file | Expected >1MB; use `<leader>ff` |
 | Slow startup | `:StartupTime`, then `:Lazy profile` for the culprit |
 | Plugin errors after update | `:Lazy sync`, restart, `:checkhealth config.health` |

@@ -2,11 +2,13 @@
 -- Run with: nvim --headless -c 'lua require("plenary.busted").run("tests/test_critical_fixes.lua")' -c 'qa!'
 
 describe('Phase 1: Critical Bug Fixes', function()
+  -- ponytail: specs moved from init.lua to lua/plugins/ — assert location-agnostic
+  local H = require('tests.helpers')
   -- Test 1: vtsls memory setting
   describe('vtsls config', function()
     it('has conservative maxTsServerMemory (2048) in init.lua', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
       -- vtsls is configured inline in init.lua, not via lspconfig.configs
       assert.is_truthy(content:match 'maxTsServerMemory%s*=%s*2048', 'Should have maxTsServerMemory = 2048 in init.lua')
     end)
@@ -15,8 +17,8 @@ describe('Phase 1: Critical Bug Fixes', function()
   -- Test 2: mini.pairs skip_next regex handles edge cases
   describe('mini.pairs', function()
     it('is configured with skip_next for common patterns in init.lua', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
       -- mini.pairs is configured inline in init.lua
       assert.is_truthy(content:match 'skip_next%s*=', 'Should have skip_next configuration')
       assert.is_truthy(content:match 'skip_ts%s*=', 'Should have skip_ts configuration')
@@ -25,8 +27,8 @@ describe('Phase 1: Critical Bug Fixes', function()
     it('skips pairing inside strings', function()
       -- This is a behavioral test - we verify the config is set
       -- Actual behavior testing would require more complex setup
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
       assert.is_truthy(content:match 'skip_ts' or content:match 'skip_next')
     end)
   end)
@@ -35,8 +37,8 @@ describe('Phase 1: Critical Bug Fixes', function()
   describe('treesitter', function()
     it('does not have upfront TSInstall loop for 15 parsers', function()
       -- Read init.lua and verify no bulk TSInstall loop
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
 
       -- Should NOT have the old loop pattern
       local has_bulk_install = content:match 'for _, lang in ipairs%s*{' and content:match 'vim%.cmd%s*[\'"]TSInstall'
@@ -48,8 +50,8 @@ describe('Phase 1: Critical Bug Fixes', function()
     end)
 
     it('has FileType autocmd that triggers TSInstall for missing parsers', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
 
       -- Should have treesitter start autocmd
       assert.is_truthy(content:match 'treesitter%-start' or content:match 'vim%.treesitter%.start')
@@ -59,8 +61,8 @@ describe('Phase 1: Critical Bug Fixes', function()
   -- Test 4: native vim.lsp uses modern API
   describe('lspconfig API', function()
     it('uses vim.lsp.get_client_by_id or vim.lsp.get_clients({bufnr}) not deprecated buf_get_clients', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
 
       -- Should NOT use deprecated API
       assert.is_falsy(content:match 'vim%.lsp%.buf_get_clients', 'Should not use deprecated vim.lsp.buf_get_clients')
@@ -74,8 +76,8 @@ describe('Phase 1: Critical Bug Fixes', function()
   -- Test 5: Session symlink handling
   describe('session', function()
     it('resolves symlinks before hashing cwd', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
 
       -- Should use vim.fn.resolve to resolve symlinks
       assert.is_truthy(content:match 'vim%.fn%.resolve', 'Should use vim.fn.resolve to handle symlinks in session path')
@@ -132,8 +134,8 @@ describe('Phase 1: Critical Bug Fixes', function()
   -- Test 9: Performance baseline
   describe('performance', function()
     it('has vim.loader.enable and lazy.nvim cache enabled', function()
-      local init_path = vim.fn.stdpath 'config' .. '/init.lua'
-      local content = table.concat(vim.fn.readfile(init_path), '\n')
+      -- ponytail: path kept for context; assertions read the whole config
+      local content = H.all()
 
       assert.is_truthy(content:match 'vim%.loader%.enable')
       assert.is_truthy(content:match 'cache%s*=%s*{%s*enabled%s*=%s*true')
