@@ -28,15 +28,18 @@ vim.api.nvim_create_autocmd('BufReadPost', {
   end,
 })
 
--- Indent-guide colors (old hlchunk look): dim guides, purple current chunk.
--- Re-applied on ColorScheme so theme switches keep them.
+-- Indent-guide colors follow the active theme via links (old hlchunk look:
+-- dim guides, accented current chunk). Re-applied on ColorScheme because
+-- :colorscheme wipes custom highlights — the previous hardcoded hexes
+-- (#4a4560/#806d9c) stayed tokyonight-purple on every other theme.
+-- (Matches snacks' own defaults: SnacksIndent → NonText, Scope → Special.)
 local function indent_colors()
-  vim.api.nvim_set_hl(0, 'SnacksIndent', { fg = '#4a4560' })
-  vim.api.nvim_set_hl(0, 'SnacksIndentScope', { fg = '#806d9c' })
-  vim.api.nvim_set_hl(0, 'SnacksIndentChunk', { fg = '#806d9c' })
+  vim.api.nvim_set_hl(0, 'SnacksIndent', { link = 'NonText' })
+  vim.api.nvim_set_hl(0, 'SnacksIndentScope', { link = 'Special' })
+  vim.api.nvim_set_hl(0, 'SnacksIndentChunk', { link = 'Special' })
 end
 vim.api.nvim_create_autocmd('ColorScheme', {
-  desc = 'Keep hlchunk-style indent colors across theme switches',
+  desc = 'Keep theme-following indent colors across theme switches',
   group = vim.api.nvim_create_augroup('indent-colors', { clear = true }),
   callback = indent_colors,
 })

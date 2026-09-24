@@ -190,9 +190,13 @@ function M.setup_lualine()
     if diag_s ~= '' then b_parts[#b_parts + 1] = diag_s end
     local b_s = table.concat(b_parts, '  ')
 
-    -- macro recording — vim.fn.reg_recording() is '' when idle, register when recording
+    -- macro recording — vim.fn.reg_recording() is '' when idle, register when recording;
+    -- reg_executing() likewise during @-playback (noice parity: recording only —
+    -- playback indicator added since long 1000@q runs otherwise show nothing).
     local rec = vim.fn.reg_recording()
-    local macro_s = rec ~= '' and ('%#SL_diff_delete#◉ @' .. rec .. hl_b) or ''
+    local exe = vim.fn.reg_executing()
+    local macro_s = rec ~= '' and ('%#SL_diff_delete#◉ @' .. rec .. hl_b)
+      or (exe ~= '' and ('%#SL_diff_delete#▶ @' .. exe .. hl_b) or '')
 
     -- filename path=1 with symbols
     local fname = vim.fn.expand '%:~:.'
