@@ -59,6 +59,10 @@ function M.setup_mode_line_colors()
 
   vim.api.nvim_create_autocmd('ColorScheme', { group = group, callback = snapshot })
   vim.api.nvim_create_autocmd('ModeChanged', { group = group, callback = function() swap(vim.fn.mode()) end })
+  -- Snapshot immediately: ModeChanged can fire before the first ColorScheme
+  -- (setup runs before lazy loads tokyonight); empty defaults made swap()
+  -- call nvim_set_hl with nil and error at theme.lua restore path.
+  snapshot()
 end
 
 return M
