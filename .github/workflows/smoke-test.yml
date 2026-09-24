@@ -59,7 +59,8 @@ jobs:
           for f in tests/test_*.lua; do
             echo "::group:: $f"
             nvim --headless --cmd "cd $GITHUB_WORKSPACE" -c "lua require('plenary.busted').run('$f')" -c 'qa!' 2>&1 | tee /tmp/test.log
-            if grep -q "Failed" /tmp/test.log; then
+            # Strip ANSI; only non-zero Failed/Errors counts fail (summary always prints "Failed : 0").
+            if sed 's/\x1b\[[0-9;]*m//g' /tmp/test.log | grep -qE 'Failed *:.*[1-9]|Errors *:.*[1-9]'; then
               echo "::error:: $f failed"
               cat /tmp/test.log
               exit 1

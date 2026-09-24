@@ -8,7 +8,7 @@
 -- TO CHANGE: Add your prefix if brew lives elsewhere.
 -- EFFECT: Prepends the first prefix containing node, once, only when node is
 --         otherwise unresolvable. Terminal launches (node already visible) skip it.
-if vim.fn.exepath('node') == '' then
+if vim.fn.exepath 'node' == '' then
   local prefixes = {
     vim.env.HOMEBREW_PREFIX and vim.env.HOMEBREW_PREFIX .. '/bin',
     '/home/linuxbrew/.linuxbrew/bin', -- Linuxbrew default
@@ -109,9 +109,7 @@ vim.o.showmode = false
 -- TO CHANGE: Set to 'unnamed' for primary selection (Linux) or 'unnamedplus' for clipboard
 -- EFFECT: You can paste system clipboard with p and copy to system clipboard with y
 -- Skipped over SSH (no forwarding): every yank would hit a missing clipboard.
-if vim.env.SSH_CONNECTION == nil then
-  vim.o.clipboard = 'unnamedplus'
-end
+if vim.env.SSH_CONNECTION == nil then vim.o.clipboard = 'unnamedplus' end
 
 -- BREAK INDENT
 -- WHAT: Indents wrapped lines to match the first line's indent

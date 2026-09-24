@@ -32,7 +32,7 @@ SECTION INDEX:
   2.  Core Options             - lua/config/options.lua (leader key, editor settings)
   3.  Keymaps                  - lua/config/keymaps.lua (global mappings)
   4.  Autocommands             - lua/config/autocmds.lua (global autocmds)
-  5.  Theme & Filetypes        - Theme persistence, docker-compose filetype
+   5.  Theme & Filetypes        - docker-compose filetype; theme pack in custom/plugins
   6.  Plugins (lazy.nvim)      - All plugin configurations
      6.1  UI & Visual         - Indent, git signs, which-key, telescope
      6.3  LSP                 - Language servers, Mason, vtsls
@@ -142,7 +142,7 @@ vim.filetype.add {
   },
 }
 
--- THEME: persistence + mode-colored line numbers live in custom/ui/theme.lua.
+-- THEME: mode-colored line numbers + boot default live in custom/ui/theme.lua.
 pcall(function() require('custom.ui.theme').setup() end)
 
 -- NOTIFY THROTTLE (spam guard for auto-save + conform)
@@ -268,7 +268,7 @@ require('lazy').setup({
   -- {
   --   'folke/noice.nvim',
   --   event = 'VeryLazy',
-  --   dependencies = { 'MunifTanjim/nui.nvim', 'folke/snacks.nvim' },
+  --   dependencies = { 'MunifTanjim/nui.nvim', "folke/snacks.nvim" },
   --   opts = {
   --     presets = {
   --       bottom_search = true,
@@ -992,33 +992,33 @@ require('lazy').setup({
       -- gss<surrounding> to surround current line (e.g. gss" -> "line")
       vim.keymap.set('n', 'gss', 'gsa_', { remap = true })
 
-       -- Auto-pair brackets, parens, quotes: when you type ( it adds ), etc.
-       -- LazyVim-style: skip next char, skip inside treesitter strings.
-        require('mini.pairs').setup {
-          modes = { insert = true, command = true, terminal = false },
-          skip_next = [=[[%w%%%'%[%"%.%`%$]]=],
-          skip_ts = { 'string' },
-          skip_unbalanced = true,
-          markdown = true,
-        }
+      -- Auto-pair brackets, parens, quotes: when you type ( it adds ), etc.
+      -- LazyVim-style: skip next char, skip inside treesitter strings.
+      require('mini.pairs').setup {
+        modes = { insert = true, command = true, terminal = false },
+        skip_next = [=[[%w%%%'%[%"%.%`%$]]=],
+        skip_ts = { 'string' },
+        skip_unbalanced = true,
+        markdown = true,
+      }
 
-        -- Bracketed navigation: [b/]b buffers, [q/]q quickfix, [t/]t
-        -- treesitter, [u/]u undo states... (zero new dep — ships inside
-        -- mini.nvim). Diagnostic suffix disabled: [d/]d already jump with
-        -- a float in lua/config/keymaps.lua. See :help mini.bracketed.
-        require('mini.bracketed').setup { diagnostic = { suffix = '' } }
+      -- Bracketed navigation: [b/]b buffers, [q/]q quickfix, [t/]t
+      -- treesitter, [u/]u undo states... (zero new dep — ships inside
+      -- mini.nvim). Diagnostic suffix disabled: [d/]d already jump with
+      -- a float in lua/config/keymaps.lua. See :help mini.bracketed.
+      require('mini.bracketed').setup { diagnostic = { suffix = '' } }
 
-       -- Statusline is builtin (see lua/custom/ui/spec.lua).
+      -- Statusline is builtin (see lua/custom/ui/spec.lua).
 
-       -- ... and there is more!
-       --  Check out: https://github.com/nvim-mini/mini.nvim
-     end,
-   },
+      -- ... and there is more!
+      --  Check out: https://github.com/nvim-mini/mini.nvim
+    end,
+  },
 
-   -- TS-COMMENTS (#6 LazyVim gap): treesitter-aware commenting.
-   -- Without it `gc` uses one commentstring per filetype; with it embedded
-   -- languages get the right string (e.g. JS inside vue/svelte, lua docs).
-   { 'folke/ts-comments.nvim', event = 'VeryLazy', opts = {} },
+  -- TS-COMMENTS (#6 LazyVim gap): treesitter-aware commenting.
+  -- Without it `gc` uses one commentstring per filetype; with it embedded
+  -- languages get the right string (e.g. JS inside vue/svelte, lua docs).
+  { 'folke/ts-comments.nvim', event = 'VeryLazy', opts = {} },
 
   -- AUTO-SAVE
   -- WHAT: Automatically saves your file when you leave insert mode or stop typing
@@ -1142,9 +1142,7 @@ require('lazy').setup({
             -- TSInstall would error, so install/check the base language.
             local lang = ft:match '^[^.]+'
             local parser = vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser', lang .. '.so')
-            if vim.uv.fs_stat(parser) == nil then
-              pcall(vim.cmd, 'TSInstall ' .. lang)
-            end
+            if vim.uv.fs_stat(parser) == nil then pcall(vim.cmd, 'TSInstall ' .. lang) end
           end
           pcall(vim.treesitter.start, args.buf)
         end,
@@ -1152,14 +1150,18 @@ require('lazy').setup({
     end,
   },
 
-     { 'windwp/nvim-ts-autotag', ft = { 'html', 'javascriptreact', 'typescriptreact', 'svelte', 'vue', 'xml' }, config = function() require('nvim-ts-autotag').setup {} end },
+  {
+    'windwp/nvim-ts-autotag',
+    ft = { 'html', 'javascriptreact', 'typescriptreact', 'svelte', 'vue', 'xml' },
+    config = function() require('nvim-ts-autotag').setup {} end,
+  },
 
-    -- ============================================================================
-    -- SECTION 6.9: UI COMPONENTS
-    -- ============================================================================
-    -- Plugins that add visual UI elements to Neovim.
+  -- ============================================================================
+  -- SECTION 6.9: UI COMPONENTS
+  -- ============================================================================
+  -- Plugins that add visual UI elements to Neovim.
 
-    -- NEO-TREE
+  -- NEO-TREE
   -- WHAT: A file explorer that shows your project's file tree
   -- TO CHANGE: Modify filesystem.hijack_netrw_behavior or keybindings
   -- EFFECT: fallback explorer — daily <leader>e/fe/fE moved to snacks.explorer
@@ -1181,9 +1183,7 @@ require('lazy').setup({
           -- (passes nil last_user_width to nvim_win_set_width when the
           -- pre-render path never recorded one). Pre-seed, then delegate.
           ['e'] = function(state)
-            if state.window.last_user_width == nil then
-              state.window.last_user_width = require('neo-tree.utils').resolve_width(state.window.width)
-            end
+            if state.window.last_user_width == nil then state.window.last_user_width = require('neo-tree.utils').resolve_width(state.window.width) end
             require('neo-tree.sources.common.commands').toggle_auto_expand_width(state)
           end,
         },
@@ -1207,96 +1207,160 @@ require('lazy').setup({
   -- (ponytail: mini.icons spec deleted — zero requires anywhere; neo-tree
   -- uses nvim-web-devicons, which-key degrades gracefully without it.)
 
-   -- SNACKS.NVIM (#1 LazyVim gap)
-   -- The swiss-army knife: picker, scratch buffer, dashboard,
-   -- notifier, terminal navigation, big-file, quick-file, words.
-   -- LazyVim wires it into which-key, lualine, lsp, treesitter, etc.
-   -- We keep it minimal here; expand opts as you adopt features.
-    {
-     'folke/snacks.nvim',
-     -- ponytail: keys-only meant notifier/input stayed dead until first keypress
-     -- (only loaded transitively via noice); VeryLazy makes it self-sufficient.
-     event = 'VeryLazy',
-      opts = {
-        indent = {
+  -- SNACKS.NVIM (#1 LazyVim gap)
+  -- The swiss-army knife: picker, scratch buffer, dashboard,
+  -- notifier, terminal navigation, big-file, quick-file, words.
+  -- LazyVim wires it into which-key, lualine, lsp, treesitter, etc.
+  -- We keep it minimal here; expand opts as you adopt features.
+  {
+    'folke/snacks.nvim',
+    -- ponytail: keys-only meant notifier/input stayed dead until first keypress
+    -- (only loaded transitively via noice); VeryLazy makes it self-sufficient.
+    event = 'VeryLazy',
+    opts = {
+      indent = {
+        enabled = true,
+        -- ponytail: chunk box replaces hlchunk.nvim (deleted); chars match the old chunk spec
+        chunk = {
           enabled = true,
-          -- ponytail: chunk box replaces hlchunk.nvim (deleted); chars match the old chunk spec
-          chunk = {
-            enabled = true,
-            char = { corner_top = '╭', corner_bottom = '╰', horizontal = '─', vertical = '│', arrow = '─' },
-          },
-          -- ponytail: scope follows the code block, not the cursor column;
-          -- without this the chunk jumps to the outer scope on col-0/blank lines
-          scope = { cursor = false },
+          char = { corner_top = '╭', corner_bottom = '╰', horizontal = '─', vertical = '│', arrow = '─' },
         },
-        input = { enabled = true },
-        notifier = { enabled = true },
-        -- ponytail: picker + explorer own daily search/files (migrated from
-        -- telescope/neo-tree — no plenary, faster; telescope stays cmd-only
-        -- for vim_bookmarks + ui-select, neo-tree cmd-only as fallback).
-        picker = {
-          enabled = true,
-          -- ponytail: show dotfiles (.env, .gitignore) + gitignored in the
-          -- explorer by default; toggle at runtime with `h` / `i`.
-          -- ponytail: build/dependency dirs stay out of every picker (fd/rg/tree
-          -- all take the same glob; `i` toggling ignored can't bring them back).
-          sources = {
-            explorer = { hidden = true, ignored = true, exclude = { 'node_modules', 'dist', 'build', 'out', 'target', 'vendor', 'coverage', '__pycache__', '.venv', '.next', '.nuxt', '.git', '.turbo', '.pytest_cache' } },
-            files = { hidden = true, ignored = true, exclude = { 'node_modules', 'dist', 'build', 'out', 'target', 'vendor', 'coverage', '__pycache__', '.venv', '.next', '.nuxt', '.git', '.turbo', '.pytest_cache' } },
-            grep = { exclude = { 'node_modules', 'dist', 'build', 'out', 'target', 'vendor', 'coverage', '__pycache__', '.venv', '.next', '.nuxt', '.git', '.turbo', '.pytest_cache' } },
+        -- ponytail: scope follows the code block, not the cursor column;
+        -- without this the chunk jumps to the outer scope on col-0/blank lines
+        scope = { cursor = false },
+      },
+      input = { enabled = true },
+      notifier = { enabled = true },
+      -- ponytail: picker + explorer own daily search/files (migrated from
+      -- telescope/neo-tree — no plenary, faster; telescope stays cmd-only
+      -- for vim_bookmarks + ui-select, neo-tree cmd-only as fallback).
+      picker = {
+        enabled = true,
+        -- ponytail: show dotfiles (.env, .gitignore) + gitignored in the
+        -- explorer by default; toggle at runtime with `h` / `i`.
+        -- ponytail: build/dependency dirs stay out of every picker (fd/rg/tree
+        -- all take the same glob; `i` toggling ignored can't bring them back).
+        sources = {
+          explorer = {
+            hidden = true,
+            ignored = true,
+            exclude = {
+              'node_modules',
+              'dist',
+              'build',
+              'out',
+              'target',
+              'vendor',
+              'coverage',
+              '__pycache__',
+              '.venv',
+              '.next',
+              '.nuxt',
+              '.git',
+              '.turbo',
+              '.pytest_cache',
+            },
           },
-          -- ponytail: builtin `yank` copies the full item text
-          -- (diagnostics items carry the untruncated message); free in both wins.
-          win = {
-            input = { keys = { ['<c-y>'] = { 'yank', mode = { 'i', 'n' } } } },
-            list = { keys = { ['<c-y>'] = 'yank' } },
+          files = {
+            hidden = true,
+            ignored = true,
+            exclude = {
+              'node_modules',
+              'dist',
+              'build',
+              'out',
+              'target',
+              'vendor',
+              'coverage',
+              '__pycache__',
+              '.venv',
+              '.next',
+              '.nuxt',
+              '.git',
+              '.turbo',
+              '.pytest_cache',
+            },
+          },
+          grep = {
+            exclude = {
+              'node_modules',
+              'dist',
+              'build',
+              'out',
+              'target',
+              'vendor',
+              'coverage',
+              '__pycache__',
+              '.venv',
+              '.next',
+              '.nuxt',
+              '.git',
+              '.turbo',
+              '.pytest_cache',
+            },
           },
         },
-        explorer = { enabled = true },
-        scope = { enabled = true },
-        scroll = { enabled = false }, -- ponytail: vim.o.smoothscroll owns smooth scrolling; snacks scroll fought it
-        scratch = { ft = 'markdown' }, -- ponytail: always markdown, never inherits python/js ft (no pyrefly/eslint in scratch)
-        statuscolumn = { enabled = false },
-        toggle = { enabled = false },
-        words = { enabled = true },
-     },
-       keys = {
-       { '<leader>.', function() require('snacks').scratch() end, desc = 'Toggle Scratch Buffer' },
-       { '<leader>S', function() require('snacks').scratch.select() end, desc = 'Select Scratch Buffer' },
-       { '<leader>n', function()
-           if require('snacks.config').picker and require('snacks.config').picker.enabled then
-             require('snacks').picker.notifications()
-           else
-             require('snacks').notifier.show_history()
-           end
-         end, desc = 'Notification History' },
-        { '<leader>un', function() require('snacks').notifier.hide() end, desc = 'Dismiss All Notifications' },
-        -- Picker: daily search, migrated from telescope (keys identical).
-        { '<leader>sh', function() require('snacks').picker.help() end, desc = '[S]earch [H]elp' },
-        { '<leader>sk', function() require('snacks').picker.keymaps() end, desc = '[S]earch [K]eymaps' },
-        { '<leader>sf', function() require('snacks').picker.files() end, desc = '[S]earch [F]iles' },
-        { '<leader><leader>', function() require('snacks').picker.files() end, desc = '[S]earch [F]iles' },
-        { '<leader>sp', function()
+        -- ponytail: builtin `yank` copies the full item text
+        -- (diagnostics items carry the untruncated message); free in both wins.
+        win = {
+          input = { keys = { ['<c-y>'] = { 'yank', mode = { 'i', 'n' } } } },
+          list = { keys = { ['<c-y>'] = 'yank' } },
+        },
+      },
+      explorer = { enabled = true },
+      scope = { enabled = true },
+      scroll = { enabled = false }, -- ponytail: vim.o.smoothscroll owns smooth scrolling; snacks scroll fought it
+      scratch = { ft = 'markdown' }, -- ponytail: always markdown, never inherits python/js ft (no pyrefly/eslint in scratch)
+      statuscolumn = { enabled = false },
+      toggle = { enabled = false },
+      words = { enabled = true },
+    },
+    keys = {
+      { '<leader>.', function() require('snacks').scratch() end, desc = 'Toggle Scratch Buffer' },
+      { '<leader>S', function() require('snacks').scratch.select() end, desc = 'Select Scratch Buffer' },
+      { '<leader>ty', function() require('snacks').picker.colorschemes() end, desc = 'Switch [T]heme (colorschemes)' },
+      {
+        '<leader>n',
+        function()
+          if require('snacks.config').picker and require('snacks.config').picker.enabled then
+            require('snacks').picker.notifications()
+          else
+            require('snacks').notifier.show_history()
+          end
+        end,
+        desc = 'Notification History',
+      },
+      { '<leader>un', function() require('snacks').notifier.hide() end, desc = 'Dismiss All Notifications' },
+      -- Picker: daily search, migrated from telescope (keys identical).
+      { '<leader>sh', function() require('snacks').picker.help() end, desc = '[S]earch [H]elp' },
+      { '<leader>sk', function() require('snacks').picker.keymaps() end, desc = '[S]earch [K]eymaps' },
+      { '<leader>sf', function() require('snacks').picker.files() end, desc = '[S]earch [F]iles' },
+      { '<leader><leader>', function() require('snacks').picker.files() end, desc = '[S]earch [F]iles' },
+      {
+        '<leader>sp',
+        function()
           local root = vim.fs.root(0, { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' }) or vim.uv.cwd() or vim.fn.getcwd()
           require('snacks').picker.files { cwd = root }
-        end, desc = '[S]earch [P]rojects (builtin root)' },
-        { '<leader>ss', function() require('snacks').picker() end, desc = '[S]earch [S]elect picker' },
-        { '<leader>sw', function() require('snacks').picker.grep_word() end, mode = { 'n', 'x' }, desc = '[S]earch current [W]ord' },
-        { '<leader>sg', function() require('snacks').picker.grep() end, desc = '[S]earch by [G]rep' },
-        { '<leader>sd', function() require('snacks').picker.diagnostics() end, desc = '[S]earch [D]iagnostics' },
-        { '<leader>sr', function() require('snacks').picker.resume() end, desc = '[S]earch [R]esume' },
-        { '<leader>s.', function() require('snacks').picker.recent() end, desc = '[S]earch Recent Files ("." for repeat)' },
-        { '<leader>sc', function() require('snacks').picker.commands() end, desc = '[S]earch [C]ommands' },
-        { '<leader>/', function() require('snacks').picker.lines() end, desc = '[/] Fuzzily search in current buffer' },
-        { '<leader>s/', function() require('snacks').picker.grep_buffers() end, desc = '[S]earch [/] in Open Files' },
-        { '<leader>sn', function() require('snacks').picker.files { cwd = vim.fn.stdpath 'config' } end, desc = '[S]earch [N]eovim files' },
-        { '<leader>ls', function() require('snacks').picker.lsp_symbols() end, desc = '[L]ist [S]ymbols in file' },
-        { '<leader>lS', function() require('snacks').picker.lsp_workspace_symbols() end, desc = '[L]ist [S]ymbols in workspace' },
-        -- Explorer trial (neo-tree kept cmd-only one release as fallback).
-        { '<leader>e', function() require('snacks').explorer() end, desc = 'Toggle File [E]xplorer' },
-        { '<leader>fe', function() require('snacks').explorer() end, desc = '[F]ile [E]xplorer' },
-        { '<leader>fE', function() require('snacks').explorer.reveal() end, desc = '[F]ile [E]xplorer (reveal)' },
-     },
+        end,
+        desc = '[S]earch [P]rojects (builtin root)',
+      },
+      { '<leader>ss', function() require('snacks').picker() end, desc = '[S]earch [S]elect picker' },
+      { '<leader>sw', function() require('snacks').picker.grep_word() end, mode = { 'n', 'x' }, desc = '[S]earch current [W]ord' },
+      { '<leader>sg', function() require('snacks').picker.grep() end, desc = '[S]earch by [G]rep' },
+      { '<leader>sd', function() require('snacks').picker.diagnostics() end, desc = '[S]earch [D]iagnostics' },
+      { '<leader>sr', function() require('snacks').picker.resume() end, desc = '[S]earch [R]esume' },
+      { '<leader>s.', function() require('snacks').picker.recent() end, desc = '[S]earch Recent Files ("." for repeat)' },
+      { '<leader>sc', function() require('snacks').picker.commands() end, desc = '[S]earch [C]ommands' },
+      { '<leader>/', function() require('snacks').picker.lines() end, desc = '[/] Fuzzily search in current buffer' },
+      { '<leader>s/', function() require('snacks').picker.grep_buffers() end, desc = '[S]earch [/] in Open Files' },
+      { '<leader>sn', function() require('snacks').picker.files { cwd = vim.fn.stdpath 'config' } end, desc = '[S]earch [N]eovim files' },
+      { '<leader>ls', function() require('snacks').picker.lsp_symbols() end, desc = '[L]ist [S]ymbols in file' },
+      { '<leader>lS', function() require('snacks').picker.lsp_workspace_symbols() end, desc = '[L]ist [S]ymbols in workspace' },
+      -- Explorer trial (neo-tree kept cmd-only one release as fallback).
+      { '<leader>e', function() require('snacks').explorer() end, desc = 'Toggle File [E]xplorer' },
+      { '<leader>fe', function() require('snacks').explorer() end, desc = '[F]ile [E]xplorer' },
+      { '<leader>fE', function() require('snacks').explorer.reveal() end, desc = '[F]ile [E]xplorer (reveal)' },
+    },
   },
 
   -- NVIM-LINT (#4): async linters complement conform (format) — oxlint/ruff via mason
@@ -1319,15 +1383,15 @@ require('lazy').setup({
     end,
   },
 
-   -- SNACKS SCRATCH BUFFERS: create a named scratch via :lua Snacks.scratch { name = 'notes' }
-   -- Named scratches persist separately; pick all with <leader>S
+  -- SNACKS SCRATCH BUFFERS: create a named scratch via :lua Snacks.scratch { name = 'notes' }
+  -- Named scratches persist separately; pick all with <leader>S
 
-   -- ============================================================================
-   -- SECTION 6.10: SESSIONS (builtin — replaces auto-session, zero loss)
-   -- ============================================================================
-   -- (builtin session handling is set up after lazy.nvim — see bottom of file)
+  -- ============================================================================
+  -- SECTION 6.10: SESSIONS (builtin — replaces auto-session, zero loss)
+  -- ============================================================================
+  -- (builtin session handling is set up after lazy.nvim — see bottom of file)
 
-   -- ============================================================================
+  -- ============================================================================
   -- SECTION 6.11: NAVIGATION
   -- ============================================================================
   -- Plugins for jumping around your code and files.
@@ -1421,10 +1485,14 @@ require('lazy').setup({
       { '<leader>mc', '<cmd>BookmarkAnnotate<cr>', desc = '[B]ookmark [A]nnotate' },
       { '<leader>mj', '<cmd>BookmarkNext<cr>', desc = '[B]ookmark [N]ext' },
       { '<leader>mk', '<cmd>BookmarkPrev<cr>', desc = '[B]ookmark [P]revious' },
-      { '<leader>mb', function()
-          require('telescope').load_extension('vim_bookmarks')
-          vim.cmd('Telescope vim_bookmarks')
-        end, desc = '[B]ookmark [L]ist' },
+      {
+        '<leader>mb',
+        function()
+          require('telescope').load_extension 'vim_bookmarks'
+          vim.cmd 'Telescope vim_bookmarks'
+        end,
+        desc = '[B]ookmark [L]ist',
+      },
     },
   },
 
@@ -1473,9 +1541,7 @@ require('lazy').setup({
           local name = vim.api.nvim_buf_get_name(ev.buf)
           -- getfsize returns -1/-2 on error; fs_stat nil-check is exact.
           local ok, st = pcall(vim.uv.fs_stat, name)
-          if name ~= '' and ok and st and st.size > 200 * 1024 then
-            pcall(vim.cmd, 'ColorizerDetachFromBuffer')
-          end
+          if name ~= '' and ok and st and st.size > 200 * 1024 then pcall(vim.cmd, 'ColorizerDetachFromBuffer') end
         end,
       })
     end,
@@ -1571,7 +1637,7 @@ do
     local out = {}
     if vim.uv.fs_stat(dir) == nil then return out end
     for name, t in vim.fs.dir(dir) do
-      if t == 'file' and name:match('%.vim$') then
+      if t == 'file' and name:match '%.vim$' then
         local st = vim.uv.fs_stat(dir .. '/' .. name)
         out[#out + 1] = { path = dir .. '/' .. name, mtime = st and st.mtime.sec or 0 }
       end
@@ -1585,24 +1651,28 @@ do
     local f = session_file_for(cwd)
     local function has_badd(p)
       if vim.fn.filereadable(p) ~= 1 then return false end
-      for _, l in ipairs(vim.fn.readfile(p)) do if l:match('^badd') then return true end end
+      for _, l in ipairs(vim.fn.readfile(p)) do
+        if l:match '^badd' then return true end
+      end
       return false
     end
     if has_badd(f) then return f end
     local norm = cwd:gsub('/+$', '')
     if norm == '' then norm = '/' end
-    local dir = vim.fn.stdpath('data') .. '/sessions'
+    local dir = vim.fn.stdpath 'data' .. '/sessions'
     local best, best_time = nil, -1
     for _, e in ipairs(session_files(dir)) do
       local path = e.path
       if has_badd(path) then
         for _, l in ipairs(vim.fn.readfile(path)) do
-          local cd = l:match('^cd%s+(.+)$')
+          local cd = l:match '^cd%s+(.+)$'
           if cd then
             cd = vim.fn.fnamemodify(vim.fn.expand(cd), ':p'):gsub('/+$', '')
             if cd == '' then cd = '/' end
             if cd == norm then
-              if e.mtime > best_time then best, best_time = path, e.mtime end
+              if e.mtime > best_time then
+                best, best_time = path, e.mtime
+              end
             end
             break
           end
@@ -1623,7 +1693,16 @@ do
       -- don't overwrite good session with empty dashboard/no-file state
       local has_file = false
       for _, b in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_is_loaded(b) and vim.bo[b].buflisted and vim.bo[b].buftype == '' and vim.api.nvim_buf_get_name(b) ~= '' and vim.bo[b].filetype ~= 'dashboard' then has_file = true; break end
+        if
+          vim.api.nvim_buf_is_loaded(b)
+          and vim.bo[b].buflisted
+          and vim.bo[b].buftype == ''
+          and vim.api.nvim_buf_get_name(b) ~= ''
+          and vim.bo[b].filetype ~= 'dashboard'
+        then
+          has_file = true
+          break
+        end
       end
       if not has_file then return end
       pcall(vim.cmd, 'silent! Neotree close')
@@ -1654,7 +1733,14 @@ do
     end
     -- also handle case win was closed manually (buf still valid)
     if is_buf_valid(horiz.buf) then
-      for _, w in ipairs(vim.api.nvim_list_wins()) do if vim.api.nvim_win_get_buf(w) == horiz.buf then vim.api.nvim_set_current_win(w); vim.cmd.startinsert(); horiz.win = w; return end end
+      for _, w in ipairs(vim.api.nvim_list_wins()) do
+        if vim.api.nvim_win_get_buf(w) == horiz.buf then
+          vim.api.nvim_set_current_win(w)
+          vim.cmd.startinsert()
+          horiz.win = w
+          return
+        end
+      end
       vim.cmd 'botright split'
       vim.cmd 'resize 15'
       vim.api.nvim_win_set_buf(0, horiz.buf)
@@ -1683,11 +1769,19 @@ do
     local row = math.floor((vim.o.lines - height) / 2)
     local col = math.floor((vim.o.columns - width) / 2)
     if is_buf_valid(float.buf) then
-      float.win = vim.api.nvim_open_win(float.buf, true, { relative = 'editor', width = width, height = height, row = row, col = col, style = 'minimal', border = 'rounded' })
+      float.win = vim.api.nvim_open_win(
+        float.buf,
+        true,
+        { relative = 'editor', width = width, height = height, row = row, col = col, style = 'minimal', border = 'rounded' }
+      )
       vim.cmd.startinsert()
     else
       float.buf = vim.api.nvim_create_buf(false, true)
-      float.win = vim.api.nvim_open_win(float.buf, true, { relative = 'editor', width = width, height = height, row = row, col = col, style = 'minimal', border = 'rounded' })
+      float.win = vim.api.nvim_open_win(
+        float.buf,
+        true,
+        { relative = 'editor', width = width, height = height, row = row, col = col, style = 'minimal', border = 'rounded' }
+      )
       vim.fn.jobstart(cmd, { term = true })
       vim.cmd.startinsert()
     end
@@ -1699,9 +1793,9 @@ do
   end
   vim.keymap.set('n', '<leader>tt', function() toggle_horiz(vim.o.shell) end, { desc = '[T]oggle [T]erminal' })
   vim.keymap.set('n', '<leader>tf', function() toggle_float(vim.o.shell) end, { desc = '[T]erminal [F]loat' })
-  vim.keymap.set('n', '<leader>fg', function() toggle_float('lazygit') end, { desc = '[F]ind Lazy[G]it' })
-  vim.keymap.set('n', '<leader>tm', function() toggle_float('tmux new -s float 2>/dev/null || tmux attach -t float') end, { desc = '[T]erminal t[M]ux' })
-  vim.keymap.set('n', '<leader>ht', function() toggle_float('herdr') end, { desc = '[H]erdr [T]erminal' })
+  vim.keymap.set('n', '<leader>fg', function() toggle_float 'lazygit' end, { desc = '[F]ind Lazy[G]it' })
+  vim.keymap.set('n', '<leader>tm', function() toggle_float 'tmux new -s float 2>/dev/null || tmux attach -t float' end, { desc = '[T]erminal t[M]ux' })
+  vim.keymap.set('n', '<leader>ht', function() toggle_float 'herdr' end, { desc = '[H]erdr [T]erminal' })
   vim.keymap.set('n', '<leader>t1', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [1]' })
   vim.keymap.set('n', '<leader>t2', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [2]' })
   vim.keymap.set('n', '<leader>t3', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [3]' })
@@ -1723,16 +1817,29 @@ do
       seen = true
       return pcall(vim.api.nvim_win_close, win, true)
     end
-    if hide(float.win, float.buf) then float.win = nil; return end
-    if hide(horiz.win, horiz.buf) then horiz.win = nil; return end
+    if hide(float.win, float.buf) then
+      float.win = nil
+      return
+    end
+    if hide(horiz.win, horiz.buf) then
+      horiz.win = nil
+      return
+    end
     -- also hunt for manually-opened wins still showing our bufs
     for _, w in ipairs(vim.api.nvim_list_wins()) do
       local b = vim.api.nvim_win_get_buf(w)
       if b == float.buf and hide(w, float.buf) then return end
-      if b == horiz.buf and hide(w, horiz.buf) then horiz.win = nil; return end
+      if b == horiz.buf and hide(w, horiz.buf) then
+        horiz.win = nil
+        return
+      end
     end
     if seen then return end -- terminal visible but unclosable (last window) — leave it
-    if last == 'float' then toggle_float(vim.o.shell) else toggle_horiz(vim.o.shell) end
+    if last == 'float' then
+      toggle_float(vim.o.shell)
+    else
+      toggle_horiz(vim.o.shell)
+    end
   end
   vim.keymap.set({ 'n', 't' }, '<c-\\>', toggle_last, { desc = 'Toggle Terminal' })
 end
@@ -1749,7 +1856,10 @@ do
   local function run_file()
     local ft = vim.bo.filetype
     local file = vim.fn.expand '%:p'
-    if file == '' then vim.notify('No file to run', vim.log.levels.WARN) return end
+    if file == '' then
+      vim.notify('No file to run', vim.log.levels.WARN)
+      return
+    end
     local cmd
     if runners[ft] then
       cmd = runners[ft] .. ' ' .. vim.fn.shellescape(file)
@@ -1760,7 +1870,8 @@ do
       local out = '/tmp/' .. vim.fn.expand '%:t:r'
       cmd = string.format('gcc %s -o %s && %s', vim.fn.shellescape(file), vim.fn.shellescape(out), vim.fn.shellescape(out))
     else
-      vim.notify('No runner for filetype: ' .. ft, vim.log.levels.WARN) return
+      vim.notify('No runner for filetype: ' .. ft, vim.log.levels.WARN)
+      return
     end
     vim.cmd('split | terminal ' .. cmd)
     vim.cmd 'wincmd J | resize 15'

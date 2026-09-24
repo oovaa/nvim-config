@@ -26,7 +26,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
 | `<leader>e` | Toggle File Explorer | `snacks.nvim` |
-| `<leader>ty` | Switch Theme (Themery picker, choice persisted across restarts) | config |
+| `<leader>ty` | Switch Theme (snacks colorschemes picker; boot default tokyonight-night) | snacks.nvim |
 | `t` | Open file in new tab (in explorer) | `snacks.nvim` |
 | `<C-t>` | Open file in new tab (in picker) | `snacks.nvim` |
 | `<leader>tt` | Toggle bottom terminal | built-in |

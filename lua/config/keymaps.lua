@@ -43,8 +43,7 @@ end, { desc = '[G]ank diagnostic [Y]ank to clipboard' })
 -- Toggle inline color previews (colorizer plugin)
 vim.keymap.set('n', '<leader>uc', '<cmd>ColorizerToggle<cr>', { desc = '[U]I [C]olorizer toggle' })
 
--- Switch themes with Themery (live preview + persistence).
-vim.keymap.set('n', '<leader>ty', '<cmd>Themery<CR>', { desc = 'Switch [T]heme (Themery)' })
+-- <leader>ty is snacks.picker.colorschemes — defined on the snacks spec in init.lua.
 
 -- Flip dark/light background (most themes ship both variants)
 vim.keymap.set('n', '<leader>tb', function() vim.o.background = vim.o.background == 'dark' and 'light' or 'dark' end, { desc = '[T]oggle [B]ackground' })
@@ -53,8 +52,8 @@ vim.keymap.set('n', '<leader>tb', function() vim.o.background = vim.o.background
 vim.keymap.set('n', '<leader>gp', ':Gitsigns preview_hunk<CR>', { desc = '[G]it [P]review hunk' })
 vim.keymap.set('n', '<leader>gd', ':Gitsigns diffthis<CR>', { desc = '[G]it [D]iff split' })
 vim.keymap.set('n', '<leader>gt', ':Gitsigns toggle_deleted<CR>', { desc = '[G]it [T]oggle deleted' })
-vim.keymap.set('n', ']c', function() require('gitsigns').nav_hunk('next') end, { desc = 'Next git hunk' })
-vim.keymap.set('n', '[c', function() require('gitsigns').nav_hunk('prev') end, { desc = 'Prev git hunk' })
+vim.keymap.set('n', ']c', function() require('gitsigns').nav_hunk 'next' end, { desc = 'Next git hunk' })
+vim.keymap.set('n', '[c', function() require('gitsigns').nav_hunk 'prev' end, { desc = 'Prev git hunk' })
 
 -- Terminal mode: exit with double <Esc>
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
