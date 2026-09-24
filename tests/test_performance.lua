@@ -42,6 +42,22 @@ describe('Phase 2: Performance Optimizations', function()
       assert.is_falsy(tokyonight_section:match('lazy%s*=%s*true'), 'tokyonight should not have lazy = true')
       assert.is_truthy(init_content:match('tokyonight.*priority%s*=%s*1000'), 'tokyonight should have priority=1000')
     end)
+
+    it('uses snacks.picker for <leader>ty, not themery', function()
+      local themes_path = vim.fn.stdpath('config') .. '/lua/custom/plugins/themes.lua'
+      local content = table.concat(vim.fn.readfile(themes_path), '\n')
+      assert.is_falsy(content:match('themery'), 'themes.lua must not reference themery')
+      assert.is_falsy(content:match('zaldih'), 'themery plugin must be removed')
+
+      local keymaps = table.concat(vim.fn.readfile(vim.fn.stdpath('config') .. '/lua/config/keymaps.lua'), '\n')
+      assert.is_falsy(keymaps:match('Themery'), 'keymaps.lua must not map Themery')
+
+      local init = table.concat(vim.fn.readfile(vim.fn.stdpath('config') .. '/init.lua'), '\n')
+      local snacks = init:match("'folke/snacks%.nvim'.-\n  },")
+      assert.is_not_nil(snacks, 'snacks spec should exist')
+      assert.is_truthy(snacks:find('<leader>ty', 1, true), 'snacks should own <leader>ty')
+      assert.is_truthy(snacks:find('colorschemes', 1, true), '<leader>ty should open colorschemes picker')
+    end)
   end)
 
   -- Test 2: LSP uses native vim.lsp.config (nvim-lspconfig removed)

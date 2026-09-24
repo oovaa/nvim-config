@@ -26,4 +26,8 @@ describe('keymaps/autocmds', function()
     end
     assert.are.same({}, dupes)
   end)
+  it('<leader>ty is not Themery command', function()
+    local map = vim.fn.maparg('<leader>ty', 'n')
+    assert.is_truthy(map == '' or not map:match('Themery'), 'must not map to Themery')
+  end)
 end)
