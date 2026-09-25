@@ -95,9 +95,20 @@ function M.setup_lualine()
       end
       return bg or '#16161e', fg or '#a9b1d6'
     end
-    -- ponytail: no accent backgrounds — everything sits on the theme's own
-    -- StatusLine bg; mode/diffs show as accent *text* so the bar blends in.
+    -- Sections get their own color weight: mode pill (accent bg), lifted
+    -- middle (branch/diff/diag), flat filename — all derived from the
+    -- theme's own StatusLine/Normal colors, so every <leader>ty pick
+    -- re-colors the bar with zero hardcoded hexes (fallbacks excepted).
     local bar_bg, bar_fg = bar_colors()
+    -- blend two #rrggbb colors; t=0 → a, t=1 → b
+    local function blend(a, b, t)
+      local function ch(h, i) return tonumber(h:sub(i, i + 1), 16) end
+      local r = math.floor(ch(a, 2) + (ch(b, 2) - ch(a, 2)) * t + 0.5)
+      local g = math.floor(ch(a, 4) + (ch(b, 4) - ch(a, 4)) * t + 0.5)
+      local bl = math.floor(ch(a, 6) + (ch(b, 6) - ch(a, 6)) * t + 0.5)
+      return string.format('#%02x%02x%02x', r, g, bl)
+    end
+    local mid_bg = blend(bar_bg, bar_fg, 0.1) -- subtle lift for the b section
     local c = {
       blue = fg_of 'Function' or '#7aa2f7',
       green = fg_of 'String' or '#9ece6a',
@@ -118,17 +129,21 @@ function M.setup_lualine()
     local function hl(name, bg, fg, gui)
       vim.api.nvim_set_hl(0, name, { bg = bg, fg = fg, bold = gui == 'bold' })
     end
-    -- a=mode (accent text on bar bg), b=branch/diff/diag, c=filename
+    -- a=mode pill (accent bg, bar text), b=lifted middle, c=flat filename.
+    -- Every color comes from the theme's live highlights (accents via
+    -- fg_of, base via bar_colors); fallbacks only fire when a theme
+    -- omits the group entirely.
     for key, accent in pairs(modes) do
-      hl('SL_a_' .. key, bar_bg, accent, 'bold')
-      hl('SL_b_' .. key, bar_bg, bar_fg)
+      hl('SL_a_' .. key, accent, bar_bg, 'bold')
+      hl('SL_b_' .. key, mid_bg, bar_fg)
     end
     hl('SL_c', bar_bg, bar_fg)
     hl('SL_lsp', bar_bg, c.lsp)
-    -- diff colors
-    hl('SL_diff_add', bar_bg, c.lsp); hl('SL_diff_change', bar_bg, c.blue); hl('SL_diff_delete', bar_bg, c.red)
+    -- diff colors + search count sit inside the lifted b section / next to
+    -- the filename, so they share mid_bg to avoid a patchwork bar
+    hl('SL_diff_add', mid_bg, c.lsp); hl('SL_diff_change', mid_bg, c.blue); hl('SL_diff_delete', mid_bg, c.red)
     -- search count (noice-style [cur/total], only visible while searching)
-    hl('SL_search', bar_bg, c.yellow)
+    hl('SL_search', mid_bg, c.yellow)
   end
   define_hl()
   vim.api.nvim_create_autocmd('ColorScheme', { callback = define_hl })
@@ -254,7 +269,7 @@ function M.setup_lualine()
     local left = hl_a .. ' ' .. mode .. ' ' .. hl_b .. (macro_s ~= '' and ' ' .. macro_s .. ' ' or '') .. (b_s ~= '' and ' ' .. b_s .. ' ' or ' ')
     local center = hl_c .. ' %<' .. fname .. ' ' .. search_s
     local right_x = hl_c .. (lsp_s ~= '' and ' ' .. lsp_s .. ' ' or ' ') .. enc .. ' ' .. ff .. (ft_s ~= '' and ' ' .. ft_s or '') .. ' '
-    local right_y = hl_b .. ' %p%% '
+    local right_y = hl_c .. ' %p%% '
     local right_z = hl_a .. ' %l:%c ' .. '%*'
     return left .. center .. '%=' .. right_x .. right_y .. right_z
   end

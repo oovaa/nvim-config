@@ -56,11 +56,15 @@ return {
   -- notifier, terminal navigation, big-file, quick-file, words.
   -- LazyVim wires it into which-key, lualine, lsp, treesitter, etc.
   -- We keep it minimal here; expand opts as you adopt features.
-  {
-    'folke/snacks.nvim',
-    -- ponytail: keys-only meant notifier/input stayed dead until first keypress
-    -- (only loaded transitively via noice); VeryLazy makes it self-sufficient.
-    event = 'VeryLazy',
+    {
+     'folke/snacks.nvim',
+     -- ponytail: keys-only meant notifier/input stayed dead until first keypress
+     -- (only loaded transitively via noice); VeryLazy makes it self-sufficient.
+     event = 'VeryLazy',
+     -- ponytail: devicons was telescope/neo-tree-only, so the explorer showed
+     -- fallback circles until one of those loaded; pin it here (already
+     -- installed — no new dep) so icons resolve on the snacks path too.
+     dependencies = { { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font } },
     opts = {
       indent = {
         enabled = true,
@@ -80,8 +84,26 @@ return {
       -- ponytail: picker + explorer own daily search/files (migrated from
       -- telescope/neo-tree — no plenary, faster; telescope stays cmd-only
       -- for vim_bookmarks + ui-select, neo-tree cmd-only as fallback).
-      picker = {
-        enabled = true,
+        picker = {
+          enabled = true,
+          -- ponytail: replace upstream's circle git icons (staged ●,
+          -- modified ○) with distinct nerd glyphs — coverage verified
+          -- against MesloLGS NF. Full table (not just overrides):
+          -- snacks replaces icons.git instead of deep-merging it.
+          icons = {
+            git = {
+              enabled = true,
+              commit = ' ',
+              staged = '',
+              added = '',
+              deleted = '',
+              ignored = ' ',
+              modified = '',
+              renamed = '',
+              unmerged = ' ',
+              untracked = '?',
+            },
+          },
         -- ponytail: show dotfiles (.env, .gitignore) + gitignored in the
         -- explorer by default; toggle at runtime with `h` / `i`.
         -- ponytail: build/dependency dirs stay out of every picker (fd/rg/tree
