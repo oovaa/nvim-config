@@ -67,6 +67,7 @@ return {
           markdown = true,
           yaml = true,
           graphql = true,
+          nginx = true,
         }
         if enabled_filetypes[vim.bo[bufnr].filetype] then
           return { timeout_ms = 750 } -- ponytail: 500 was too tight for prettier on large files, 1000 felt laggy; 750 is middle
@@ -102,8 +103,8 @@ return {
         scss = prettier,
         less = prettier,
         graphql = prettier,
-        markdown = prettier,
         yaml = prettier,
+        nginx = { 'nginxfmt' },
       },
     },
   },

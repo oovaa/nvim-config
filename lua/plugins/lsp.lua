@@ -170,6 +170,13 @@ return {
           cmd = { 'vscode-json-language-server', '--stdio' },
           filetypes = { 'json', 'jsonc' },
         },
+        -- nginx: config files get diagnostics/completion; format via nginxfmt
+        nginx_language_server = {
+          -- stdio is the default transport; 0.9.0 rejects --stdio
+          cmd = { 'nginx-language-server' },
+          filetypes = { 'nginx' },
+          root_markers = { 'nginx.conf', '.git' },
+        },
         -- gopls = {},
         pyrefly = {
           cmd = { 'pyrefly', 'lsp' },
@@ -239,6 +246,8 @@ return {
       --
       -- You can press `g?` for help in this menu.
       -- NOTE: pyrefly is installed globally via brew (not managed by Mason); skip it.
+      -- nginx_language_server via `uv tool install` (pypi pkg requires python <3.14,
+      -- host only has 3.14 → Mason install fails; binary lives in ~/.local/bin); skip it.
       -- ponytail: mason package names use dashes; lspconfig uses underscores — map them
       local lsp_to_mason = {
         docker_compose_language_service = 'docker-compose-language-service',
@@ -248,7 +257,7 @@ return {
       }
       local ensure_installed = {}
       for name in pairs(servers) do
-        if name ~= 'pyrefly' then table.insert(ensure_installed, lsp_to_mason[name] or name) end
+        if name ~= 'pyrefly' and name ~= 'nginx_language_server' then table.insert(ensure_installed, lsp_to_mason[name] or name) end
       end
       vim.list_extend(ensure_installed, {
         'prettier', -- unified JS/TS/JSON/HTML/CSS formatter used by conform
@@ -278,6 +287,7 @@ return {
         jsonls = { 'json', 'jsonc' },
         docker_compose_language_service = { 'yaml.docker-compose' },
         dockerls = { 'dockerfile' },
+        nginx_language_server = { 'nginx' },
       }
       for server, filetypes in pairs(lsp_filetypes) do
         vim.api.nvim_create_autocmd('FileType', {
