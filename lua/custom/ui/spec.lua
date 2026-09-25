@@ -9,6 +9,12 @@ M._lsp_name = { buf = -1, name = '' }
 -- Search-count cache: searchcount() scans the buffer, so only recompute when
 -- the pattern, buffer content, or cursor line changed — pure redraws reuse.
 M._search = { key = nil, s = '' }
+-- Filetype icons: resolved from nvim-web-devicons once it's loaded (never
+-- proactively required — that would pull it onto the startup path), then
+-- cached with a per-ft highlight in the icon's own color. Cleared on
+-- ColorScheme since :colorscheme wipes custom highlights.
+M._icons = {} -- [ft] = icon-segment string or false
+M._bar_bg = nil
 
 function M._count_diags(buf)
   local sev = vim.diagnostic.severity
@@ -100,6 +106,8 @@ function M.setup_lualine()
     -- theme's own StatusLine/Normal colors, so every <leader>ty pick
     -- re-colors the bar with zero hardcoded hexes (fallbacks excepted).
     local bar_bg, bar_fg = bar_colors()
+    M._bar_bg = bar_bg
+    M._icons = {} -- stale per-ft highlights died with the colorscheme; re-resolve lazily
     -- blend two #rrggbb colors; t=0 → a, t=1 → b
     local function blend(a, b, t)
       local function ch(h, i) return tonumber(h:sub(i, i + 1), 16) end
@@ -264,13 +272,39 @@ function M.setup_lualine()
     local ff = vim.bo.fileformat
     local ft_s = vim.bo.filetype
 
+    -- filetype icon in its own color (devicons resolves only after something
+    -- loads it — snacks dep covers the explorer path; never required here).
+    local icon_s = ''
+    if ft_s ~= '' and vim.bo.buftype == '' then
+      if M._icons[ft_s] == nil and package.loaded['nvim-web-devicons'] then
+        local ok, dev = pcall(require, 'nvim-web-devicons')
+        if ok then
+          local icon, color = dev.get_icon_by_filetype(ft_s)
+          if icon then
+            if color then
+              local safe = ft_s:gsub('%W', '_')
+              pcall(vim.api.nvim_set_hl, 0, 'SL_ft_' .. safe, { fg = color, bg = M._bar_bg })
+              M._icons[ft_s] = '%#SL_ft_' .. safe .. '#' .. icon .. ' ' .. hl_c
+            else
+              M._icons[ft_s] = icon .. ' '
+            end
+          else
+            M._icons[ft_s] = false
+          end
+        else
+          M._icons[ft_s] = false
+        end
+      end
+      if M._icons[ft_s] then icon_s = M._icons[ft_s] end
+    end
+
     -- sections mirror lualine: a=mode | b=branch/diff/diag | c=filename | x=lsp/enc/ff/ft | y=progress | z=location
     -- lualine had no separators; %< truncates the filename side first in narrow splits
     local left = hl_a .. ' ' .. mode .. ' ' .. hl_b .. (macro_s ~= '' and ' ' .. macro_s .. ' ' or '') .. (b_s ~= '' and ' ' .. b_s .. ' ' or ' ')
-    local center = hl_c .. ' %<' .. fname .. ' ' .. search_s
+    local center = hl_c .. ' %<' .. icon_s .. fname .. ' ' .. search_s
     local right_x = hl_c .. (lsp_s ~= '' and ' ' .. lsp_s .. ' ' or ' ') .. enc .. ' ' .. ff .. (ft_s ~= '' and ' ' .. ft_s or '') .. ' '
     local right_y = hl_c .. ' %p%% '
-    local right_z = hl_a .. ' %l:%c ' .. '%*'
+    local right_z = hl_a .. ' %l/%L:%c ' .. '%*'
     return left .. center .. '%=' .. right_x .. right_y .. right_z
   end
   vim.o.statusline = '%!v:lua._builtin_statusline()'
@@ -308,6 +342,11 @@ function M.setup_bufferline()
   end
   define_hl()
   vim.api.nvim_create_autocmd('ColorScheme', { callback = define_hl })
+  -- Click a buffer tab to switch to it (mouse enabled). Only left-click
+  -- switches; anything else is ignored so right-click menus keep working.
+  _G._builtin_tabclick = function(bufnr, _, button)
+    if button == 'l' and vim.api.nvim_buf_is_valid(bufnr) then vim.api.nvim_set_current_buf(bufnr) end
+  end
   _G._builtin_tabline = function()
     local s, idx = '', 0
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
@@ -317,7 +356,6 @@ function M.setup_bufferline()
         if name == '' then name = '[No Name]' end
         local is_cur = buf == vim.api.nvim_get_current_buf()
         local hl = is_cur and '%#TabLineSel#' or '%#TabLine#'
-        local tab_hl_name = is_cur and 'TabLineSel' or 'TabLine'
         local cnt = M._diag_counts[buf] or M._count_diags(buf)
         local diag = ''
         if cnt.e > 0 then diag = diag .. cnt.e .. ' ' end
@@ -326,7 +364,7 @@ function M.setup_bufferline()
         if cnt.h > 0 then diag = diag .. cnt.h .. ' ' end
         local mod_hl = is_cur and '%#TabLineModSel#' or '%#TabLineMod#'
         local mod = vim.bo[buf].modified and ' ' .. mod_hl .. '●' .. hl or ''
-        s = s .. hl .. ' ' .. idx .. ' ' .. name .. mod .. (diag ~= '' and ' ' .. diag or '') .. ' %*'
+        s = s .. '%' .. buf .. '@_builtin_tabclick@' .. hl .. ' ' .. idx .. ' ' .. name .. mod .. (diag ~= '' and ' ' .. diag or '') .. ' %X%*'
       end
     end
     return s .. '%#TabLineFill#%='
