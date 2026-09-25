@@ -87,18 +87,18 @@ return {
         picker = {
           enabled = true,
           -- ponytail: replace upstream's circle git icons (staged ●,
-          -- modified ○) with distinct nerd glyphs — coverage verified
-          -- against MesloLGS NF. Full table (not just overrides):
-          -- snacks replaces icons.git instead of deep-merging it.
+          -- modified ○) with check/pencil nerd glyphs. Written as
+          -- nr2char() calls — literal emoji bytes get stripped in transit,
+          -- escapes don't. 0xF00C fa-check, 0xF040 fa-pencil.
           icons = {
             git = {
               enabled = true,
               commit = ' ',
-              staged = '',
+              staged = vim.fn.nr2char(0xF00C),
               added = '',
               deleted = '',
               ignored = ' ',
-              modified = '',
+              modified = vim.fn.nr2char(0xF040),
               renamed = '',
               unmerged = ' ',
               untracked = '?',
