@@ -6,6 +6,9 @@ local M = {}
 -- ponytail: global per-buffer cache; per-win only if multi-window counts ever diverge.
 M._diag_counts = {} -- [bufnr] = { e, w, i, h, total }
 M._lsp_name = { buf = -1, name = '' }
+-- Search-count cache: searchcount() scans the buffer, so only recompute when
+-- the pattern, buffer content, or cursor line changed — pure redraws reuse.
+M._search = { key = nil, s = '' }
 
 function M._count_diags(buf)
   local sev = vim.diagnostic.severity
@@ -136,6 +139,8 @@ function M.setup_lualine()
   local mode_map = {
     n = 'NORMAL', i = 'INSERT', v = 'VISUAL', V = 'V-LINE', ['\22'] = 'V-BLOCK',
     c = 'COMMAND', R = 'REPLACE', t = 'TERMINAL', nt = 'TERMINAL',
+    no = 'OP-PENDING', nov = 'OP-PENDING', noV = 'OP-PENDING', ['no\22'] = 'OP-PENDING',
+    s = 'SELECT', S = 'SELECT-LINE', ['\19'] = 'SELECT-BLOCK',
   }
   local function mode_hl_key(m)
     if m:find('^[iI]') then return 'insert'
@@ -172,7 +177,6 @@ function M.setup_lualine()
       if d.removed and d.removed > 0 then parts[#parts + 1] = '%#SL_diff_delete#-' .. d.removed .. '%#SL_b_' .. key .. '#' end
       diff_s = table.concat(parts, ' ')
     end
-    -- diagnostics — Nerd Fonts v3 (old / codepoints often missing → '?') — this is the 'problems in current file'
     -- diagnostics — cached counts (refreshed on DiagnosticChanged), not get() per redraw
     local buf0 = vim.api.nvim_get_current_buf()
     local cnt = M._diag_counts[buf0] or M._count_diags(buf0)
@@ -198,23 +202,44 @@ function M.setup_lualine()
     local macro_s = rec ~= '' and ('%#SL_diff_delete#◉ @' .. rec .. hl_b)
       or (exe ~= '' and ('%#SL_diff_delete#▶ @' .. exe .. hl_b) or '')
 
-    -- filename path=1 with symbols
-    local fname = vim.fn.expand '%:~:.'
-    if fname == '' then fname = '[No Name]' end
+    -- filename path=1 with symbols; terminal buffers show a short command
+    -- name instead of the raw term://... job URL (term_title defaults to
+    -- the URL itself, so treat that as absent and use the part after the
+    -- last colon, basename-d for paths: 'echo hi', 'zsh', 'lazygit').
+    local fname
+    if vim.bo.buftype == 'terminal' then
+      local title = vim.b.term_title
+      local raw = vim.api.nvim_buf_get_name(buf0)
+      if not title or title == '' or title == raw then title = raw:match(':([^:]*)$') or raw end
+      fname = vim.fn.fnamemodify(title, ':t')
+      if fname == '' then fname = 'terminal' end
+    else
+      fname = vim.fn.expand '%:~:.'
+      if fname == '' then fname = '[No Name]' end
+    end
     if vim.bo.modified then fname = fname .. ' [+]' end
     if vim.bo.readonly then fname = fname .. ' 󰌾' end
+    -- spell flag mirrors the <leader>us toggle (visible state, only when on)
+    if vim.wo.spell then fname = fname .. ' %#SL_search#SPELL' .. hl_c end
 
     -- search count, noice-style [cur/total] — only while hlsearch is on.
-    -- ponytail: direct searchcount() with a timeout cap (no cache layer);
-    -- redraws without cursor movement are rare, and the timeout bounds cost.
-    local search_s = ''
-    if vim.v.hlsearch == 1 and vim.fn.getreg('/') ~= '' then
+    -- Cached on pattern + buffer content + cursor line; pure redraws reuse
+    -- the last segment instead of re-scanning the buffer.
+    local pat = vim.v.hlsearch == 1 and vim.fn.getreg('/') or ''
+    local cur = vim.api.nvim_win_get_cursor(0)
+    local skey = pat .. '\0' .. buf0 .. '\0' .. vim.b[buf0].changedtick .. '\0' .. cur[1] .. ',' .. cur[2]
+    if pat ~= '' and skey ~= M._search.key then
+      local s = ''
       local ok, sc = pcall(vim.fn.searchcount, { maxcount = 999, timeout = 100 })
       if ok and sc and sc.total and sc.total > 0 then
         local cur = sc.incomplete == 1 and '?' or sc.current
-        search_s = '%#SL_search# ' .. cur .. '/' .. sc.total .. ' ' .. hl_c
+        s = '%#SL_search# ' .. cur .. '/' .. sc.total .. ' ' .. hl_c
       end
+      M._search = { key = skey, s = s }
+    elseif pat == '' then
+      M._search = { key = skey, s = '' }
     end
+    local search_s = M._search.s
 
     -- lsp — cached first-client name (refreshed on LspAttach/Detach/BufEnter)
     if M._lsp_name.buf ~= buf0 then M._refresh_lsp(buf0) end
@@ -225,9 +250,9 @@ function M.setup_lualine()
     local ft_s = vim.bo.filetype
 
     -- sections mirror lualine: a=mode | b=branch/diff/diag | c=filename | x=lsp/enc/ff/ft | y=progress | z=location
-    -- lualine had no separators
+    -- lualine had no separators; %< truncates the filename side first in narrow splits
     local left = hl_a .. ' ' .. mode .. ' ' .. hl_b .. (macro_s ~= '' and ' ' .. macro_s .. ' ' or '') .. (b_s ~= '' and ' ' .. b_s .. ' ' or ' ')
-    local center = hl_c .. ' ' .. fname .. ' ' .. search_s
+    local center = hl_c .. ' %<' .. fname .. ' ' .. search_s
     local right_x = hl_c .. (lsp_s ~= '' and ' ' .. lsp_s .. ' ' or ' ') .. enc .. ' ' .. ff .. (ft_s ~= '' and ' ' .. ft_s or '') .. ' '
     local right_y = hl_b .. ' %p%% '
     local right_z = hl_a .. ' %l:%c ' .. '%*'
