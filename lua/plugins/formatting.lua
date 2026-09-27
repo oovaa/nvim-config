@@ -15,7 +15,7 @@ return {
   {
     'aznhe21/actions-preview.nvim',
     event = 'LspAttach',
-    opts = { backend = { 'telescope' } },
+    opts = { backend = { 'snacks' } },
   },
 
   -- CONFORM.NVIM
