@@ -7,17 +7,16 @@ local M = {}
 
 local required = {
   { bin = 'git', why = 'gitsigns, blame.nvim, lazy.nvim updates' },
-  { bin = 'rg', why = 'telescope live_grep, grug-far' },
+  { bin = 'rg', why = 'snacks grep, grug-far' },
   { bin = 'node', why = 'LSP servers' },
 }
 
 local optional = {
   { bin = 'bun', why = 'JS/TS tooling, vtsls install' },
   { bin = 'python3', why = 'molten-nvim, neotest-python, pyrefly' },
-  { bin = 'make', why = 'telescope-fzf-native build' },
-  { bin = 'fd', why = 'telescope find_files speed' },
+  { bin = 'make', why = 'LuaSnip jsregexp build' },
+  { bin = 'fd', why = 'snacks picker speed' },
   { bin = 'lazygit', why = '<leader>fg float' },
-  { bin = 'cmake', why = 'telescope-fzf-native build' },
   { bin = 'docker', why = 'dockerls, docker_compose_language_service (optional)' },
   { bin = 'pyrefly', why = 'python LSP' },
 }
