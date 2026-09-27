@@ -150,7 +150,7 @@ function M.setup_lualine()
     -- diff colors + search count sit inside the lifted b section / next to
     -- the filename, so they share mid_bg to avoid a patchwork bar
     hl('SL_diff_add', mid_bg, c.lsp); hl('SL_diff_change', mid_bg, c.blue); hl('SL_diff_delete', mid_bg, c.red)
-    -- search count (noice-style [cur/total], only visible while searching)
+    -- search count ([cur/total], only visible while searching)
     hl('SL_search', mid_bg, c.yellow)
   end
   define_hl()
@@ -218,7 +218,7 @@ function M.setup_lualine()
     local b_s = table.concat(b_parts, '  ')
 
     -- macro recording — vim.fn.reg_recording() is '' when idle, register when recording;
-    -- reg_executing() likewise during @-playback (noice parity: recording only —
+    -- reg_executing() likewise during @-playback (recording only —
     -- playback indicator added since long 1000@q runs otherwise show nothing).
     local rec = vim.fn.reg_recording()
     local exe = vim.fn.reg_executing()
@@ -245,7 +245,7 @@ function M.setup_lualine()
     -- spell flag mirrors the <leader>us toggle (visible state, only when on)
     if vim.wo.spell then fname = fname .. ' %#SL_search#SPELL' .. hl_c end
 
-    -- search count, noice-style [cur/total] — only while hlsearch is on.
+    -- search count, [cur/total] — only while hlsearch is on.
     -- Cached on pattern + buffer content + cursor line; pure redraws reuse
     -- the last segment instead of re-scanning the buffer.
     local pat = vim.v.hlsearch == 1 and vim.fn.getreg('/') or ''

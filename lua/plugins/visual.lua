@@ -36,20 +36,6 @@ return {
     },
   },
 
-  -- NOICE (removed — snacks notifier+input cover messages/cmdline/search;
-  -- no heavy UI layer, no macro/notify interception. One-line revert below.)
-  -- {
-  --   'folke/noice.nvim',
-  --   event = 'VeryLazy',
-  --   dependencies = { 'MunifTanjim/nui.nvim', 'folke/snacks.nvim' },
-  --   opts = {
-  --     presets = {
-  --       bottom_search = true,
-  --       lsp_doc_border = true,
-  --     },
-  --   },
-  -- },
-
   -- WHICH-KEY
   -- WHAT: Shows a popup with available keybindings after you press a key
   -- TO CHANGE: Add more groups in opts.spec, or change delay

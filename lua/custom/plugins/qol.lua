@@ -41,7 +41,7 @@ return {
   },
 
   -- Command palette: vim.ui.input via snacks.nvim, vim.ui.select via
-  -- telescope-ui-select (both lazy-loaded with their owners).
+  -- builtin (plain) until a picker override is chosen.
 
   -- Better quickfix (bqf.nvim)
   {

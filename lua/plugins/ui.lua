@@ -8,8 +8,8 @@ return {
   -- BUILTIN UI (replaces bufferline/lualine/alpha — no plugin, zero loss)
   -- statusline/tabline/dashboard via lua/custom/ui/spec.lua (pure nvim 0.12)
   -- keys S-h/S-l/<leader>bd preserved via builtin :bprev/:bnext/:bdelete
-  -- (ponytail: mini.icons spec deleted — zero requires anywhere; neo-tree
-  -- uses nvim-web-devicons, which-key degrades gracefully without it.)
+  -- (ponytail: mini.icons spec deleted — zero requires anywhere;
+  -- which-key degrades gracefully without icons.)
 
   -- SNACKS.NVIM (#1 LazyVim gap)
   -- The swiss-army knife: picker, scratch buffer, dashboard,
@@ -19,11 +19,11 @@ return {
     {
      'folke/snacks.nvim',
      -- ponytail: keys-only meant notifier/input stayed dead until first keypress
-     -- (only loaded transitively via noice); VeryLazy makes it self-sufficient.
+     -- (only loaded on demand); VeryLazy makes it self-sufficient.
      event = 'VeryLazy',
-     -- ponytail: devicons was telescope/neo-tree-only, so the explorer showed
-     -- fallback circles until one of those loaded; pin it here (already
-     -- installed — no new dep) so icons resolve on the snacks path too.
+     -- ponytail: devicons loaded late, so the explorer showed fallback
+     -- circles at first; pin it here (already installed — no new dep)
+     -- so icons resolve on the snacks path too.
      dependencies = { { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font } },
     opts = {
       indent = {
@@ -41,9 +41,8 @@ return {
       },
       input = { enabled = true },
       notifier = { enabled = true },
-      -- ponytail: picker + explorer own daily search/files (migrated from
-      -- telescope/neo-tree — no plenary, faster; telescope stays cmd-only
-      -- for vim_bookmarks + ui-select, neo-tree cmd-only as fallback).
+      -- ponytail: picker + explorer own daily search/files
+      -- (no plenary, faster).
         picker = {
           enabled = true,
           -- ponytail: replace upstream's circle git icons (staged ●,
@@ -158,7 +157,7 @@ return {
         desc = 'Notification History',
       },
       { '<leader>un', function() require('snacks').notifier.hide() end, desc = 'Dismiss All Notifications' },
-      -- Picker: daily search, migrated from telescope (keys identical).
+      -- Picker: daily search (keys identical).
       { '<leader>sh', function() require('snacks').picker.help() end, desc = '[S]earch [H]elp' },
       { '<leader>sk', function() require('snacks').picker.keymaps() end, desc = '[S]earch [K]eymaps' },
       { '<leader>sf', function() require('snacks').picker.files() end, desc = '[S]earch [F]iles' },
@@ -183,7 +182,7 @@ return {
       { '<leader>sn', function() require('snacks').picker.files { cwd = vim.fn.stdpath 'config' } end, desc = '[S]earch [N]eovim files' },
       { '<leader>ls', function() require('snacks').picker.lsp_symbols() end, desc = '[L]ist [S]ymbols in file' },
       { '<leader>lS', function() require('snacks').picker.lsp_workspace_symbols() end, desc = '[L]ist [S]ymbols in workspace' },
-      -- Explorer trial (neo-tree kept cmd-only one release as fallback).
+      -- Explorer (snacks explorer owns daily files).
       { '<leader>e', function() require('snacks').explorer() end, desc = 'Toggle File [E]xplorer' },
       { '<leader>fe', function() require('snacks').explorer() end, desc = '[F]ile [E]xplorer' },
       { '<leader>fE', function() require('snacks').explorer.reveal() end, desc = '[F]ile [E]xplorer (reveal)' },

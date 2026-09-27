@@ -81,7 +81,7 @@ return {
 
           -- Execute a code action, usually your cursor needs to be on top of an error
           -- or a suggestion from your LSP for this to activate.
-          -- ponytail: both code-action keys go through actions-preview (diff preview, telescope UI)
+          -- ponytail: both code-action keys go through actions-preview (diff preview, snacks UI)
           local preview_action = function() require('actions-preview').code_actions() end
           map('gra', preview_action, '[G]oto Code [A]ction', { 'n', 'x' })
           map('<leader>ca', preview_action, '[C]ode [A]ction', { 'n', 'x' })
@@ -127,8 +127,7 @@ return {
             map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
           end
 
-          -- Snacks picker owns LSP nav now (telescope kept cmd-only for
-          -- vim_bookmarks + ui-select). snacks is VeryLazy so loaded by
+          -- Snacks picker owns LSP nav now. snacks is VeryLazy so loaded by
           -- attach time in practice; lazy.load covers cold paths.
           local function spick(fn)
             return function()

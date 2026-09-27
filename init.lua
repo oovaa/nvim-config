@@ -22,7 +22,7 @@
    1. Read through this file top to bottom
    2. Try changing a setting and see what happens
    3. Use `:help <option>` to learn more about any option
-   4. Use `:Telescope keymaps` to see all available keybindings
+   4. Use `<leader>sk` (snacks picker) to see all available keybindings
 
  LEADER KEY: <Space>
 
@@ -47,7 +47,6 @@
     lua/plugins/ui.lua           snacks explorer, nvim-lint
    lua/plugins/navigation.lua   flash
    lua/plugins/debugging.lua    nvim-dap (python)
-   lua/plugins/bookmarks.lua    telescope-vim-bookmarks
    lua/plugins/appearance.lua   render-markdown, colorizer
 
  Key Mappings Reference:
@@ -156,7 +155,7 @@ end
 --   event = 'InsertEnter'       Load only when entering insert mode
 --   event = 'BufReadPost'       Load only when opening a file
 --   ft = { 'python', 'lua' }    Load only for specific filetypes
---   cmd = { 'Telescope' }       Load only when running specific commands
+--   cmd = { 'Mason' }           Load only when running specific commands
 --   keys = { '<leader>f' }      Load only when specific keymaps are pressed
 --   lazy = false                Load immediately at startup (use sparingly!)
 --
@@ -226,7 +225,7 @@ require('lazy').setup({
         'gzip', -- Gzip file reading/writing (not needed)
         'tarPlugin', -- Tar file reading/writing (not needed)
         'tutor', -- Vim tutorial (not needed)
-        'netrwPlugin', -- Netrw file browser (replaced by neo-tree)
+        'netrwPlugin', -- Explorer (snacks explorer owns daily files)
         'matchit', -- Extended % matching (replaced by mini.ai)
         -- matchparen is kept: mini.ai/mini.surround don't replicate its
         -- matching-paren highlight under the cursor.

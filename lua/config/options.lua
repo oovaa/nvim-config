@@ -154,8 +154,7 @@ vim.o.timeoutlen = 300
 -- WHAT: Defers intermediate screen redraws while running macros/scripts
 -- TO CHANGE: Set to false if you want every intermediate visual update
 -- EFFECT: true = smoother/faster macros and large multi-step edits
--- Enabled: defers redraws during macros/scripts. Was disabled for Noice.nvim,
--- which has since been removed (snacks notifier+input own the cmdline).
+-- Enabled: defers redraws during macros/scripts (snacks notifier+input own the cmdline).
 vim.o.lazyredraw = true
 
 -- SYNTAX COLUMN LIMIT
@@ -208,7 +207,7 @@ vim.o.smoothscroll = true
 
 -- FLOAT BORDER (builtin, replaces dressing.nvim — borders on cmdline, quickfix,
 -- help peek, incsearch split preview, terminal float, etc.)
--- Plugins that set their own borders (noice, blink, telescope) are unaffected.
+-- Plugins that set their own borders (blink, snacks) are unaffected.
 vim.o.winborder = 'rounded'
 
 -- CONFIRM DIALOG
