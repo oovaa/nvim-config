@@ -11,9 +11,9 @@ describe('modular split', function()
     assert.is_true(#lines < 300, 'init.lua should be <300 lines, got ' .. #lines)
     local code = table.concat(lines, '\n'):gsub('%-%[%[.-%]%]', ''):gsub('%-%-[^\n]*', '')
     for _, repo in ipairs({
-      'telescope.nvim', 'mason.nvim', 'blink.cmp', 'snacks.nvim',
+      'mason.nvim', 'blink.cmp', 'snacks.nvim',
       'tokyonight.nvim', 'conform.nvim', 'flash.nvim', 'nvim-dap',
-      'mini.nvim', 'nvim-vtsls', 'gitsigns.nvim', 'neo-tree.nvim',
+      'mini.nvim', 'nvim-vtsls', 'gitsigns.nvim',
     }) do
       assert.is_nil(code:find(repo, 1, true), 'init.lua must not contain ' .. repo)
     end
@@ -26,10 +26,10 @@ describe('modular split', function()
     assert.is_truthy(code:match("require%s*'config%.runner'"), 'wires runner')
   end)
 
-  it('all twelve section modules exist and are valid Lua', function()
+  it('all eleven section modules exist and are valid Lua', function()
     local modules = {
       'visual', 'lsp', 'formatting', 'completion', 'colorscheme', 'editing',
-      'treesitter', 'ui', 'navigation', 'debugging', 'bookmarks', 'appearance',
+      'treesitter', 'ui', 'navigation', 'debugging', 'appearance',
     }
     for _, m in ipairs(modules) do
       local path = root .. '/lua/plugins/' .. m .. '.lua'
@@ -52,13 +52,13 @@ describe('modular split', function()
     -- every spec from the pre-split init.lua must still exist
     for _, repo in ipairs({
       'NMAC427/guess-indent.nvim', 'lewis6991/gitsigns.nvim', 'folke/which-key.nvim',
-      'nvim-telescope/telescope.nvim', 'mason-org/mason.nvim', 'aznhe21/actions-preview.nvim',
+      'mason-org/mason.nvim', 'aznhe21/actions-preview.nvim',
       'stevearc/conform.nvim', 'saghen/blink.cmp', 'folke/tokyonight.nvim',
       'folke/todo-comments.nvim', 'nvim-mini/mini.nvim', 'folke/ts-comments.nvim',
       'okuuva/auto-save.nvim', 'yioneko/nvim-vtsls', 'nvim-treesitter/nvim-treesitter',
-      'windwp/nvim-ts-autotag', 'nvim-neo-tree/neo-tree.nvim', 'folke/snacks.nvim',
+      'windwp/nvim-ts-autotag', 'folke/snacks.nvim',
       'mfussenegger/nvim-lint', 'folke/flash.nvim', 'mfussenegger/nvim-dap',
-      'tom-anders/telescope-vim-bookmarks.nvim', 'MeanderingProgrammer/render-markdown.nvim',
+      'MeanderingProgrammer/render-markdown.nvim',
       'catgoose/nvim-colorizer.lua',
     }) do
       -- strip org prefix: gmatch key has no quotes/org split issues; compare full

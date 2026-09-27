@@ -136,21 +136,7 @@ describe('Phase 2: Performance Optimizations', function()
     end)
   end)
 
-  -- Test 5: fzf-native has cmake cond
-  describe('telescope-fzf-native', function()
-    it('has cond checking for make and cmake', function()
-      -- ponytail: path kept for context; assertions read the whole config
-      local content = H.all()
-
-      assert.is_truthy(content:match 'telescope%-fzf%-native%.nvim', 'fzf-native should be a dependency')
-      assert.is_truthy(
-        content:match 'executable.*make.*==.*1' and content:match 'executable.*cmake.*==.*1',
-        'fzf-native cond should check for both make and cmake'
-      )
-    end)
-  end)
-
-  -- Test 6: nvim-ts-autotag loads on ft
+  -- Test 5: nvim-ts-autotag loads on ft
   describe('nvim-ts-autotag', function()
     it('loads on specific filetypes (html, jsx, tsx, etc.)', function()
       -- ponytail: path kept for context; assertions read the whole config
@@ -163,7 +149,7 @@ describe('Phase 2: Performance Optimizations', function()
     end)
   end)
 
-  -- Test 7: Startup performance target
+  -- Test 6: Startup performance target
   describe('startup performance', function()
     it('has vim.loader.enable and lazy.nvim cache enabled', function()
       -- ponytail: path kept for context; assertions read the whole config
@@ -175,7 +161,7 @@ describe('Phase 2: Performance Optimizations', function()
     end)
   end)
 
-  -- Test 8: hlchunk deleted, colorizer/image narrowly triggered
+  -- Test 7: hlchunk deleted, colorizer/image narrowly triggered
   describe('hlchunk/colorizer/image triggers', function()
     it('hlchunk spec is gone; colorizer+image load on ft only', function()
       -- ponytail: path kept for context; assertions read the whole config
@@ -199,22 +185,21 @@ describe('Phase 2: Performance Optimizations', function()
     end)
   end)
 
-  -- Test 9: noice removed, telescope cmd-only, daily keys on snacks
-  describe('picker migration', function()
-    it('noice spec is commented; telescope has no keys; search keys live on snacks', function()
+  -- Test 8: telescope + noice removed, daily keys on snacks
+  describe('picker migration complete', function()
+    it('telescope and noice specs are gone; search keys live on snacks', function()
       -- ponytail: path kept for context; assertions read the whole config
       local content = H.all()
       local code = content:gsub('%-%-[^\n]*', '') -- strip comments: check code, not prose
-      assert.is_nil(code:match "'folke/noice%.nvim'", 'noice spec should be removed (commented)')
-      local tspec = code:match "'nvim%-telescope/telescope%.nvim'.-\n  %},"
-      assert.is_not_nil(tspec, 'telescope spec should exist')
-      assert.is_falsy(tspec:match 'keys%s*=', 'telescope must be cmd-only (daily keys moved to snacks)')
-      assert.is_truthy(tspec:match "cmd%s*=%s*'Telescope'", 'telescope keeps :Telescope cmd for vim_bookmarks + ui-select')
+      assert.is_nil(code:match "'folke/noice%.nvim'", 'noice spec should be removed')
+      assert.is_nil(code:match "'nvim%-telescope/telescope%.nvim'", 'telescope spec should be removed')
+      assert.is_truthy(code:match "'folke/snacks%.nvim'", 'snacks spec should exist')
       local sspec = code:match "'folke/snacks%.nvim'.-\n  %},"
       assert.is_not_nil(sspec, 'snacks spec should exist')
       for _, k in ipairs { '<leader>sf', '<leader>sg', '<leader>sd', '<leader>e', '<leader>fe' } do
         assert.is_truthy(sspec:find(k, 1, true), k .. ' should be a snacks key')
       end
+      -- NOTE: <leader>st lives on the todo-comments spec (test_cleanup.lua M2), not here.
     end)
   end)
 end)
