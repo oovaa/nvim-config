@@ -11,7 +11,7 @@
  9. Node provider disabled (joins perl/ruby)
 
 
- MEASURED STARTUP TIME: ~185ms (clean headless --startuptime; was ~250ms)
+  MEASURED STARTUP TIME: ~71.7ms (clean headless NVIM STARTED 2026-09-27; was ~185ms, ~250ms)
 
  EXTERNAL BINARIES (outside mason — reinstall manually on a new machine):
    brew: ueberzugpp (image.nvim backend), jupyter + jupytext (molten notebooks)
