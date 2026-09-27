@@ -14,8 +14,7 @@ return {
   {
     'folke/todo-comments.nvim',
     event = 'VeryLazy',
-    cmd = 'TodoTelescope',
-    keys = { { '<leader>st', '<cmd>TodoTelescope<cr>', desc = '[S]earch [T]odo comments' } },
+    keys = { { '<leader>st', function() require('snacks').picker.todo_comments() end, desc = '[S]earch [T]odo comments' } },
     dependencies = { 'nvim-lua/plenary.nvim' },
     ---@module 'todo-comments'
     ---@type TodoOptions
