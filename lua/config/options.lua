@@ -154,8 +154,9 @@ vim.o.timeoutlen = 300
 -- WHAT: Defers intermediate screen redraws while running macros/scripts
 -- TO CHANGE: Set to false if you want every intermediate visual update
 -- EFFECT: true = smoother/faster macros and large multi-step edits
--- NOTE: Disabled because it conflicts with Noice.nvim
-vim.o.lazyredraw = false
+-- Enabled: defers redraws during macros/scripts. Was disabled for Noice.nvim,
+-- which has since been removed (snacks notifier+input own the cmdline).
+vim.o.lazyredraw = true
 
 -- SYNTAX COLUMN LIMIT
 -- WHAT: Stops regex syntax highlighting after this many columns on a line
