@@ -75,13 +75,7 @@ vim.keymap.set('n', '<leader>t3', function() new_horiz(vim.o.shell) end, { desc 
 vim.keymap.set('n', '<leader>tn', function() new_horiz(vim.o.shell) end, { desc = '[T]erminal [N]ew' })
 local function toggle_last()
   -- ponytail: C-\ mirrors toggleterm — if any terminal visible, hide it; else reopen last kind
-  -- ponytail: neo-tree float focused → just dismiss the explorer, leave terminals alone
-  local cur = vim.api.nvim_get_current_win()
-  if vim.api.nvim_win_get_config(cur).relative ~= '' and vim.bo[vim.api.nvim_win_get_buf(cur)].filetype == 'neo-tree' then
-    pcall(vim.api.nvim_win_close, cur, true)
-    return
-  end
-  -- ponytail: every close is pcall — closing the last window errors (E444, e.g. terminal + neo-tree float only)
+  -- ponytail: every close is pcall — closing the last window errors (E444)
   local seen = false
   local function hide(win, buf)
     if not is_win_valid(win) then return false end

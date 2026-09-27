@@ -44,7 +44,7 @@
    lua/plugins/colorscheme.lua  tokyonight (+ saved-theme restore)
    lua/plugins/editing.lua      todo, mini, ts-comments, auto-save, vtsls
    lua/plugins/treesitter.lua   treesitter, autotag
-   lua/plugins/ui.lua           neo-tree, snacks, nvim-lint
+    lua/plugins/ui.lua           snacks explorer, nvim-lint
    lua/plugins/navigation.lua   flash
    lua/plugins/debugging.lua    nvim-dap (python)
    lua/plugins/bookmarks.lua    telescope-vim-bookmarks

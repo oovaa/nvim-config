@@ -82,7 +82,6 @@ vim.api.nvim_create_autocmd('VimLeavePre', {
       if vim.api.nvim_buf_is_loaded(b) and vim.bo[b].buflisted and vim.bo[b].buftype == '' and vim.api.nvim_buf_get_name(b) ~= '' and vim.bo[b].filetype ~= 'dashboard' then has_file = true; break end
     end
     if not has_file then return end
-    pcall(vim.cmd, 'silent! Neotree close')
     vim.fn.mkdir(vim.fn.stdpath 'data' .. '/sessions', 'p')
     vim.cmd('silent! mksession! ' .. vim.fn.fnameescape(session_file()))
   end,

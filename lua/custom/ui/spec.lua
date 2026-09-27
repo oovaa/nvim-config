@@ -175,9 +175,9 @@ function M.setup_lualine()
   end
 
   _G._builtin_statusline = function()
-    -- disabled filetypes like lualine: neo-tree / TelescopePrompt / lazy / dashboard
+    -- disabled filetypes like lualine: TelescopePrompt / lazy / dashboard
     local ft = vim.bo.filetype
-    if ft == 'neo-tree' or ft == 'TelescopePrompt' or ft == 'lazy' or ft == 'dashboard' then
+    if ft == 'TelescopePrompt' or ft == 'lazy' or ft == 'dashboard' then
       return '%#SL_c# %f %*'
     end
     local raw = vim.fn.mode()
@@ -405,7 +405,7 @@ function M.setup_starter()
         local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
         f = sess_dir .. '/' .. vim.fn.fnamemodify(vim.uv.cwd() or vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'
       end
-      if has_badd(f) then pcall(vim.cmd, 'silent! Neotree close'); close_dashboard(); vim.cmd('source ' .. vim.fn.fnameescape(f)); return end
+      if has_badd(f) then close_dashboard(); vim.cmd('source ' .. vim.fn.fnameescape(f)); return end
       local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
       local sess_files = _G._builtin_session_files and _G._builtin_session_files(sess_dir) or {}
       local mtime, files = {}, {}
@@ -436,7 +436,7 @@ function M.setup_starter()
       end
       table.sort(items)
       if #items == 0 then vim.notify('No session for ' .. (vim.uv.cwd() or vim.fn.getcwd()) .. ' — sessions are saved on quit (suppressed: ~, ~/Downloads, /etc, /tmp)', vim.log.levels.INFO) return end
-      local function do_pick(choice) if choice and map[choice] then pcall(vim.cmd, 'silent! Neotree close'); if vim.bo.filetype == 'dashboard' then pcall(vim.cmd, 'bwipeout!') end; vim.cmd('source ' .. vim.fn.fnameescape(map[choice])) end end
+      local function do_pick(choice) if choice and map[choice] then if vim.bo.filetype == 'dashboard' then pcall(vim.cmd, 'bwipeout!') end; vim.cmd('source ' .. vim.fn.fnameescape(map[choice])) end end
       local function pick()
         vim.ui.select(items, { prompt = 'Select session:' }, function(choice) do_pick(choice) end)
       end

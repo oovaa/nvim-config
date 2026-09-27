@@ -51,12 +51,12 @@ vim.g.loaded_node_provider = 0 -- Disable Node provider (no :Node remote plugins
 -- BUILT-IN PLUGIN DISABLES
 -- ============================================================================
 -- WHAT: Neovim ships legacy Vimscript plugins that load on their trigger.
---        neo-tree replaces netrw; the rest are unused. Skipping them saves
---        a few ms and avoids netrw/neo-tree explorer conflicts.
+--        snacks explorer replaces netrw; the rest are unused. Skipping them saves
+--        a few ms and avoids netrw/snacks explorer conflicts.
 -- TO CHANGE: Remove any line if you want that built-in back.
 -- EFFECT: 0 = never sourced. Check with `:checkhealth vim` or :scriptnames.
 -- ============================================================================
-vim.g.loaded_netrw = 1 -- File explorer (replaced by neo-tree)
+vim.g.loaded_netrw = 1 -- File explorer (replaced by snacks explorer)
 vim.g.loaded_netrwPlugin = 1 -- netrw remote reading (curl/wget wrappers)
 vim.g.loaded_2html_plugin = 1 -- :TOhtml export
 vim.g.loaded_gzip = 1 -- Transparent .gz editing
