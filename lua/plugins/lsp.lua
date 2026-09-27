@@ -24,9 +24,6 @@ return {
     dependencies = {
       -- Auto-installs tools listed in ensure_installed
       'WhoIsSethDaniel/mason-tool-installer.nvim',
-
-      -- Shows LSP loading progress in the bottom-right corner
-      { 'j-hui/fidget.nvim', opts = {} },
     },
     config = function()
       -- NOTE: opts = {} above is passed here, NOT auto-setup (a spec with

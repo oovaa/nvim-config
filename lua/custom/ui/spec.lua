@@ -266,7 +266,11 @@ function M.setup_lualine()
 
     -- lsp — cached first-client name (refreshed on LspAttach/Detach/BufEnter)
     if M._lsp_name.buf ~= buf0 then M._refresh_lsp(buf0) end
-    local lsp_s = M._lsp_name.name == '' and '' or '%#SL_lsp#󰄶 ' .. M._lsp_name.name .. hl_c
+    -- ponytail: vim.lsp.status() carries $/progress text while servers work;
+    -- show it live, fall back to the cached client name when idle; %-escape for statusline safety.
+    local prog = vim.lsp.status():gsub('%%', '%%%%')
+    local lsp_s = prog ~= '' and ('%#SL_lsp#' .. prog .. hl_c)
+      or (M._lsp_name.name == '' and '' or '%#SL_lsp#󰄶 ' .. M._lsp_name.name .. hl_c)
 
     local enc = (vim.bo.fileencoding ~= '' and vim.bo.fileencoding or vim.o.encoding)
     local ff = vim.bo.fileformat
