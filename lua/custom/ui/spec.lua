@@ -440,13 +440,7 @@ function M.setup_starter()
       local function pick()
         vim.ui.select(items, { prompt = 'Select session:' }, function(choice) do_pick(choice) end)
       end
-      if pcall(require, 'telescope') then
-        local pickers, finders, conf = require('telescope.pickers'), require('telescope.finders'), require('telescope.config').values
-        pickers.new({}, { prompt_title = 'Sessions', finder = finders.new_table { results = items }, sorter = conf.generic_sorter({}), previewer = false, attach_mappings = function(_, m)
-          m('i', '<CR>', function(pb) local sel = require('telescope.actions.state').get_selected_entry(); require('telescope.actions').close(pb); do_pick(sel[1]) end)
-          m('n', '<CR>', function(pb) local sel = require('telescope.actions.state').get_selected_entry(); require('telescope.actions').close(pb); do_pick(sel[1]) end)
-          return true end }):find()
-      else pick() end
+      pick()
     end },
     { key = 'u', icon = '', label = 'Update Plugins', action = '<cmd>Lazy sync<CR>' },
     { key = 'q', icon = '', label = 'Quit', action = '<cmd>qa<CR>' },
