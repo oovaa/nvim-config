@@ -37,7 +37,7 @@
    lua/custom/ui/theme.lua   theme persistence + mode-colored line numbers
    lua/custom/ui/init.lua    builtin statusline/tabline/dashboard wiring
    lua/custom/plugins/       personal plugins (molten, image, qol, themes)
-   lua/plugins/visual.lua       guess-indent, gitsigns, which-key, telescope
+    lua/plugins/visual.lua       guess-indent, gitsigns, which-key
    lua/plugins/lsp.lua          mason + native vim.lsp servers
    lua/plugins/formatting.lua   actions-preview, conform
    lua/plugins/completion.lua   blink.cmp
