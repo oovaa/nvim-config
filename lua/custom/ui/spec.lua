@@ -175,9 +175,9 @@ function M.setup_lualine()
   end
 
   _G._builtin_statusline = function()
-    -- disabled filetypes like lualine: TelescopePrompt / lazy / dashboard
+    -- disabled filetypes like lualine: lazy / dashboard
     local ft = vim.bo.filetype
-    if ft == 'TelescopePrompt' or ft == 'lazy' or ft == 'dashboard' then
+    if ft == 'lazy' or ft == 'dashboard' then
       return '%#SL_c# %f %*'
     end
     local raw = vim.fn.mode()

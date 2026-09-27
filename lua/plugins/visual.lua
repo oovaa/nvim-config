@@ -72,7 +72,7 @@ return {
       spec = {
         { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
         { '<leader>t', group = '[T]oggle & [T]erminal' },
-        { '<leader>m', group = '[M]olten & Book[m]arks' },
+        { '<leader>m', group = '[M]olten' },
         { '<leader>d', group = '[D]ebug' },
         { '<leader>f', group = '[F]ormat / [F]ind' },
         { '<leader>r', group = '[R]un' },

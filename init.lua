@@ -59,9 +59,8 @@
    Git:         <leader>fg (LazyGit)
    Debug:       <leader>d{b,c,i,o,O,r,l,t,n,f,s}
    LSP:         K(grn,a,D), grr, gri, grd, grt, gO, gW
-   Symbols:     <leader>ls, <leader>lS
-   Bookmarks:   <leader>mt/mc/mj/mk/mb
-   Molten:      <leader>m{i,l,v,r,h,d,n,p,o}
+    Symbols:     <leader>ls, <leader>lS
+    Molten:      <leader>m{i,l,v,r,h,d,n,p,o}
    Theme:       <leader>ty
    Profiling:   :StartupTime
 
