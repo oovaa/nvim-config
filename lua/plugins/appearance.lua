@@ -45,9 +45,7 @@ return {
           local name = vim.api.nvim_buf_get_name(ev.buf)
           -- getfsize returns -1/-2 on error; fs_stat nil-check is exact.
           local ok, st = pcall(vim.uv.fs_stat, name)
-          if name ~= '' and ok and st and st.size > 200 * 1024 then
-            pcall(vim.cmd, 'ColorizerDetachFromBuffer')
-          end
+          if name ~= '' and ok and st and st.size > 200 * 1024 then pcall(vim.cmd, 'ColorizerDetachFromBuffer') end
         end,
       })
     end,

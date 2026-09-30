@@ -16,15 +16,15 @@ return {
   -- notifier, terminal navigation, big-file, quick-file, words.
   -- LazyVim wires it into which-key, lualine, lsp, treesitter, etc.
   -- We keep it minimal here; expand opts as you adopt features.
-    {
-     'folke/snacks.nvim',
-     -- ponytail: keys-only meant notifier/input stayed dead until first keypress
-     -- (only loaded on demand); VeryLazy makes it self-sufficient.
-     event = 'VeryLazy',
-     -- ponytail: devicons loaded late, so the explorer showed fallback
-     -- circles at first; pin it here (already installed — no new dep)
-     -- so icons resolve on the snacks path too.
-     dependencies = { { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font } },
+  {
+    'folke/snacks.nvim',
+    -- ponytail: keys-only meant notifier/input stayed dead until first keypress
+    -- (only loaded on demand); VeryLazy makes it self-sufficient.
+    event = 'VeryLazy',
+    -- ponytail: devicons loaded late, so the explorer showed fallback
+    -- circles at first; pin it here (already installed — no new dep)
+    -- so icons resolve on the snacks path too.
+    dependencies = { { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font } },
     opts = {
       indent = {
         enabled = true,
@@ -43,26 +43,26 @@ return {
       notifier = { enabled = true },
       -- ponytail: picker + explorer own daily search/files
       -- (no plenary, faster).
-        picker = {
-          enabled = true,
-          -- ponytail: replace upstream's circle git icons (staged ●,
-          -- modified ○) with check/pencil nerd glyphs. Written as
-          -- nr2char() calls — literal emoji bytes get stripped in transit,
-          -- escapes don't. 0xF00C fa-check, 0xF040 fa-pencil.
-          icons = {
-            git = {
-              enabled = true,
-              commit = ' ',
-              staged = vim.fn.nr2char(0xF00C),
-              added = '',
-              deleted = '',
-              ignored = ' ',
-              modified = vim.fn.nr2char(0xF040),
-              renamed = '',
-              unmerged = ' ',
-              untracked = '?',
-            },
+      picker = {
+        enabled = true,
+        -- ponytail: replace upstream's circle git icons (staged ●,
+        -- modified ○) with check/pencil nerd glyphs. Written as
+        -- nr2char() calls — literal emoji bytes get stripped in transit,
+        -- escapes don't. 0xF00C fa-check, 0xF040 fa-pencil.
+        icons = {
+          git = {
+            enabled = true,
+            commit = ' ',
+            staged = vim.fn.nr2char(0xF00C),
+            added = '',
+            deleted = '',
+            ignored = ' ',
+            modified = vim.fn.nr2char(0xF040),
+            renamed = '',
+            unmerged = ' ',
+            untracked = '?',
           },
+        },
         -- ponytail: show dotfiles (.env, .gitignore) + gitignored in the
         -- explorer by default; toggle at runtime with `h` / `i`.
         -- ponytail: build/dependency dirs stay out of every picker (fd/rg/tree

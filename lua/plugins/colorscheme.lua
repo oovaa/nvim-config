@@ -40,9 +40,7 @@ return {
       local saved = nil
       pcall(function() saved = require('custom.ui.theme').get_saved() end)
       if type(saved) == 'string' then saved = saved:match '^%s*(.-)%s*$' end
-      if not saved or saved == '' or not pcall(vim.cmd.colorscheme, saved) then
-        vim.cmd.colorscheme 'tokyonight-night'
-      end
+      if not saved or saved == '' or not pcall(vim.cmd.colorscheme, saved) then vim.cmd.colorscheme 'tokyonight-night' end
     end,
   },
 }

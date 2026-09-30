@@ -3,7 +3,7 @@
 
 describe('Phase 1: Critical Bug Fixes', function()
   -- ponytail: specs moved from init.lua to lua/plugins/ — assert location-agnostic
-  local H = require('tests.helpers')
+  local H = require 'tests.helpers'
   -- Test 1: vtsls memory setting
   describe('vtsls config', function()
     it('has conservative maxTsServerMemory (2048) in init.lua', function()

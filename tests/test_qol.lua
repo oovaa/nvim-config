@@ -3,7 +3,7 @@
 
 describe('Phase 3: QoL Plugins', function()
   -- ponytail: specs moved from init.lua to lua/plugins/ — assert location-agnostic
-  local H = require('tests.helpers')
+  local H = require 'tests.helpers'
   local qol_path = vim.fn.stdpath 'config' .. '/lua/custom/plugins/qol.lua'
   local plugins_path = vim.fn.stdpath 'config' .. '/lua/custom/plugins/init.lua'
 

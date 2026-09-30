@@ -39,9 +39,7 @@ return {
             -- TSInstall would error, so install/check the base language.
             local lang = ft:match '^[^.]+'
             local parser = vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser', lang .. '.so')
-            if vim.uv.fs_stat(parser) == nil then
-              pcall(vim.cmd, 'TSInstall ' .. lang)
-            end
+            if vim.uv.fs_stat(parser) == nil then pcall(vim.cmd, 'TSInstall ' .. lang) end
           end
           pcall(vim.treesitter.start, args.buf)
         end,
@@ -49,5 +47,9 @@ return {
     end,
   },
 
-   { 'windwp/nvim-ts-autotag', ft = { 'html', 'javascriptreact', 'typescriptreact', 'svelte', 'vue', 'xml' }, config = function() require('nvim-ts-autotag').setup {} end },
+  {
+    'windwp/nvim-ts-autotag',
+    ft = { 'html', 'javascriptreact', 'typescriptreact', 'svelte', 'vue', 'xml' },
+    config = function() require('nvim-ts-autotag').setup {} end,
+  },
 }

@@ -21,7 +21,14 @@ local function toggle_horiz(cmd)
   end
   -- also handle case win was closed manually (buf still valid)
   if is_buf_valid(horiz.buf) then
-    for _, w in ipairs(vim.api.nvim_list_wins()) do if vim.api.nvim_win_get_buf(w) == horiz.buf then vim.api.nvim_set_current_win(w); vim.cmd.startinsert(); horiz.win = w; return end end
+    for _, w in ipairs(vim.api.nvim_list_wins()) do
+      if vim.api.nvim_win_get_buf(w) == horiz.buf then
+        vim.api.nvim_set_current_win(w)
+        vim.cmd.startinsert()
+        horiz.win = w
+        return
+      end
+    end
     vim.cmd 'botright split'
     vim.cmd 'resize 15'
     vim.api.nvim_win_set_buf(0, horiz.buf)
@@ -50,11 +57,19 @@ local function toggle_float(cmd)
   local row = math.floor((vim.o.lines - height) / 2)
   local col = math.floor((vim.o.columns - width) / 2)
   if is_buf_valid(float.buf) then
-    float.win = vim.api.nvim_open_win(float.buf, true, { relative = 'editor', width = width, height = height, row = row, col = col, style = 'minimal', border = 'rounded' })
+    float.win = vim.api.nvim_open_win(
+      float.buf,
+      true,
+      { relative = 'editor', width = width, height = height, row = row, col = col, style = 'minimal', border = 'rounded' }
+    )
     vim.cmd.startinsert()
   else
     float.buf = vim.api.nvim_create_buf(false, true)
-    float.win = vim.api.nvim_open_win(float.buf, true, { relative = 'editor', width = width, height = height, row = row, col = col, style = 'minimal', border = 'rounded' })
+    float.win = vim.api.nvim_open_win(
+      float.buf,
+      true,
+      { relative = 'editor', width = width, height = height, row = row, col = col, style = 'minimal', border = 'rounded' }
+    )
     vim.fn.jobstart(cmd, { term = true })
     vim.cmd.startinsert()
   end
@@ -66,9 +81,9 @@ local function new_horiz(cmd)
 end
 vim.keymap.set('n', '<leader>tt', function() toggle_horiz(vim.o.shell) end, { desc = '[T]oggle [T]erminal' })
 vim.keymap.set('n', '<leader>tf', function() toggle_float(vim.o.shell) end, { desc = '[T]erminal [F]loat' })
-vim.keymap.set('n', '<leader>fg', function() toggle_float('lazygit') end, { desc = '[F]ind Lazy[G]it' })
-vim.keymap.set('n', '<leader>tm', function() toggle_float('tmux new -s float 2>/dev/null || tmux attach -t float') end, { desc = '[T]erminal t[M]ux' })
-vim.keymap.set('n', '<leader>ht', function() toggle_float('herdr') end, { desc = '[H]erdr [T]erminal' })
+vim.keymap.set('n', '<leader>fg', function() toggle_float 'lazygit' end, { desc = '[F]ind Lazy[G]it' })
+vim.keymap.set('n', '<leader>tm', function() toggle_float 'tmux new -s float 2>/dev/null || tmux attach -t float' end, { desc = '[T]erminal t[M]ux' })
+vim.keymap.set('n', '<leader>ht', function() toggle_float 'herdr' end, { desc = '[H]erdr [T]erminal' })
 vim.keymap.set('n', '<leader>t1', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [1]' })
 vim.keymap.set('n', '<leader>t2', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [2]' })
 vim.keymap.set('n', '<leader>t3', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [3]' })
@@ -84,15 +99,28 @@ local function toggle_last()
     seen = true
     return pcall(vim.api.nvim_win_close, win, true)
   end
-  if hide(float.win, float.buf) then float.win = nil; return end
-  if hide(horiz.win, horiz.buf) then horiz.win = nil; return end
+  if hide(float.win, float.buf) then
+    float.win = nil
+    return
+  end
+  if hide(horiz.win, horiz.buf) then
+    horiz.win = nil
+    return
+  end
   -- also hunt for manually-opened wins still showing our bufs
   for _, w in ipairs(vim.api.nvim_list_wins()) do
     local b = vim.api.nvim_win_get_buf(w)
     if b == float.buf and hide(w, float.buf) then return end
-    if b == horiz.buf and hide(w, horiz.buf) then horiz.win = nil; return end
+    if b == horiz.buf and hide(w, horiz.buf) then
+      horiz.win = nil
+      return
+    end
   end
   if seen then return end -- terminal visible but unclosable (last window) — leave it
-  if last == 'float' then toggle_float(vim.o.shell) else toggle_horiz(vim.o.shell) end
+  if last == 'float' then
+    toggle_float(vim.o.shell)
+  else
+    toggle_horiz(vim.o.shell)
+  end
 end
 vim.keymap.set({ 'n', 't' }, '<c-\\>', toggle_last, { desc = 'Toggle Terminal' })

@@ -22,9 +22,7 @@ vim.api.nvim_create_autocmd('BufReadPost', {
     if ft == 'gitcommit' or ft == 'gitrebase' then return end
     local mark = vim.api.nvim_buf_get_mark(args.buf, '"')
     local lines = vim.api.nvim_buf_line_count(args.buf)
-    if mark[1] > 0 and mark[1] <= lines then
-      pcall(vim.api.nvim_win_set_cursor, 0, mark)
-    end
+    if mark[1] > 0 and mark[1] <= lines then pcall(vim.api.nvim_win_set_cursor, 0, mark) end
   end,
 })
 
@@ -148,9 +146,7 @@ vim.api.nvim_create_autocmd('BufWritePre', {
   group = vim.api.nvim_create_augroup('auto-mkdir', { clear = true }),
   callback = function(args)
     local dir = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(args.buf), ':p:h')
-    if dir ~= '' and vim.fn.isdirectory(dir) == 0 and not dir:match('^%w+://') then
-      vim.fn.mkdir(dir, 'p')
-    end
+    if dir ~= '' and vim.fn.isdirectory(dir) == 0 and not dir:match '^%w+://' then vim.fn.mkdir(dir, 'p') end
   end,
 })
 
@@ -164,15 +160,17 @@ vim.api.nvim_create_user_command('SudoWrite', function(args)
     return
   end
   vim.cmd(('write%s !sudo tee %s >/dev/null'):format(args.bang and '!' or '', vim.fn.fnameescape(name)))
-  vim.cmd('edit!')
+  vim.cmd 'edit!'
 end, { desc = 'Write current buffer via sudo', bang = true })
 
 -- :DiffOrig — side-by-side diff of the buffer against the file on disk.
 -- Classic vim QoL for "what have I changed since :w?" (gitsigns covers git,
 -- this covers unsaved edits anywhere).
-vim.api.nvim_create_user_command('DiffOrig', function()
-  vim.cmd('vert new | set buftype=nofile | read ++edit # | 0d_ | diffthis | wincmd p | diffthis')
-end, { desc = 'Diff buffer against saved file' })
+vim.api.nvim_create_user_command(
+  'DiffOrig',
+  function() vim.cmd 'vert new | set buftype=nofile | read ++edit # | 0d_ | diffthis | wincmd p | diffthis' end,
+  { desc = 'Diff buffer against saved file' }
+)
 
 -- HTTP buffer mapping: <leader>hr lives ONLY in http buffers (buffer-local).
 -- A lazy.nvim `keys` entry would register a global load-shim instead.
@@ -180,9 +178,7 @@ vim.api.nvim_create_autocmd('FileType', {
   pattern = 'http',
   desc = 'HTTP buffer mappings',
   group = vim.api.nvim_create_augroup('http-keymaps', { clear = true }),
-  callback = function(args)
-    vim.keymap.set('n', '<leader>hr', '<cmd>Rest run<cr>', { buffer = args.buf, desc = 'HTTP Request' })
-  end,
+  callback = function(args) vim.keymap.set('n', '<leader>hr', '<cmd>Rest run<cr>', { buffer = args.buf, desc = 'HTTP Request' }) end,
 })
 
 -- docker-compose files get the docker-compose LSP (docker_compose_language_service).

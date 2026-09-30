@@ -3,7 +3,7 @@
 
 describe('Phase 2: Performance Optimizations', function()
   -- ponytail: specs moved from init.lua to lua/plugins/ — assert location-agnostic
-  local H = require('tests.helpers')
+  local H = require 'tests.helpers'
   -- Test 1: Themes load lazily except tokyonight
   describe('themes', function()
     it('kept themes are lazy=true, trimmed ones stay commented, only tokyonight is eager', function()

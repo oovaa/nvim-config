@@ -68,33 +68,33 @@ return {
       -- gss<surrounding> to surround current line (e.g. gss" -> "line")
       vim.keymap.set('n', 'gss', 'gsa_', { remap = true })
 
-       -- Auto-pair brackets, parens, quotes: when you type ( it adds ), etc.
-       -- LazyVim-style: skip next char, skip inside treesitter strings.
-        require('mini.pairs').setup {
-          modes = { insert = true, command = true, terminal = false },
-          skip_next = [=[[%w%%%'%[%"%.%`%$]]=],
-          skip_ts = { 'string' },
-          skip_unbalanced = true,
-          markdown = true,
-        }
+      -- Auto-pair brackets, parens, quotes: when you type ( it adds ), etc.
+      -- LazyVim-style: skip next char, skip inside treesitter strings.
+      require('mini.pairs').setup {
+        modes = { insert = true, command = true, terminal = false },
+        skip_next = [=[[%w%%%'%[%"%.%`%$]]=],
+        skip_ts = { 'string' },
+        skip_unbalanced = true,
+        markdown = true,
+      }
 
-        -- Bracketed navigation: [b/]b buffers, [q/]q quickfix, [t/]t
-        -- treesitter, [u/]u undo states... (zero new dep — ships inside
-        -- mini.nvim). Diagnostic suffix disabled: [d/]d already jump with
-        -- a float in lua/config/keymaps.lua. See :help mini.bracketed.
-        require('mini.bracketed').setup { diagnostic = { suffix = '' } }
+      -- Bracketed navigation: [b/]b buffers, [q/]q quickfix, [t/]t
+      -- treesitter, [u/]u undo states... (zero new dep — ships inside
+      -- mini.nvim). Diagnostic suffix disabled: [d/]d already jump with
+      -- a float in lua/config/keymaps.lua. See :help mini.bracketed.
+      require('mini.bracketed').setup { diagnostic = { suffix = '' } }
 
-       -- Statusline is builtin (see lua/custom/ui/spec.lua).
+      -- Statusline is builtin (see lua/custom/ui/spec.lua).
 
-       -- ... and there is more!
-       --  Check out: https://github.com/nvim-mini/mini.nvim
-     end,
-   },
+      -- ... and there is more!
+      --  Check out: https://github.com/nvim-mini/mini.nvim
+    end,
+  },
 
-   -- TS-COMMENTS (#6 LazyVim gap): treesitter-aware commenting.
-   -- Without it `gc` uses one commentstring per filetype; with it embedded
-   -- languages get the right string (e.g. JS inside vue/svelte, lua docs).
-   { 'folke/ts-comments.nvim', event = 'VeryLazy', opts = {} },
+  -- TS-COMMENTS (#6 LazyVim gap): treesitter-aware commenting.
+  -- Without it `gc` uses one commentstring per filetype; with it embedded
+  -- languages get the right string (e.g. JS inside vue/svelte, lua docs).
+  { 'folke/ts-comments.nvim', event = 'VeryLazy', opts = {} },
 
   -- AUTO-SAVE
   -- WHAT: Automatically saves your file when you leave insert mode or stop typing

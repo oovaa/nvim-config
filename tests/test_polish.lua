@@ -3,7 +3,7 @@
 
 describe('Phase 4: Polish', function()
   -- ponytail: specs moved from init.lua to lua/plugins/ — assert location-agnostic
-  local H = require('tests.helpers')
+  local H = require 'tests.helpers'
   local autocmds_path = vim.fn.stdpath 'config' .. '/lua/config/autocmds.lua'
   local health_path = vim.fn.stdpath 'config' .. '/lua/config/health.lua'
 

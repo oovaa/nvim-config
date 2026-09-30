@@ -21,10 +21,15 @@ function M._count_diags(buf)
   local c = { e = 0, w = 0, i = 0, h = 0, total = 0 }
   for _, d in ipairs(vim.diagnostic.get(buf)) do
     c.total = c.total + 1
-    if d.severity == sev.ERROR then c.e = c.e + 1
-    elseif d.severity == sev.WARN then c.w = c.w + 1
-    elseif d.severity == sev.INFO then c.i = c.i + 1
-    else c.h = c.h + 1 end
+    if d.severity == sev.ERROR then
+      c.e = c.e + 1
+    elseif d.severity == sev.WARN then
+      c.w = c.w + 1
+    elseif d.severity == sev.INFO then
+      c.i = c.i + 1
+    else
+      c.h = c.h + 1
+    end
   end
   M._diag_counts[buf] = c
   return c
@@ -39,12 +44,12 @@ end
 
 do
   local grp = vim.api.nvim_create_augroup('BuiltinUICache', { clear = true })
-  vim.api.nvim_create_autocmd('DiagnosticChanged', { group = grp,
-    callback = function(ev) M._count_diags(ev.buf) end })
-  vim.api.nvim_create_autocmd({ 'LspAttach', 'LspDetach', 'BufEnter' }, { group = grp,
-    callback = function(ev) M._refresh_lsp(ev.buf or vim.api.nvim_get_current_buf()) end })
-  vim.api.nvim_create_autocmd({ 'BufDelete', 'BufWipeout' }, { group = grp,
-    callback = function(ev) M._diag_counts[ev.buf] = nil end })
+  vim.api.nvim_create_autocmd('DiagnosticChanged', { group = grp, callback = function(ev) M._count_diags(ev.buf) end })
+  vim.api.nvim_create_autocmd(
+    { 'LspAttach', 'LspDetach', 'BufEnter' },
+    { group = grp, callback = function(ev) M._refresh_lsp(ev.buf or vim.api.nvim_get_current_buf()) end }
+  )
+  vim.api.nvim_create_autocmd({ 'BufDelete', 'BufWipeout' }, { group = grp, callback = function(ev) M._diag_counts[ev.buf] = nil end })
 end
 
 -- builtin statusline (replaces lualine.nvim) — tokyonight-night, same sections as before
@@ -89,7 +94,9 @@ function M.setup_lualine()
         bg = bg or lb
         fg = fg or lf
       end
-      if h.reverse then bg, fg = fg, bg end
+      if h.reverse then
+        bg, fg = fg, bg
+      end
       return hex(bg), hex(fg)
     end
     local function bar_colors()
@@ -134,9 +141,7 @@ function M.setup_lualine()
       command = c.yellow,
       terminal = c.cyan,
     }
-    local function hl(name, bg, fg, gui)
-      vim.api.nvim_set_hl(0, name, { bg = bg, fg = fg, bold = gui == 'bold' })
-    end
+    local function hl(name, bg, fg, gui) vim.api.nvim_set_hl(0, name, { bg = bg, fg = fg, bold = gui == 'bold' }) end
     -- a=mode pill (accent bg, bar text), b=lifted middle, c=flat filename.
     -- Every color comes from the theme's live highlights (accents via
     -- fg_of, base via bar_colors); fallbacks only fire when a theme
@@ -149,7 +154,9 @@ function M.setup_lualine()
     hl('SL_lsp', bar_bg, c.lsp)
     -- diff colors + search count sit inside the lifted b section / next to
     -- the filename, so they share mid_bg to avoid a patchwork bar
-    hl('SL_diff_add', mid_bg, c.lsp); hl('SL_diff_change', mid_bg, c.blue); hl('SL_diff_delete', mid_bg, c.red)
+    hl('SL_diff_add', mid_bg, c.lsp)
+    hl('SL_diff_change', mid_bg, c.blue)
+    hl('SL_diff_delete', mid_bg, c.red)
     -- search count ([cur/total], only visible while searching)
     hl('SL_search', mid_bg, c.yellow)
   end
@@ -161,30 +168,47 @@ function M.setup_lualine()
   vim.api.nvim_create_autocmd('ColorScheme', { group = grp, callback = define_hl })
   vim.api.nvim_create_autocmd({ 'RecordingEnter', 'RecordingLeave' }, {
     group = grp,
-    callback = function() vim.cmd('redrawstatus') end,
+    callback = function() vim.cmd 'redrawstatus' end,
   })
 
   local mode_map = {
-    n = 'NORMAL', i = 'INSERT', v = 'VISUAL', V = 'V-LINE', ['\22'] = 'V-BLOCK',
-    c = 'COMMAND', R = 'REPLACE', t = 'TERMINAL', nt = 'TERMINAL',
-    no = 'OP-PENDING', nov = 'OP-PENDING', noV = 'OP-PENDING', ['no\22'] = 'OP-PENDING',
-    s = 'SELECT', S = 'SELECT-LINE', ['\19'] = 'SELECT-BLOCK',
+    n = 'NORMAL',
+    i = 'INSERT',
+    v = 'VISUAL',
+    V = 'V-LINE',
+    ['\22'] = 'V-BLOCK',
+    c = 'COMMAND',
+    R = 'REPLACE',
+    t = 'TERMINAL',
+    nt = 'TERMINAL',
+    no = 'OP-PENDING',
+    nov = 'OP-PENDING',
+    noV = 'OP-PENDING',
+    ['no\22'] = 'OP-PENDING',
+    s = 'SELECT',
+    S = 'SELECT-LINE',
+    ['\19'] = 'SELECT-BLOCK',
   }
   local function mode_hl_key(m)
-    if m:find('^[iI]') then return 'insert'
-    elseif m:find('^[vV\22]') then return 'visual'
-    elseif m:find('^R') then return 'replace'
-    elseif m:find('^c') then return 'command'
-    elseif m:find('^t') then return 'terminal'
-    else return 'normal' end
+    if m:find '^[iI]' then
+      return 'insert'
+    elseif m:find '^[vV\22]' then
+      return 'visual'
+    elseif m:find '^R' then
+      return 'replace'
+    elseif m:find '^c' then
+      return 'command'
+    elseif m:find '^t' then
+      return 'terminal'
+    else
+      return 'normal'
+    end
   end
 
   _G._builtin_statusline = function()
     -- disabled filetypes like lualine: lazy / dashboard
     local ft = vim.bo.filetype
-    if ft == 'lazy' or ft == 'dashboard' then
-      return '%#SL_c# %f %*'
-    end
+    if ft == 'lazy' or ft == 'dashboard' then return '%#SL_c# %f %*' end
     local raw = vim.fn.mode()
     local mode = mode_map[raw] or raw:upper()
     local key = mode_hl_key(raw)
@@ -227,8 +251,7 @@ function M.setup_lualine()
     -- playback indicator added since long 1000@q runs otherwise show nothing).
     local rec = vim.fn.reg_recording()
     local exe = vim.fn.reg_executing()
-    local macro_s = rec ~= '' and ('%#SL_diff_delete#◉ @' .. rec .. hl_b)
-      or (exe ~= '' and ('%#SL_diff_delete#▶ @' .. exe .. hl_b) or '')
+    local macro_s = rec ~= '' and ('%#SL_diff_delete#◉ @' .. rec .. hl_b) or (exe ~= '' and ('%#SL_diff_delete#▶ @' .. exe .. hl_b) or '')
 
     -- filename path=1 with symbols; terminal buffers show a short command
     -- name instead of the raw term://... job URL (term_title defaults to
@@ -238,7 +261,7 @@ function M.setup_lualine()
     if vim.bo.buftype == 'terminal' then
       local title = vim.b.term_title
       local raw = vim.api.nvim_buf_get_name(buf0)
-      if not title or title == '' or title == raw then title = raw:match(':([^:]*)$') or raw end
+      if not title or title == '' or title == raw then title = raw:match ':([^:]*)$' or raw end
       fname = vim.fn.fnamemodify(title, ':t')
       if fname == '' then fname = 'terminal' end
     else
@@ -253,7 +276,7 @@ function M.setup_lualine()
     -- search count, [cur/total] — only while hlsearch is on.
     -- Cached on pattern + buffer content + cursor line; pure redraws reuse
     -- the last segment instead of re-scanning the buffer.
-    local pat = vim.v.hlsearch == 1 and vim.fn.getreg('/') or ''
+    local pat = vim.v.hlsearch == 1 and vim.fn.getreg '/' or ''
     local cur = vim.api.nvim_win_get_cursor(0)
     local skey = pat .. '\0' .. buf0 .. '\0' .. vim.b[buf0].changedtick .. '\0' .. cur[1] .. ',' .. cur[2]
     if pat ~= '' and skey ~= M._search.key then
@@ -274,8 +297,7 @@ function M.setup_lualine()
     -- ponytail: vim.lsp.status() carries $/progress text while servers work;
     -- show it live, fall back to the cached client name when idle; %-escape for statusline safety.
     local prog = vim.lsp.status():gsub('%%', '%%%%')
-    local lsp_s = prog ~= '' and ('%#SL_lsp#' .. prog .. hl_c)
-      or (M._lsp_name.name == '' and '' or '%#SL_lsp#󰄶 ' .. M._lsp_name.name .. hl_c)
+    local lsp_s = prog ~= '' and ('%#SL_lsp#' .. prog .. hl_c) or (M._lsp_name.name == '' and '' or '%#SL_lsp#󰄶 ' .. M._lsp_name.name .. hl_c)
 
     local enc = (vim.bo.fileencoding ~= '' and vim.bo.fileencoding or vim.o.encoding)
     local ff = vim.bo.fileformat
@@ -332,7 +354,11 @@ function M.setup_bufferline()
       local b = bg % 256
       local luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
       -- light bg -> dark green for contrast, dark bg -> light green
-      if luma > 140 then return '#005f00' else return '#9ece6a' end
+      if luma > 140 then
+        return '#005f00'
+      else
+        return '#9ece6a'
+      end
     end
     local function set_mod(name, bg)
       local fg = fg_for(bg)
@@ -398,56 +424,81 @@ function M.setup_starter()
     { key = 'f', icon = '', label = 'Find File', action = function() require('snacks').picker.files() end },
     { key = 'r', icon = '', label = 'File Explorer', action = function() require('snacks').explorer() end },
     { key = 'g', icon = '', label = 'Git (LazyGit)', action = function() vim.cmd 'terminal lazygit' end },
-    { key = 's', icon = '', label = 'Recent Sessions', action = function()
-      -- ponytail: restore current cwd session; if none, pick from sessions dir (readable `cd` dir, deduped)
-      local function has_badd(path)
-        if vim.fn.filereadable(path) ~= 1 then return false end
-        for _, l in ipairs(vim.fn.readfile(path)) do if l:match('^badd') then return true end end
-        return false
-      end
-      local function close_dashboard() if vim.bo.filetype == 'dashboard' then pcall(vim.cmd, 'bwipeout!') end end
-      local f = _G._builtin_find_session and _G._builtin_find_session(nil) or nil
-      if not f then
-        local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
-        f = sess_dir .. '/' .. vim.fn.fnamemodify(vim.uv.cwd() or vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'
-      end
-      if has_badd(f) then close_dashboard(); vim.cmd('source ' .. vim.fn.fnameescape(f)); return end
-      local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
-      local sess_files = _G._builtin_session_files and _G._builtin_session_files(sess_dir) or {}
-      local mtime, files = {}, {}
-      for _, e in ipairs(sess_files) do mtime[e.path] = e.mtime; files[#files + 1] = e.path end
-      -- readable labels via `cd` line, dedup by dir (legacy %2F vs new %), skip empty.
-      -- ponytail: one read per file (badd + cd label in a single scan, newest wins); split again only if session format changes.
-      local seen, items, map = {}, {}, {}
-      for _, path in ipairs(files) do
-        if vim.fn.filereadable(path) == 1 then
-          local has_b, label = false, nil
+    {
+      key = 's',
+      icon = '',
+      label = 'Recent Sessions',
+      action = function()
+        -- ponytail: restore current cwd session; if none, pick from sessions dir (readable `cd` dir, deduped)
+        local function has_badd(path)
+          if vim.fn.filereadable(path) ~= 1 then return false end
           for _, l in ipairs(vim.fn.readfile(path)) do
-            if not has_b and l:match('^badd') then has_b = true end
-            if not label then
-              local cd = l:match('^cd%s+(.+)$')
-              if cd then label = vim.fn.fnamemodify(vim.fn.expand(cd), ':p'):gsub('/+$', '') end
-            end
-            if has_b and label then break end
+            if l:match '^badd' then return true end
           end
-          if has_b and label and (not seen[label] or mtime[path] > mtime[seen[label]]) then
-            seen[label] = path
+          return false
+        end
+        local function close_dashboard()
+          if vim.bo.filetype == 'dashboard' then pcall(vim.cmd, 'bwipeout!') end
+        end
+        local f = _G._builtin_find_session and _G._builtin_find_session(nil) or nil
+        if not f then
+          local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
+          f = sess_dir .. '/' .. vim.fn.fnamemodify(vim.uv.cwd() or vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'
+        end
+        if has_badd(f) then
+          close_dashboard()
+          vim.cmd('source ' .. vim.fn.fnameescape(f))
+          return
+        end
+        local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
+        local sess_files = _G._builtin_session_files and _G._builtin_session_files(sess_dir) or {}
+        local mtime, files = {}, {}
+        for _, e in ipairs(sess_files) do
+          mtime[e.path] = e.mtime
+          files[#files + 1] = e.path
+        end
+        -- readable labels via `cd` line, dedup by dir (legacy %2F vs new %), skip empty.
+        -- ponytail: one read per file (badd + cd label in a single scan, newest wins); split again only if session format changes.
+        local seen, items, map = {}, {}, {}
+        for _, path in ipairs(files) do
+          if vim.fn.filereadable(path) == 1 then
+            local has_b, label = false, nil
+            for _, l in ipairs(vim.fn.readfile(path)) do
+              if not has_b and l:match '^badd' then has_b = true end
+              if not label then
+                local cd = l:match '^cd%s+(.+)$'
+                if cd then label = vim.fn.fnamemodify(vim.fn.expand(cd), ':p'):gsub('/+$', '') end
+              end
+              if has_b and label then break end
+            end
+            if has_b and label and (not seen[label] or mtime[path] > mtime[seen[label]]) then seen[label] = path end
           end
         end
-      end
-      for label, path in pairs(seen) do
-        local disp = label:gsub('^' .. vim.fn.expand('~'), '~')
-        items[#items + 1] = disp
-        map[disp] = path
-      end
-      table.sort(items)
-      if #items == 0 then vim.notify('No session for ' .. (vim.uv.cwd() or vim.fn.getcwd()) .. ' — sessions are saved on quit (suppressed: ~, ~/Downloads, /etc, /tmp)', vim.log.levels.INFO) return end
-      local function do_pick(choice) if choice and map[choice] then if vim.bo.filetype == 'dashboard' then pcall(vim.cmd, 'bwipeout!') end; vim.cmd('source ' .. vim.fn.fnameescape(map[choice])) end end
-      local function pick()
-        vim.ui.select(items, { prompt = 'Select session:' }, function(choice) do_pick(choice) end)
-      end
-      pick()
-    end },
+        for label, path in pairs(seen) do
+          local disp = label:gsub('^' .. vim.fn.expand '~', '~')
+          items[#items + 1] = disp
+          map[disp] = path
+        end
+        table.sort(items)
+        if #items == 0 then
+          vim.notify(
+            'No session for ' .. (vim.uv.cwd() or vim.fn.getcwd()) .. ' — sessions are saved on quit (suppressed: ~, ~/Downloads, /etc, /tmp)',
+            vim.log.levels.INFO
+          )
+          return
+        end
+        local function do_pick(choice)
+          if choice and map[choice] then
+            if vim.bo.filetype == 'dashboard' then pcall(vim.cmd, 'bwipeout!') end
+            vim.cmd('source ' .. vim.fn.fnameescape(map[choice]))
+          end
+        end
+        local function pick()
+          vim.ui.select(items, { prompt = 'Select session:' }, function(choice) do_pick(choice) end)
+        end
+        pick()
+      end,
+    },
     { key = 'u', icon = '', label = 'Update Plugins', action = '<cmd>Lazy sync<CR>' },
     { key = 'q', icon = '', label = 'Quit', action = '<cmd>qa<CR>' },
   }
@@ -486,7 +537,9 @@ function M.setup_starter()
         return s .. string.rep(' ', w - d)
       end
       local label_w = 0
-      for _, b in ipairs(buttons) do label_w = math.max(label_w, vim.fn.strdisplaywidth(b.label)) end
+      for _, b in ipairs(buttons) do
+        label_w = math.max(label_w, vim.fn.strdisplaywidth(b.label))
+      end
       for _, b in ipairs(buttons) do
         raw[#raw + 1] = string.format('  %s  %s  %s', b.key, b.icon, pad_disp(b.label, label_w))
       end
@@ -502,20 +555,29 @@ function M.setup_starter()
       local win_w = vim.api.nvim_win_get_width(win)
       local win_h = vim.api.nvim_win_get_height(win)
       local max_w = 0
-      for _, l in ipairs(raw) do max_w = math.max(max_w, vim.fn.strdisplaywidth(l)) end
+      for _, l in ipairs(raw) do
+        max_w = math.max(max_w, vim.fn.strdisplaywidth(l))
+      end
       local block_pad = math.max(4, math.floor((win_w - max_w) / 2))
       local pad_top = math.max(0, math.floor((win_h - #raw) / 2) - 2)
       local lines = {}
-      for _ = 1, pad_top do lines[#lines + 1] = '' end
+      for _ = 1, pad_top do
+        lines[#lines + 1] = ''
+      end
       for _, l in ipairs(raw) do
-        if l == '' then lines[#lines + 1] = ''
-        else lines[#lines + 1] = string.rep(' ', block_pad) .. l end
+        if l == '' then
+          lines[#lines + 1] = ''
+        else
+          lines[#lines + 1] = string.rep(' ', block_pad) .. l
+        end
       end
 
       vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
       -- highlight like alpha: header Include, footer subtle (account for pad_top)
       local hdr_start = pad_top + 3
-      for i = hdr_start, hdr_start + 5 do pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Include', i - 1, block_pad, -1) end
+      for i = hdr_start, hdr_start + 5 do
+        pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Include', i - 1, block_pad, -1)
+      end
       pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Comment', #lines - 1, block_pad, -1)
       -- button rows: key char Special (then icon), then label as Function
       local btn_start = pad_top + 1 + 1 + #header + 1 -- pad_top + 2 blanks + header lines + 1 blank
