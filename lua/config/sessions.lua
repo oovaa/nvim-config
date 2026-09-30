@@ -16,9 +16,20 @@ local function suppressed_dir(cwd)
   end
   return false
 end
+-- normalize a cwd to the exact string the session name is derived from:
+-- resolved, absolute, no trailing slash (so `/a/b` and `/a/b/` share one file)
+local function norm_cwd(cwd)
+  cwd = (cwd and vim.fn.fnamemodify(vim.fn.resolve(cwd), ':p') or vim.fn.fnamemodify(vim.fn.resolve(vim.fn.getcwd()), ':p')):gsub('/+$', '')
+  if cwd == '' then cwd = '/' end
+  return cwd
+end
 local function session_file_for(cwd)
-  cwd = cwd and vim.fn.fnamemodify(vim.fn.resolve(cwd), ':p') or vim.fn.fnamemodify(vim.fn.resolve(vim.fn.getcwd()), ':p')
-  return vim.fn.stdpath 'data' .. '/sessions/' .. cwd:gsub('[^%w]+', '%%') .. '.vim'
+  cwd = norm_cwd(cwd)
+  -- ponytail: the escaped path alone is lossy — `/a/b` and `/a%b` both escaped
+  -- to `%a%b` and clobbered each other's session. 8 hex chars of sha256 on the
+  -- raw path keeps the name readable and makes it collision-free.
+  local esc = cwd:gsub('[^%w]+', '%%')
+  return vim.fn.stdpath 'data' .. '/sessions/' .. esc .. '-' .. vim.fn.sha256(cwd):sub(1, 8) .. '.vim'
 end
 local function session_file() return session_file_for(nil) end
 -- one sessions-dir listing shared by find_session_for + dashboard picker.
@@ -37,16 +48,14 @@ local function session_files(dir)
 end
 -- find existing session for cwd by scanning cd line (supports legacy %2F names)
 local function find_session_for(cwd)
-  cwd = cwd and vim.fn.fnamemodify(vim.fn.resolve(cwd), ':p') or vim.fn.fnamemodify(vim.fn.resolve(vim.fn.getcwd()), ':p')
-  local f = session_file_for(cwd)
+  local norm = norm_cwd(cwd)
+  local f = session_file_for(norm)
   local function has_badd(p)
     if vim.fn.filereadable(p) ~= 1 then return false end
     for _, l in ipairs(vim.fn.readfile(p)) do if l:match('^badd') then return true end end
     return false
   end
   if has_badd(f) then return f end
-  local norm = cwd:gsub('/+$', '')
-  if norm == '' then norm = '/' end
   local dir = vim.fn.stdpath('data') .. '/sessions'
   local best, best_time = nil, -1
   for _, e in ipairs(session_files(dir)) do
@@ -71,6 +80,9 @@ end
 -- expose for dashboard s picker
 _G._builtin_find_session = find_session_for
 _G._builtin_session_files = session_files
+-- expose the path builder too, so the dashboard's `s` cannot drift from the
+-- name VimLeavePre actually writes
+_G._builtin_session_file = session_file_for
 -- ponytail: no auto-restore on VimEnter; dashboard is default, `s` restores (see spec.lua)
 -- helpers kept for `s` (find_session_for / session_file)
 vim.api.nvim_create_autocmd('VimLeavePre', {

@@ -154,8 +154,13 @@ function M.setup_lualine()
     hl('SL_search', mid_bg, c.yellow)
   end
   define_hl()
-  vim.api.nvim_create_autocmd('ColorScheme', { callback = define_hl })
+  -- ponytail: augroups matter here — `<leader>ur` re-runs setup(), and
+  -- ungrouped autocmds accumulated one copy per reload (measured: 3 reloads
+  -- turned 1 RecordingLeave handler into 5).
+  local grp = vim.api.nvim_create_augroup('BuiltinStatusline', { clear = true })
+  vim.api.nvim_create_autocmd('ColorScheme', { group = grp, callback = define_hl })
   vim.api.nvim_create_autocmd({ 'RecordingEnter', 'RecordingLeave' }, {
+    group = grp,
     callback = function() vim.cmd('redrawstatus') end,
   })
 
@@ -345,7 +350,8 @@ function M.setup_bufferline()
     set_mod('TabLineModSel', sel.bg)
   end
   define_hl()
-  vim.api.nvim_create_autocmd('ColorScheme', { callback = define_hl })
+  local grp = vim.api.nvim_create_augroup('BuiltinTabline', { clear = true })
+  vim.api.nvim_create_autocmd('ColorScheme', { group = grp, callback = define_hl })
   -- Click a buffer tab to switch to it (mouse enabled). Only left-click
   -- switches; anything else is ignored so right-click menus keep working.
   _G._builtin_tabclick = function(bufnr, _, button)
@@ -515,13 +521,21 @@ function M.setup_starter()
       local btn_start = pad_top + 1 + 1 + #header + 1 -- pad_top + 2 blanks + header lines + 1 blank
       for i, b in ipairs(buttons) do
         local row = btn_start + i - 1
+        -- ponytail: extmark columns are BYTE offsets, so the icon advance must be
+        -- #icon, not strdisplaywidth(icon) — a nerd glyph is 3 utf-8 bytes but 1
+        -- display cell, which put the label highlight 2 columns to its left.
+        local icon_end = block_pad + 5 + #b.icon
         pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Special', row, block_pad + 2, block_pad + 3)
-        pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Title', row, block_pad + 5, block_pad + 5 + vim.fn.strdisplaywidth(b.icon))
-        pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Function', row, block_pad + 5 + vim.fn.strdisplaywidth(b.icon) + 2, -1)
+        pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Title', row, block_pad + 5, icon_end)
+        pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Function', row, icon_end + 2, -1)
       end
-      -- recent file rows: Directory on the basename (after '  N  ')
+      -- recent file rows: Number on the index, Directory on the rest.
+      -- The blank separator after the buttons is raw index 9+#buttons, so the
+      -- first recent is +#buttons from btn_start — the extra +1 here shifted
+      -- every recent highlight one line down (measured: the first recent got
+      -- nothing and the blank above the footer got Directory).
       for i, r in ipairs(recent) do
-        local row = btn_start + #buttons + 1 + i -- +1 blank, then recents
+        local row = btn_start + #buttons + i
         pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Number', row, block_pad + 2, block_pad + 3)
         pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Directory', row, block_pad + 5, -1)
       end

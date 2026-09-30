@@ -94,8 +94,13 @@ vim.api.nvim_create_autocmd('BufReadPost', {
     local bo = vim.bo[args.buf]
     bo.swapfile = false
     bo.undofile = false
-    bo.foldmethod = 'manual'
     bo.synmaxcol = 200
+    -- 'foldmethod' is window-local since 0.11, so `bo.foldmethod = ...` raises
+    -- E5555 here and aborted the rest of this callback (synmaxcol above and
+    -- diagnostic disable below never ran). Set it per window instead.
+    for _, win in ipairs(vim.fn.win_findbuf(args.buf)) do
+      vim.wo[win].foldmethod = 'manual'
+    end
     pcall(vim.diagnostic.enable, false, { bufnr = args.buf })
   end,
 })

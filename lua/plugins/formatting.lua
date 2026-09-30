@@ -3,10 +3,14 @@
 -- Split from init.lua (see SECTION INDEX there). Comments kept verbatim.
 
 -- Shared values for plugin specs below.
--- conform fallback chain for all web languages (prettierd first, prettier second)
--- (ponytail: duplicated one-liner from init.lua's old `local prettier`;
--- a shared module isn't worth it for a single line.)
-local prettier = { 'prettierd', 'prettier' }
+-- conform fallback chain for all web languages.
+-- ponytail: `prettier` only. prettierd's node cold start measured 850-2300ms
+-- inside nvim on this box (vs 270-470ms for plain prettier, and 316ms for a
+-- *warm* prettierd), so it blew the save timeout on the first save of every
+-- session and reported "Formatter failed" while formatting nothing. It also
+-- leaves an orphan daemon per session. Re-add 'prettierd' in front of
+-- 'prettier' if a node start ever gets under ~200ms here.
+local prettier = { 'prettier' }
 
 ---@module 'lazy'
 ---@type LazySpec
@@ -67,10 +71,19 @@ return {
           markdown = true,
           yaml = true,
           graphql = true,
-          nginx = true,
+          -- ponytail: nginx is NOT auto-formatted. conform's nginxfmt backend
+          -- is a python package that mason cannot install here (no ensurepip),
+          -- so listing it in enabled_filetypes only produced a silent no-op.
+          -- `pip install nginx-config-formatter` enables it; the mapping below
+          -- is already in place, so add `nginx = true` back then.
+          nginx = false,
         }
         if enabled_filetypes[vim.bo[bufnr].filetype] then
-          return { timeout_ms = 750 } -- ponytail: 500 was too tight for prettier on large files, 1000 felt laggy; 750 is middle
+          -- ponytail: 750 was too tight for prettier on large files, 1000 felt laggy;
+          -- but 750 also timed out on prettier's ~470ms cold start, so the first
+          -- save of a session silently skipped formatting. 2000 only costs you
+          -- when the formatter is genuinely slow.
+          return { timeout_ms = 2000 }
         else
           return nil
         end
@@ -81,10 +94,6 @@ return {
       formatters = {
         prettier = {
           prepend_args = { '--config', vim.fs.normalize '~/.config/nvim/prettier.config.json' },
-        },
-        prettierd = {
-          stdin = true,
-          prepend_args = { '--config=' .. vim.fs.normalize '~/.config/nvim/prettier.config.json' },
         },
       },
       -- You can also specify external formatters in here.
@@ -102,8 +111,11 @@ return {
         css = prettier,
         scss = prettier,
         less = prettier,
-        graphql = prettier,
+        -- markdown was in enabled_filetypes but missing here, so auto-format
+        -- silently did nothing for it
+        markdown = prettier,
         yaml = prettier,
+        graphql = prettier,
         nginx = { 'nginxfmt' },
       },
     },

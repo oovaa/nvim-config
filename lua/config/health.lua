@@ -19,6 +19,7 @@ local optional = {
   { bin = 'lazygit', why = '<leader>fg float' },
   { bin = 'docker', why = 'dockerls, docker_compose_language_service (optional)' },
   { bin = 'pyrefly', why = 'python LSP' },
+  { bin = 'nginxfmt', why = 'nginx format on <leader>ff (pip install nginx-config-formatter)' },
 }
 
 function M.check()
@@ -38,7 +39,7 @@ function M.check()
     end
   end
   local mason_bin = vim.fn.stdpath 'data' .. '/mason/bin/'
-  for _, bin in ipairs { 'stylua', 'oxlint', 'prettier', 'prettierd', 'ruff' } do
+  for _, bin in ipairs { 'stylua', 'oxlint', 'prettier', 'ruff' } do
     if vim.fn.executable(mason_bin .. bin) == 1 then
       vim.health.ok('mason: ' .. bin .. ' found')
     else

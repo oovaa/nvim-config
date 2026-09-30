@@ -148,7 +148,10 @@ return {
       {
         '<leader>n',
         function()
-          if require('snacks.config').picker and require('snacks.config').picker.enabled then
+          -- ponytail: `require('snacks.config')` does not exist in current
+          -- snacks; it raised E492/E5108 on every <leader>n press. The config
+          -- table hangs off the Snacks module itself.
+          if require('snacks').config.picker.enabled then
             require('snacks').picker.notifications()
           else
             require('snacks').notifier.show_history()
@@ -208,6 +211,7 @@ return {
         python = { 'ruff' },
       }
       vim.api.nvim_create_autocmd({ 'BufWritePost', 'InsertLeave' }, {
+        group = vim.api.nvim_create_augroup('lint-on-save', { clear = true }),
         callback = function() pcall(lint.try_lint) end,
       })
     end,

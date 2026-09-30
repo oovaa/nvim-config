@@ -261,6 +261,12 @@ return {
         'stylua', -- lua formatter (conform needs it; health checks it)
         'ruff', -- python lint+format backend for conform + nvim-lint
         'oxlint', -- fast Rust JS/TS linter used by nvim-lint
+        -- ponytail: nginxfmt (nginx) is NOT here. It is a python package and
+        -- this box's python3 has no ensurepip, so mason fails to build its venv
+        -- on every FileType — same wall as debugpy below. `pip install
+        -- nginx-config-formatter` puts it on PATH instead, which conform picks
+        -- up. Re-add 'nginx-config-formatter' here after `sudo apt install
+        -- python3.12-venv`.
         -- ponytail: debugpy NOT here — system python3 lacks ensurepip
         -- (needs `sudo apt install python3.12-venv`), so mason can't build
         -- its venv and would retry+fail on every FileType. Installed manually

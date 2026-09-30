@@ -128,19 +128,44 @@ pcall(function() require('custom.ui.theme').setup() end)
 -- dropped. Manual <leader>ff still notifies when you ask for it.
 -- ponytail: narrow match (only conform's failure string), global helpers
 -- like this stay in init.lua so the behavior is visible in one place.
-do
-  local orig_notify = vim.notify
-  local last_msg, last_time = nil, 0
+-- The throttle is re-applied instead of stacked, because snacks.nvim installs
+-- a shim that swaps `vim.notify` for its notifier on the FIRST call
+-- (snacks/init.lua:219) — a one-shot wrap at startup is silently dead by the
+-- time the first format error arrives, which is what the stress test caught.
+-- `vim.notify_throttled` holds the last wrapper, so `<leader>ur` re-sources this
+-- file without stacking another layer.
+local throttle_state = { msg = nil, at = 0 }
+local function wrap_notify(fn)
+  if fn == vim.notify_throttled then return fn end
   ---@diagnostic disable-next-line: duplicate-set-field
   function vim.notify(msg, level, opts)
     if type(msg) == 'string' and msg:match '^Formatter failed' then
       local now = vim.uv.now()
-      if msg == last_msg and now - last_time < 15000 then return end
-      last_msg, last_time = msg, now
+      if msg == throttle_state.msg and now - throttle_state.at < 15000 then return end
+      throttle_state.msg, throttle_state.at = msg, now
     end
-    return orig_notify(msg, level, opts)
+    return fn(msg, level, opts)
   end
+  vim.notify_throttled = vim.notify
+  return vim.notify
 end
+vim.notify = wrap_notify(vim.notify)
+-- vim.schedule so this runs *after* every User VeryLazy handler (lazy.nvim
+-- registers its own, and its handler is what loads snacks). User VeryLazy fires
+-- once per session, so the notifier is wrapped once even across `<leader>ur`.
+vim.api.nvim_create_autocmd('User', {
+  pattern = 'VeryLazy',
+  group = vim.api.nvim_create_augroup('notify-throttle', { clear = true }),
+  callback = function()
+    vim.schedule(function()
+      local ok, notifier = pcall(require, 'snacks.notifier')
+      -- wrap the notifier too: the shim assigns vim.notify = Snacks.notifier.notify
+      -- at first use, so this is the only place the swap can be caught
+      if ok and type(notifier.notify) == 'function' then notifier.notify = wrap_notify(notifier.notify) end
+      vim.notify = wrap_notify(vim.notify)
+    end)
+  end,
+})
 
 -- ============================================================================
 -- SECTION 6: LAZY.NVIM PLUGIN MANAGER
