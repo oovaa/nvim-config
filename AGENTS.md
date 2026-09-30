@@ -36,12 +36,13 @@ In nvim, `:checkhealth config.health` is this repo's own check (`lua/config/heal
 
 ## Traps
 
-1. **`stylua --check .` currently fails on 18 files, so CI is red on `master`.**
-   `.stylua.toml` sets `call_parentheses = "None"`, `collapse_simple_statement =
-   "Always"`, `column_width = 160` — that's why the code reads `if x then return end`
-   and `require 'foo'`. If you edit one of those 18 files and run `stylua .`, you
-   inherit a large unrelated reformat. Decide deliberately whether to commit it
-   (I reverted mine to keep diffs reviewable) or fix your own lines by hand.
+1. **`stylua --check .` is the CI gate — it must stay green.** `.stylua.toml` sets
+   `call_parentheses = "None"`, `collapse_simple_statement = "Always"`,
+   `column_width = 160` — that's why the code reads `if x then return end` and
+   `require 'foo'`. `stylua .` reflows whole lines, not just indentation, so an
+   unreformatted neighbour can turn a 1-line change into a 200-line diff. Run
+   `stylua .` on the files you touch and keep the reformat in its own `style:`
+   commit, never mixed into a fix.
 2. **`<leader>ur` is not a real reload.** It sources `$MYVIMRC`; lazy prints
    "Re-sourcing your config is not supported with lazy.nvim" and does not re-read
    specs. Everything behind `require` is cached, so `lua/config/autocmds.lua` does
