@@ -84,7 +84,7 @@ do
     { 'signcolumn', vim.o.signcolumn, 'yes' },
     { 'updatetime', vim.o.updatetime, 250 },
     { 'timeoutlen', vim.o.timeoutlen, 300 },
-    { 'lazyredraw', vim.o.lazyredraw, false },
+    { 'lazyredraw', vim.o.lazyredraw, true }, -- re-enabled after noice was dropped
     { 'synmaxcol', vim.o.synmaxcol, 300 },
     { 'splitright', vim.o.splitright, true },
     { 'splitbelow', vim.o.splitbelow, true },
