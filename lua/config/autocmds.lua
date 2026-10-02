@@ -194,6 +194,32 @@ vim.filetype.add {
   },
 }
 
+-- Markdown lists: auto-continue + Enter on empty exits (Google Docs).
+-- ponytail: native formatoptions + one <CR> guard; autolist.nvim if renumber-on-delete matters.
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'markdown',
+  desc = 'Markdown list continue + empty list exits',
+  group = vim.api.nvim_create_augroup('markdown-lists', { clear = true }),
+  callback = function(args)
+    vim.opt_local.formatoptions:append 'ron'
+    -- Overwrite, not append: the runtime markdown ftplugin sets fb:-/fb:*/fb:+
+    -- whose f flag means "leader on first line only, never repeat it". First
+    -- match wins, so appended b:- entries would be shadowed and Enter/o would
+    -- never continue the list.
+    vim.opt_local.comments = { 'b:-', 'b:*', 'b:+', 'n:>' }
+    vim.keymap.set('i', '<CR>', function()
+      local line = vim.api.nvim_get_current_line()
+      if line:match '^%s*[-*+]%s*$' or line:match '^%s*%d+[.)]%s*$' or line:match '^%s*[-*+]%s+%[.%]%s*$' then return '<C-U>' end
+      -- ponytail: native r/n can't increment numbers (verified in clean nvim);
+      -- insert the next marker explicitly (indent is already copied by native
+      -- indent handling, so only the number is supplied).
+      local num, delim = line:match '^%s*(%d+)([.)])%s+.*$'
+      if num then return '<CR>' .. (tonumber(num) + 1) .. delim .. ' ' end
+      return '<CR>'
+    end, { buffer = args.buf, expr = true, desc = 'Empty list item exits list' })
+  end,
+})
+
 -- which-key hides hints while recording/playing macros (upstream hard-code in
 -- state.lua/triggers.lua via util.in_macro(), no config knob). Force it on —
 -- popup is display-only, recorded keys are unaffected.
