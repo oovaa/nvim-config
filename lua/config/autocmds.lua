@@ -217,6 +217,13 @@ vim.api.nvim_create_autocmd('FileType', {
       if num then return '<CR>' .. (tonumber(num) + 1) .. delim .. ' ' end
       return '<CR>'
     end, { buffer = args.buf, expr = true, desc = 'Empty list item exits list' })
+    -- ponytail: native o can't increment numbers (same gap as <CR> above);
+    -- let native o open the line, then type the next marker explicitly.
+    vim.keymap.set('n', 'o', function()
+      local num, delim = vim.api.nvim_get_current_line():match '^%s*(%d+)([.)])%s+.*$'
+      if num then return 'o' .. (tonumber(num) + 1) .. delim .. ' ' end
+      return 'o'
+    end, { buffer = args.buf, expr = true, desc = 'Open list item below (numbers increment)' })
   end,
 })
 
