@@ -67,6 +67,14 @@ return {
         dir_path = 'assets',
         relative_to_current_file = true,
       },
+      -- ponytail: stock markdown template leaves alt text empty ($CURSOR);
+      -- filetype opts beat default.*, so the override must live here, not in
+      -- default. Reuses the prompted file name: ![name](path), no 2nd edit.
+      filetypes = {
+        markdown = {
+          template = '![$FILE_NAME_NO_EXT]($FILE_PATH)',
+        },
+      },
     },
   },
 }
