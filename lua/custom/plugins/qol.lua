@@ -56,4 +56,17 @@ return {
     keys = { { '<leader>fr', function() require('grug-far').open() end, desc = 'Find & Replace (grug-far)' } },
     opts = { engine = 'ripgrep' },
   },
+
+  -- Paste clipboard image into markdown (img-clip.nvim)
+  {
+    'HakonHarnes/img-clip.nvim',
+    ft = 'markdown',
+    keys = { { '<leader>p', '<cmd>PasteImage<cr>', desc = 'Paste image from clipboard', ft = 'markdown' } },
+    opts = {
+      default = {
+        dir_path = 'assets',
+        relative_to_current_file = true,
+      },
+    },
+  },
 }
