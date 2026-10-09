@@ -132,6 +132,38 @@ vim.o.undofile = true
 vim.o.ignorecase = true
 vim.o.smartcase = true
 
+-- CMdLINE COMPLETION
+-- WHAT: popup menu for : command/file/option completion, auto-shown as you
+--        type (CmdlineChanged -> wildtrigger in autocmds.lua) instead of the
+--        one-item-at-a-time press-<Tab> loop
+-- TO CHANGE: 'noselect:full,full' -> 'full' to always take the first full match
+-- EFFECT: noselect = menu shows but nothing is pre-inserted — typed text stays
+--         untouched until a match is confirmed (<Tab>/arrows pick, <C-y>
+--         accepts, <C-e> aborts); pum = render it as a menu, arrow keys work
+vim.o.wildmode = 'noselect:full,full'
+vim.o.wildoptions = 'pum'
+
+-- FORMATTING (gq / gwgq)
+-- WHAT: routes `gq` through conform instead of nvim's internal formatter, so
+--        manual reflow uses the same formatters as format-on-save
+-- TO CHANGE: set to '' to fall back to internal formatting
+-- EFFECT: v:lua defers the require to first use, so conform stays lazy-loaded
+vim.o.formatexpr = "v:lua.require('conform').formatexpr()"
+
+-- TRUE COLOR
+-- WHAT: enables 24-bit color (GUI/highlight-gui colors instead of 256)
+-- TO CHANGE: set to false if your terminal only supports 256 colors
+-- EFFECT: themes set this on load; explicit here covers custom/hl-only themes
+vim.o.termguicolors = true
+
+-- WHICHWRAP (arrow/hl across line boundaries)
+-- WHAT: Left/<BS>/h at column 0 move to the end of the previous line;
+--        Right/Space/l past EOL move to the start of the next line
+-- TO CHANGE: remove h,l to keep h/l confined (or drop [,] to confine insert)
+-- EFFECT: one option covers normal+visual (<,>,h,l), insert ([,]) and
+--         <BS>/Space (b,s) — no keymaps needed, motions just cross lines
+vim.o.whichwrap = 'b,s,<,>,[,],h,l'
+
 -- SIGN COLUMN
 -- WHAT: The column left of line numbers where git signs and diagnostics appear
 -- TO CHANGE: Set to 'auto' to only show when there are signs

@@ -133,3 +133,9 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 vim.keymap.set('n', '<S-h>', '<cmd>bprev<cr>', { desc = 'Prev Buffer' })
 vim.keymap.set('n', '<S-l>', '<cmd>bnext<cr>', { desc = 'Next Buffer' })
 vim.keymap.set('n', '<leader>bd', '<cmd>bdelete<cr>', { desc = '[B]uffer [D]elete' })
+
+-- Cmdline pum: keep <Up>/<Down> as history navigation. With auto-shown
+-- completion (:h cmdline-autocompletion) they would otherwise select matches;
+-- <C-n>/<C-p>/<Left>/<Right>/<Tab> still move through the menu.
+vim.keymap.set('c', '<Up>', function() return vim.fn.wildmenumode() == 1 and '<C-E><Up>' or '<Up>' end, { expr = true, desc = 'Cmdline history (older)' })
+vim.keymap.set('c', '<Down>', function() return vim.fn.wildmenumode() == 1 and '<C-E><Down>' or '<Down>' end, { expr = true, desc = 'Cmdline history (newer)' })

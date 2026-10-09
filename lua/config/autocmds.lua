@@ -239,3 +239,15 @@ vim.api.nvim_create_autocmd('RecordingEnter', {
     if ok then util.in_macro = function() return false end end
   end,
 })
+
+-- Cmdline autocompletion (:h cmdline-autocompletion): pop the pum automatically
+-- as you type instead of waiting for <Tab>. Paired with noselect in wildmode
+-- (options.lua) so the typed text stays untouched until a match is confirmed.
+-- ponytail: '[?]' — bare ? in autocmd patterns means "any char", which would
+-- also fire on input()/expression-register prompts.
+vim.api.nvim_create_autocmd('CmdlineChanged', {
+  desc = 'Auto-show cmdline completion menu while typing',
+  group = vim.api.nvim_create_augroup('cmdline-autocomplete', { clear = true }),
+  pattern = { ':', '/', '[?]' },
+  callback = function() vim.fn.wildtrigger() end,
+})
