@@ -104,6 +104,7 @@ Press `<leader>e` to toggle the file explorer (`:Neotree` fallback). Inside it:
 | `:%s/old/new/gi` | Find & replace (case-insensitive) | built-in |
 | `<Tab>` | Accept Autocompletion Suggestion | `blink.cmp` |
 | `<S-Tab>` | Previous Autocompletion Suggestion | `blink.cmp` |
+| `<C-j>` / `<C-k>` | Next / prev snippet placeholder | `blink.cmp` + `luasnip` |
 | `<C-space>` | Force show completion docs | `blink.cmp` |
 | `<C-BS>` | Delete previous word | built-in |
 | `<leader>q` | Open diagnostic quickfix list | built-in |
