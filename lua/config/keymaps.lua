@@ -11,8 +11,9 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 -- Delete previous word with Ctrl+Backspace
 -- WHAT: Standard editor behavior - delete the word before cursor
 -- TO CHANGE: Remove this line if you prefer default behavior
--- EFFECT: Works in both normal and insert mode
-vim.keymap.set({ 'n', 'i' }, '<C-BS>', '<C-w>', { desc = 'Delete previous word' })
+-- EFFECT: insert mode only (normal mode dropped: <C-w> is the window-command
+--         prefix there, so as a normal-mode mapping it never deleted anything)
+vim.keymap.set('i', '<C-BS>', '<C-w>', { desc = 'Delete previous word' })
 
 -- Open diagnostic quickfix list
 -- WHAT: Opens a list of all diagnostics in the current buffer
