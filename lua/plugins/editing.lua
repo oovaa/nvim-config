@@ -106,16 +106,20 @@ return {
     cmd = 'ASToggle',
     event = { 'InsertLeave', 'TextChanged' },
     opts = {
-      -- Save once per edit session, not per text change: TextChanged queues a
-      -- write per keystroke burst, then BufWritePre -> prettier -> tsserver
-      -- recheck thrashes the whole file.
+      -- defer_save is debounced (one timer per buffer, restarted on every
+      -- event), so TextChanged costs one write 1s after the last change — per
+      -- burst, not per keystroke. TextChanged exists for normal-mode edits
+      -- (dd/x/r/J): InsertLeave alone never fires when insert is never
+      -- entered. A >=1s typing pause also saves mid-insert; those writes are
+      -- unformatted (guard in formatting.lua) and format at the next save
+      -- outside insert.
       --
       -- immediate_save restores the stock safety net (esp. QuitPre): without
       -- it, edits made <1s before quitting hit the debounce timer and are
       -- silently lost.
       trigger_events = {
         immediate_save = { 'QuitPre', 'FocusLost', 'BufLeave', 'VimSuspend' },
-        defer_save = { 'InsertLeave' },
+        defer_save = { 'InsertLeave', 'TextChanged' },
         cancel_deferred_save = { 'InsertEnter' },
       },
     },
