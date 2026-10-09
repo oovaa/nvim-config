@@ -7,10 +7,10 @@ only covers what those don't say.
 ## Commands
 
 ```sh
-# one plenary suite (this is what CI runs, one file at a time)
-nvim --headless -c 'lua require("plenary.busted").run("tests/test_qol.lua")' -c 'qa!'
+# what CI runs: every suite, one file at a time (plus boot + stylua jobs)
+for f in tests/test_*.lua; do nvim --headless -c "lua require('plenary.busted').run('$f')" -c 'qa!'; done
 
-# full config stress test — NOT in CI, ~2 min, exits non-zero on any FAIL,
+# full config stress test — CI `stress` job, ~2 min, exits non-zero on any FAIL,
 # rewrites the (gitignored) tests/stress-report.md
 nvim --headless -c 'luafile tests/stress.lua' -c 'qa!'
 
@@ -43,29 +43,31 @@ In nvim, `:checkhealth config.health` is this repo's own check (`lua/config/heal
    unreformatted neighbour can turn a 1-line change into a 200-line diff. Run
    `stylua .` on the files you touch and keep the reformat in its own `style:`
    commit, never mixed into a fix.
-2. **`<leader>ur` is not a real reload.** It sources `$MYVIMRC`; lazy prints
-   "Re-sourcing your config is not supported with lazy.nvim" and does not re-read
-   specs. Everything behind `require` is cached, so `lua/config/autocmds.lua` does
-   **not** re-register — but code called from `init.lua`'s body does. That's why
-   every `nvim_create_autocmd` in a `setup()` function needs a named
-   `group = { clear = true }`; without one they accumulate per reload.
-   `tests/stress.lua` asserts this.
+2. **`<leader>ur` is a real reload; plain `:source $MYVIMRC` is not.** The mapping
+   drops `^config%.`/`^custom%.` from `package.loaded` then sources `$MYVIMRC`, so
+   config modules re-register from scratch. A bare `:source` only re-runs `init.lua`'s
+   body — lazy never re-reads specs ("Re-sourcing not supported"). Either way every
+   `nvim_create_autocmd` needs a named `group = { clear = true }` or it stacks:
+   `tests/stress.lua` sources `$MYVIMRC` 4x and fails on any autocmd/keymap growth.
 3. **No lockfile is committed** (`.gitignore` has `lazy-lock.json`), so CI's
-   `lazy.sync()` picks up whatever upstream released. Plugin breakage arrives with
-   no commit: the installed `molten-nvim` v1.9.2 has no `plugin/` and no
-   `lua/molten/init.lua`, so all 9 `<leader>m*` keys raise `E492`. **Those 9 stress
-   failures are expected** — don't "fix" the config. Repair is
-   `rm -rf ~/.local/share/nvim/lazy/molten-nvim` then reinstall.
+   `lazy.sync()` picks up whatever upstream released. Known case: `molten-nvim`
+   v1.9.2 ships no `plugin/` and no `lua/molten/init.lua` *by design* — its 41
+   commands come from `rplugin/python3/molten` and only exist after
+   `:UpdateRemotePlugins`, which silently registers nothing when the pynvim host
+   can't `import jupyter_client` (the spec's `build` runs it; that python needs
+   `jupyter_client` + `ipykernel`). So if all 9 `<leader>m*` keys raise `E492`,
+   check `:command Molten` and remote-plugin registration before touching the spec.
+   Upstream also renamed `MoltenHide` → `MoltenHideOutput` (config binds the new name).
 4. **mason cannot install Python packages on this host** (`python3` has no
    `ensurepip`). `debugpy` and `nginx-config-formatter` are deliberately left out
    of `ensure_installed`, with comments, in `lua/plugins/lsp.lua` and
    `lua/plugins/formatting.lua`. Adding a Python-backed mason package makes it fail
    on *every* FileType. `nginxfmt` is also why `nginx` is `false` in
-   `format_after_save`'s table.
+   `format_on_save`'s table.
 5. **Do not put `prettierd` back.** Measured here: prettierd cold start 850–2300 ms
    inside nvim, vs 270–470 ms for plain prettier (316 ms warm prettierd). It blew
    the save timeout and reported "Formatter failed" while formatting nothing, and
-   leaves an orphan daemon per session. The 2000 ms `format_after_save` timeout
+   leaves an orphan daemon per session. The 2000 ms `format_on_save` timeout
    exists because prettier's own cold start hit 2.3 s — don't lower it.
 6. **snacks owns `vim.notify` and replaces it on the first call**
    (`snacks/init.lua:219`). A monkey-patch installed at startup is dead by the
@@ -89,6 +91,13 @@ In nvim, `:checkhealth config.health` is this repo's own check (`lua/config/heal
     handled in `session_file_for` (`lua/config/sessions.lua`), which the dashboard
     `s` picker also calls via `_G._builtin_session_file` — keep them in sync.
     `~/`, `~/Downloads`, `/etc`, `/tmp` are suppressed (exact match, not subdirs).
+11. **Auto-save and format-on-save are coupled across insert mode.** `defer_save`
+    includes `TextChanged`, so normal-mode edits — and mid-insert pauses — save
+    without leaving insert mode; `format_on_save` returns nil while the mode is
+    `i*`/`ni*` (mid-typing), `s*` (snippet Select — a reflow under an active
+    selection shifts its anchors, so the next keystroke deletes code), or `R*`
+    (replace), because those writes must stay raw (formatting a half-typed
+    line reflows it and jumps the cursor). Don't remove one side without the other.
 
 ## Conventions
 
