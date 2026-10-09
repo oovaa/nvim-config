@@ -79,15 +79,55 @@ local function new_horiz(cmd)
   vim.cmd 'resize 15'
   vim.cmd.startinsert()
 end
+local function new_vert(cmd)
+  vim.cmd('vsplit | terminal ' .. cmd)
+  vim.cmd 'vertical resize 40'
+  vim.cmd.startinsert()
+end
+-- ponytail: same 0.85-of-editor geometry as toggle_float; unlike toggle_float
+-- this always opens a fresh window+shell (t1/t2/t3 are "new", tt/tf are "toggle")
+local function new_float(cmd)
+  local width = math.floor(vim.o.columns * 0.85)
+  local height = math.floor(vim.o.lines * 0.85)
+  vim.api.nvim_open_win(vim.api.nvim_create_buf(false, true), true, {
+    relative = 'editor',
+    width = width,
+    height = height,
+    row = math.floor((vim.o.lines - height) / 2),
+    col = math.floor((vim.o.columns - width) / 2),
+    style = 'minimal',
+    border = 'rounded',
+  })
+  vim.fn.jobstart(cmd, { term = true })
+  vim.cmd.startinsert()
+end
 vim.keymap.set('n', '<leader>tt', function() toggle_horiz(vim.o.shell) end, { desc = '[T]oggle [T]erminal' })
 vim.keymap.set('n', '<leader>tf', function() toggle_float(vim.o.shell) end, { desc = '[T]erminal [F]loat' })
 vim.keymap.set('n', '<leader>fg', function() toggle_float 'lazygit' end, { desc = '[F]ind Lazy[G]it' })
 vim.keymap.set('n', '<leader>tm', function() toggle_float 'tmux new -s float 2>/dev/null || tmux attach -t float' end, { desc = '[T]erminal t[M]ux' })
-vim.keymap.set('n', '<leader>ht', function() toggle_float 'herdr' end, { desc = '[H]erdr [T]erminal' })
-vim.keymap.set('n', '<leader>t1', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [1]' })
-vim.keymap.set('n', '<leader>t2', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [2]' })
-vim.keymap.set('n', '<leader>t3', function() new_horiz(vim.o.shell) end, { desc = 'Terminal [3]' })
+-- herdr float removed: <leader>ht sat in which-key's [H]TTP group (herdr is a
+-- tunnel tool, not a group you'd find under H) and <leader>tf already spawns a
+-- float terminal: <leader>tf `herdr` does the same thing on demand.
+vim.keymap.set('n', '<leader>t1', function() new_horiz(vim.o.shell) end, { desc = '[T]erminal [1] horizontal' })
+vim.keymap.set('n', '<leader>t2', function() new_vert(vim.o.shell) end, { desc = '[T]erminal [2] vertical' })
+vim.keymap.set('n', '<leader>t3', function() new_float(vim.o.shell) end, { desc = '[T]erminal [3] floating' })
 vim.keymap.set('n', '<leader>tn', function() new_horiz(vim.o.shell) end, { desc = '[T]erminal [N]ew' })
+-- VSCode-style "split terminal": split the CURRENT window and open a fresh
+-- shell in the new half (old shell stays visible beside it). From any other
+-- window it just opens a shell next to your code.
+-- ponytail: one path, no buftype branch — `split | terminal` keeps the old
+-- term visible either way; no resize, splits stay 50/50 like VSCode. Splitting
+-- from a float is safe: :split targets the underlying layout, float untouched.
+local function split_horiz(cmd)
+  vim.cmd('split | terminal ' .. cmd)
+  vim.cmd.startinsert()
+end
+local function split_vert(cmd)
+  vim.cmd('vsplit | terminal ' .. cmd)
+  vim.cmd.startinsert()
+end
+vim.keymap.set('n', '<leader>t-', function() split_horiz(vim.o.shell) end, { desc = '[T]erminal split below' })
+vim.keymap.set('n', '<leader>tv', function() split_vert(vim.o.shell) end, { desc = '[T]erminal split [V]ertical' })
 local function toggle_last()
   -- ponytail: C-\ mirrors toggleterm — if any terminal visible, hide it; else reopen last kind
   -- ponytail: every close is pcall — closing the last window errors (E444)

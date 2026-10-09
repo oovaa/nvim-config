@@ -63,7 +63,6 @@ return {
         { '<leader>f', group = '[F]ormat / [F]ind' },
         { '<leader>r', group = '[R]un' },
         { '<leader>g', group = '[G]it' },
-        { '<leader>h', group = '[H]TTP' },
         { '<leader>u', group = '[U]I' },
         { '<leader>y', group = '[Y]ank' },
         { 'gr', group = 'LSP Actions', mode = { 'n' } },

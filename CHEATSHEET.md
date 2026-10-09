@@ -32,10 +32,11 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<leader>tt` | Toggle bottom terminal | built-in |
 | `<leader>tf` | Toggle floating terminal | built-in |
 | `<leader>tm` | Toggle floating terminal with tmux (multi-tab) | built-in |
-| `<leader>ht` | Toggle floating Herdr terminal | built-in |
 | `<C-\>` | Toggle Terminal (Any mode) | built-in |
-| `<leader>tn` | New terminal window | built-in |
-| `<leader>t1/2/3`| Switch to Terminal 1, 2, or 3 | built-in |
+| `<leader>tn` | New terminal window (bottom) | built-in |
+| `<leader>t1/2/3`| New terminal: bottom / vertical / floating | built-in |
+| `<leader>t-` | Split current window, new shell below (VSCode split) | built-in |
+| `<leader>tv` | Split current window, new shell beside (VSCode split) | built-in |
 | `<S-h>` | Previous Buffer | built-in |
 | `<S-l>` | Next Buffer | built-in |
 | `<leader>bd` | Delete Current Buffer | built-in |
