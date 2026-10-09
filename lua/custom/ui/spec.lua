@@ -383,6 +383,9 @@ function M.setup_bufferline()
   _G._builtin_tabclick = function(bufnr, _, button)
     if button == 'l' and vim.api.nvim_buf_is_valid(bufnr) then vim.api.nvim_set_current_buf(bufnr) end
   end
+  -- ponytail: labeled segments ('E2 W1') not bare numbers ('2 1') — E/W/I/H letters
+  -- with the standard Diagnostic* hl groups, so the tabline reads at a glance.
+  local function diag_seg(n, letter, hl) return n > 0 and ('%#' .. hl .. '#' .. letter .. n .. ' ') or '' end
   _G._builtin_tabline = function()
     local s, idx = '', 0
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
@@ -393,11 +396,10 @@ function M.setup_bufferline()
         local is_cur = buf == vim.api.nvim_get_current_buf()
         local hl = is_cur and '%#TabLineSel#' or '%#TabLine#'
         local cnt = M._diag_counts[buf] or M._count_diags(buf)
-        local diag = ''
-        if cnt.e > 0 then diag = diag .. cnt.e .. ' ' end
-        if cnt.w > 0 then diag = diag .. cnt.w .. ' ' end
-        if cnt.i > 0 then diag = diag .. cnt.i .. ' ' end
-        if cnt.h > 0 then diag = diag .. cnt.h .. ' ' end
+        local diag = diag_seg(cnt.e, 'E', 'DiagnosticError')
+          .. diag_seg(cnt.w, 'W', 'DiagnosticWarn')
+          .. diag_seg(cnt.i, 'I', 'DiagnosticInfo')
+          .. diag_seg(cnt.h, 'H', 'DiagnosticHint')
         local mod_hl = is_cur and '%#TabLineModSel#' or '%#TabLineMod#'
         local mod = vim.bo[buf].modified and ' ' .. mod_hl .. '●' .. hl or ''
         s = s .. '%' .. buf .. '@_builtin_tabclick@' .. hl .. ' ' .. idx .. ' ' .. name .. mod .. (diag ~= '' and ' ' .. diag or '') .. ' %X%*'
