@@ -31,7 +31,7 @@ end
 --        Disabling them speeds up startup by ~5-10ms each.
 --
 -- TO CHANGE:
---   - If you use Python plugins (like molten-nvim), keep python3 enabled
+--   - If you use a Python plugin that needs it (pynvim enabled), keep it unset
 --   - If you use Ruby plugins, remove the ruby line
 --   - If you use Perl plugins, remove the perl line
 --   - Check active providers: `:checkhealth provider`

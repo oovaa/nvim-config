@@ -26,14 +26,13 @@ return {
       { '<leader>ml', '<cmd>MoltenEvaluateLine<cr>', desc = '[M]olten [L]ine' },
       { '<leader>mv', '<cmd>MoltenEvaluateVisual<cr>', mode = 'v', desc = '[M]olten [V]isual' },
       { '<leader>mr', '<cmd>MoltenReevaluateCell<cr>', desc = '[M]olten [R]e-evaluate' },
-      { '<leader>mh', '<cmd>MoltenHide<cr>', desc = '[M]olten [H]ide output' },
+      { '<leader>mh', '<cmd>MoltenHideOutput<cr>', desc = '[M]olten [H]ide output' },
       { '<leader>md', '<cmd>MoltenDelete<cr>', desc = '[M]olten [D]elete cell' },
       { '<leader>mn', '<cmd>MoltenNext<cr>', desc = '[M]olten [N]ext cell' },
       { '<leader>mp', '<cmd>MoltenPrev<cr>', desc = '[M]olten [P]rev cell' },
       { '<leader>mo', '<cmd>MoltenOpenInBrowser<cr>', desc = '[M]olten [O]pen in browser' },
     },
   },
-
   {
     '3rd/image.nvim',
     build = false,
