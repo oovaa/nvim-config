@@ -1134,7 +1134,8 @@ do
 
   H.t('integrity: every command the config binds to exists', function()
     -- A plugin whose checkout is missing its entry point loads silently and then
-    -- every keymap bound to it raises E492 (molten-nvim currently does). Report
+    -- every keymap bound to it raises E492 (molten-nvim v1.9.2 did: its commands
+    -- live in rplugin/ and only exist after :UpdateRemotePlugins). Report
     -- the cause once instead of one failure per key.
     require('lazy').load { plugins = vim.tbl_map(function(p) return p.name end, require('lazy').plugins()) }
     local cmds = {}

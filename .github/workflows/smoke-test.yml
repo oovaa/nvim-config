@@ -67,3 +67,32 @@ jobs:
             fi
             echo "::endgroup::"
           done
+
+  stress:
+    name: Full config stress test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Install Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: v0.12.5
+
+      - name: Link config (so nvim loads this repo)
+        run: |
+          mkdir -p ~/.config
+          ln -sfn "$GITHUB_WORKSPACE" ~/.config/nvim
+          nvim --version | head -1
+
+      - name: Install plugins via lazy.nvim
+        run: |
+          timeout 120 nvim --headless \
+            -c 'lua require("lazy").sync(); vim.wait(90000, function() local s=require("lazy").stats(); return s.count and s.count > 0 end, 500)' \
+            -c 'qa' 2>&1 | tail -5 || true
+
+      - name: Run stress harness (~2 min, exits non-zero on any FAIL)
+        run: nvim --headless -c 'luafile tests/stress.lua' -c 'qa!'

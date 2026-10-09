@@ -105,11 +105,23 @@ S.keymaps = function()
     ['<leader>tf'] = true,
     ['<leader>fg'] = true,
     ['<leader>tm'] = true,
-    ['<leader>ht'] = true,
     ['<leader>t1'] = true,
     ['<leader>t2'] = true,
     ['<leader>t3'] = true,
     ['<leader>tn'] = true,
+    -- molten needs a live jupyter kernel plus image.nvim (cond=false headless,
+    -- so the rplugin host tracebacks in the sandbox). Skipped here; the
+    -- integrity test in tests/stress.lua still asserts every bound Molten
+    -- command exists, which is what caught the MoltenHide rename.
+    ['<leader>mi'] = true,
+    ['<leader>ml'] = true,
+    ['<leader>mv'] = true,
+    ['<leader>mr'] = true,
+    ['<leader>mh'] = true,
+    ['<leader>md'] = true,
+    ['<leader>mn'] = true,
+    ['<leader>mp'] = true,
+    ['<leader>mo'] = true,
     -- these launch a whole app against a real project: neotest walks the cwd
     -- for test files, grug-far and refactoring need a real buffer, dap opens
     -- its ui. Headless in a sandbox they either hang or kill the child, and
@@ -134,23 +146,27 @@ S.keymaps = function()
   for _, mode in ipairs { 'n', 'x', 'v' } do
     for _, m in ipairs(vim.api.nvim_get_keymap(mode)) do
       local key = mode .. '|' .. m.lhs
-      if not SKIP[m.lhs] and not is_default(m) and not is_plug(m) and not seen[key] then
-        seen[key] = true
-        H.t(string.format('keymap %s %s', mode, m.lhs), function()
-          H.pass('key in flight: ' .. key)
-          scratch()
-          vim.wait(40) -- let anything queued by the previous key land first
-          vim.cmd 'messages clear'
-          local keys = vim.api.nvim_replace_termcodes(m.lhs, true, false, true)
-          vim.api.nvim_feedkeys(keys, 'x', false)
-          vim.wait(120)
-          local bad = H.error_text(vim.api.nvim_exec2('messages', { output = true }).output or '')
-          vim.wait(60)
-          vim.cmd 'messages clear' -- discard late fallout before the next key
-          -- the diagnostic yank maps notify INFO when the line is clean
-          if #bad == 0 then return true end
-          return table.concat(bad, ' | ')
-        end)
+      if not seen[key] then
+        -- SKIP uses '<leader>' form; live lhs has it resolved to mapleader
+        local skipped = SKIP[m.lhs] or SKIP[m.lhs:gsub('^' .. vim.g.mapleader, '<leader>')]
+        if not skipped and not is_default(m) and not is_plug(m) then
+          seen[key] = true
+          H.t(string.format('keymap %s %s', mode, m.lhs), function()
+            H.pass('key in flight: ' .. key)
+            scratch()
+            vim.wait(40) -- let anything queued by the previous key land first
+            vim.cmd 'messages clear'
+            local keys = vim.api.nvim_replace_termcodes(m.lhs, true, false, true)
+            vim.api.nvim_feedkeys(keys, 'x', false)
+            vim.wait(120)
+            local bad = H.error_text(vim.api.nvim_exec2('messages', { output = true }).output or '')
+            vim.wait(60)
+            vim.cmd 'messages clear' -- discard late fallout before the next key
+            -- the diagnostic yank maps notify INFO when the line is clean
+            if #bad == 0 then return true end
+            return table.concat(bad, ' | ')
+          end)
+        end
       end
     end
   end

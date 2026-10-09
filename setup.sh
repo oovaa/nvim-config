@@ -104,7 +104,19 @@ need python3 "python3" "molten, neotest-python"
 
 if have python3 && ! python3 -c "import pynvim" &>/dev/null; then
   fail "pynvim python module"
-  (( CHECK_ONLY )) || { info "pip install pynvim jupyter ipykernel…"; python3 -m pip install --user pynvim jupyter ipykernel; }
+  if (( ! CHECK_ONLY )); then
+    # uv replaces `pip install --user` (PEP 668 blocks that on externally-managed
+    # pythons); --user keeps the old no-sudo semantics, --break-system-packages
+    # is uv's PEP 668 bypass.
+    if ! have uv; then
+      info "installing uv…"
+      curl -LsSf https://astral.sh/uv/install.sh | sh
+      export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+    fi
+    info "uv pip install pynvim jupyter ipykernel…"
+    uv pip install --user --break-system-packages pynvim jupyter ipykernel
+    python3 -c "import pynvim" &>/dev/null && ok "pynvim installed" || warn "pynvim install failed"
+  fi
 else
   have python3 && ok "pynvim python module"
 fi
