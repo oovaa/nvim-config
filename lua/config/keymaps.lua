@@ -24,6 +24,12 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 vim.keymap.set('n', '[d', function() vim.diagnostic.jump { count = -1, float = true } end, { desc = 'Previous [D]iagnostic' })
 vim.keymap.set('n', ']d', function() vim.diagnostic.jump { count = 1, float = true } end, { desc = 'Next [D]iagnostic' })
 
+-- ponytail: '+' needs a clipboard provider; the config leaves 'clipboard'
+-- unset over SSH (options.lua), where '+' is a dead end — fall back to the
+-- default register. (has('clipboard') is always 1 in nvim, so check the option.)
+-- Shared by yank_diagnostics and <leader>fy, which both hardcoded '+'.
+local function yank_reg() return vim.o.clipboard ~= '' and '+' or '"' end
+
 -- Copy diagnostic message(s) on the current line to the system clipboard.
 -- `all` = every message on the line joined by newline; otherwise the one
 -- nearest to the cursor. Shared by `gy` (nearest) and `<leader>yd` (all).
@@ -46,7 +52,7 @@ local function yank_diagnostics(all)
     table.sort(diag, function(a, b) return math.abs(a.col - col) < math.abs(b.col - col) end)
     msg = diag[1].message
   end
-  vim.fn.setreg('+', msg)
+  vim.fn.setreg(yank_reg(), msg)
   vim.notify(string.format('Yanked %d diagnostic%s: %s', #diag, #diag == 1 and '' or 's', msg:gsub('\n', ' '):sub(1, 60)), vim.log.levels.INFO)
 end
 
@@ -70,7 +76,7 @@ vim.keymap.set('n', '<leader>fy', function()
     vim.notify('No file to yank', vim.log.levels.WARN)
     return
   end
-  vim.fn.setreg('+', path)
+  vim.fn.setreg(yank_reg(), path)
   vim.notify('Yanked path: ' .. path, vim.log.levels.INFO)
 end, { desc = '[F]ile [Y]ank path' })
 
