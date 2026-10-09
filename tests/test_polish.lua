@@ -19,8 +19,8 @@ describe('Phase 4: Polish', function()
 
   it('conform skips large files', function()
     local c = H.all()
-    local section = c:match 'format_after_save.-\n      end'
-    assert.is_truthy(section, 'format_after_save should exist')
+    local section = c:match 'format_on_save.-\n      end'
+    assert.is_truthy(section, 'format_on_save should exist')
     assert.is_truthy(section:match 'large_file_mode', 'Should guard on large_file_mode')
   end)
 

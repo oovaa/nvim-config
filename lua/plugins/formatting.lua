@@ -49,10 +49,29 @@ return {
       -- ponytail: true so formatter failures (e.g. broken json) notify
       -- instead of silently skipping the format
       notify_on_error = true,
-      format_after_save = function(bufnr)
+      -- ponytail: format_on_save (sync), not format_after_save (async).
+      -- The async path snapshots the buffer, formats in the background, and
+      -- silently discards the result if you typed meanwhile (concurrent
+      -- modification) — with auto-save writing every ~1s, fast typing meant
+      -- formatting never stuck and looked "undone". Sync formats in
+      -- BufWritePre before the write lands: one write, no race. Cost: saves
+      -- block for the formatter run (ruff is ms, prettier ~300ms warm).
+      format_on_save = function(bufnr)
         -- Skip auto-format for large files (large_file_mode set by
         -- config/autocmds.lua); manual <leader>ff still works.
         if vim.b[bufnr].large_file_mode then return nil end
+        -- Skip auto-format while mid-typing: auto-save's FocusLost/BufLeave
+        -- triggers write the buffer from inside insert mode, and a formatter
+        -- rewriting a half-typed line (reflow + cursor jump) is worse than
+        -- saving it raw. Same for Select (s*) and Replace (R*): a reflow
+        -- under an active snippet placeholder shifts the selection anchors,
+        -- so the next keystroke replaces more than the placeholder and eats
+        -- code. (Select is s/S/^S — Lua is case-sensitive and ^S is byte
+        -- 19, so all three are listed.) Next save outside insert formats
+        -- it; <leader>ff formats on demand. ('ni*' = i_CTRL-O — :h mode().)
+        local mode = vim.api.nvim_get_mode().mode
+        local m0 = mode:sub(1, 1)
+        if m0 == 'i' or mode:sub(1, 2) == 'ni' or m0 == 's' or m0 == 'S' or m0 == 'R' or m0 == '\19' then return nil end
         -- TO CHANGE: Add or remove filetypes from this table
         -- EFFECT: Only files matching these types will auto-format after save
         local enabled_filetypes = {
