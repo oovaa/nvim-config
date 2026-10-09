@@ -90,6 +90,9 @@ _G._builtin_session_file = session_file_for
 -- ponytail: no auto-restore on VimEnter; dashboard is default, `s` restores (see spec.lua)
 -- helpers kept for `s` (find_session_for / session_file)
 vim.api.nvim_create_autocmd('VimLeavePre', {
+  -- ponytail: named group required so <leader>ur>'s reload doesn't stack a
+  -- second session writer (AGENTS.md trap 2)
+  group = vim.api.nvim_create_augroup('BuiltinSessions', { clear = true }),
   callback = function()
     if suppressed_dir() then return end
     -- don't overwrite good session with empty dashboard/no-file state

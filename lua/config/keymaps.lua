@@ -87,8 +87,27 @@ vim.keymap.set('n', '<leader>us', function()
   vim.notify('Spell ' .. (vim.wo.spell and 'on' or 'off'), vim.log.levels.INFO)
 end, { desc = '[U]I [S]pell toggle' })
 
--- Reload the config without restarting (re-sources init.lua; lazy re-syncs specs).
-vim.keymap.set('n', '<leader>ur', '<cmd>source $MYVIMRC<cr>', { desc = '[U]I [R]eload config' })
+-- Toggle line wrapping (off by default, so long lines scroll horizontally)
+vim.keymap.set('n', '<leader>uw', function()
+  vim.wo.wrap = not vim.wo.wrap
+  vim.notify('Wrap ' .. (vim.wo.wrap and 'on' or 'off'), vim.log.levels.INFO)
+end, { desc = '[U]I [W]rap toggle' })
+
+-- Reload the config without restarting.
+-- WHAT: drops the cached `require` entries for lua/config + lua/custom modules,
+--        then sources init.lua so they re-register from scratch
+-- TO CHANGE: a new top-level lua/<dir>/ module would need its prefix added here
+-- EFFECT: a REAL reload now: plain `source $MYVIMRC` only re-ran init.lua's body,
+--         and everything behind `require` (autocmds, keymaps, terminal, ui) stayed
+--         cached. Re-registration is safe: every augroup is `clear = true` and
+--         lazy/keymaps are idempotent (AGENTS.md trap 2).
+vim.keymap.set('n', '<leader>ur', function()
+  for mod in pairs(package.loaded) do
+    if mod:match '^config%.' or mod:match '^custom%.' then package.loaded[mod] = nil end
+  end
+  vim.cmd 'source $MYVIMRC'
+  vim.notify('Config reloaded', vim.log.levels.INFO)
+end, { desc = '[U]I [R]eload config' })
 
 -- Flip dark/light background (most themes ship both variants)
 vim.keymap.set('n', '<leader>tb', function() vim.o.background = vim.o.background == 'dark' and 'light' or 'dark' end, { desc = '[T]oggle [B]ackground' })
