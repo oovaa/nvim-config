@@ -128,6 +128,11 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+-- Restart the LSP servers attached to this buffer.
+-- 0.12's `:lsp restart` replaced the `:LspRestart`/client-restart keymap dance;
+-- bare `:lsp` errors (it's a family: enable/disable/restart/stop).
+vim.keymap.set('n', '<leader>lr', '<cmd>lsp restart<cr>', { desc = '[L]SP [R]estart servers' })
+
 -- Buffer navigation (builtin :bprev/:bnext/:bdelete — replaces bufferline keys;
 -- moved from init.lua bottom, which now only wires lua/custom/ui/init.lua).
 vim.keymap.set('n', '<S-h>', '<cmd>bprev<cr>', { desc = 'Prev Buffer' })
