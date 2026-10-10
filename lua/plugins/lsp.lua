@@ -257,7 +257,6 @@ return {
       end
       vim.list_extend(ensure_installed, {
         'prettier', -- unified JS/TS/JSON/HTML/CSS formatter used by conform
-        'prettierd', -- daemon prettier: first in conform chain, ms per save
         'stylua', -- lua formatter (conform needs it; health checks it)
         'ruff', -- python lint+format backend for conform + nvim-lint
         'oxlint', -- fast Rust JS/TS linter used by nvim-lint
