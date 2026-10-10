@@ -74,7 +74,7 @@ In nvim, `:checkhealth config.health` is this repo's own check (`lua/config/heal
    first notification — see the throttle in `init.lua` for the re-wrap pattern.
    Also `require('snacks.config')` does not exist; use `require('snacks').config`.
 7. **0.12-only options are set unguarded** in `lua/config/options.lua`
-   (`smoothscroll`, `winborder`, `inccommand = 'split'`) and CI pins nvim v0.12.5.
+   (`smoothscroll`, `winborder`, `inccommand = 'split'`) and CI pins nvim v0.12.6.
    A pre-0.11 option needs a guard. Related trap that already bit:
    `foldmethod` is window-local since 0.11, so `vim.bo[buf].foldmethod` raises and
    aborts the rest of the callback — set it per window.
