@@ -241,6 +241,12 @@ vim.o.smoothscroll = true
 -- help peek, incsearch split preview, terminal float, etc.)
 -- Plugins that set their own borders (blink, snacks) are unaffected.
 vim.o.winborder = 'rounded'
+-- 'winborder' deliberately does not cover popupmenu, hence the separate option.
+-- The one popupmenu this config actually shows is cmdline completion:
+-- wildmode = 'noselect:full,full' + the CmdlineChanged wildtrigger() autocmd.
+-- (blink's menu and vim.ui.select are unaffected — blink draws its own float, and
+-- snacks.picker's ui_select = true routes vim.ui.select there, not the pum.)
+vim.o.pumborder = 'rounded'
 
 -- CONFIRM DIALOG
 -- WHAT: Shows a confirmation when trying to quit with unsaved changes
