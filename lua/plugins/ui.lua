@@ -136,10 +136,10 @@ return {
       },
       explorer = { enabled = true },
       scope = { enabled = true },
-      scroll = { enabled = false }, -- ponytail: vim.o.smoothscroll owns smooth scrolling; snacks scroll fought it
+      -- ponytail: scroll/statuscolumn/toggle are opt-in (off by default) and stay
+      -- that way — vim.o.smoothscroll owns scrolling and the custom statusline owns
+      -- the gutter. Don't set enabled = true here; that's what fought smoothscroll.
       scratch = { ft = 'markdown' }, -- ponytail: always markdown, never inherits python/js ft (no pyrefly/eslint in scratch)
-      statuscolumn = { enabled = false },
-      toggle = { enabled = false },
       words = { enabled = true },
     },
     keys = {

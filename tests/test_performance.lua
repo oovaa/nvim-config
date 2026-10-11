@@ -111,9 +111,13 @@ describe('Phase 2: Performance Optimizations', function()
       assert.is_truthy(content:match 'explorer%s*=%s*{%s*enabled%s*=%s*true', 'explorer should be enabled')
       -- Check disabled modules
       assert.is_truthy(content:match 'indent%s*=%s*{%s*enabled%s*=%s*true', 'indent should be enabled (replaces hlchunk)')
-      assert.is_truthy(content:match 'scroll%s*=%s*{%s*enabled%s*=%s*false', 'scroll should be disabled')
-      assert.is_truthy(content:match 'statuscolumn%s*=%s*{%s*enabled%s*=%s*false', 'statuscolumn should be disabled')
-      assert.is_truthy(content:match 'toggle%s*=%s*{%s*enabled%s*=%s*false', 'toggle should be disabled')
+      -- ponytail: scroll/statuscolumn/toggle are opt-in and off by default, so the
+      -- config no longer stubs them with `enabled = false`. Guard the intent, not the
+      -- removed lines: none of the three may ever be switched on (snacks.scroll
+      -- fought vim.o.smoothscroll; snacks.statuscolumn would fight the custom statusline).
+      for _, mod in ipairs { 'scroll', 'statuscolumn', 'toggle' } do
+        assert.is_nil(content:match(mod .. '%s*=%s*{%s*enabled%s*=%s*true'), mod .. ' should stay disabled')
+      end
     end)
   end)
 
