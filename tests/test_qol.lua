@@ -81,6 +81,29 @@ describe('qol plugins', function()
     assert.equals('markdown', img.ft, 'img-clip must be gated on ft=markdown')
   end)
 
+  it('routes actions-preview and the todo picker through snacks', function()
+    -- both used to hang off plugins this config dropped; a stale backend or a
+    -- dead require only shows up when the key is pressed, so drive them.
+    local ap = assert_spec 'actions-preview.nvim'
+    assert.same({ 'snacks' }, ap.opts and ap.opts.backend, 'actions-preview backend must be snacks')
+
+    -- lazy.nvim swaps the key's callback for the real handler only once the
+    -- owning plugin is loaded; before that it is a trigger stub that re-feeds
+    -- the key, so calling it directly would prove nothing.
+    require('lazy').load { plugins = { 'todo-comments.nvim' } }
+    local m = mapped '<leader>st'
+    assert.is_not_nil(m and next(m) ~= nil, '<leader>st must be mapped')
+    assert.is_function(m.callback, '<leader>st must resolve to a real handler')
+
+    local snacks = require 'snacks'
+    local orig, called = snacks.picker.todo_comments, 0
+    snacks.picker.todo_comments = function() called = called + 1 end
+    local ok, err = pcall(m.callback)
+    snacks.picker.todo_comments = orig
+    assert.is_truthy(ok, tostring(err))
+    assert.equals(1, called, '<leader>st must open the snacks todo picker')
+  end)
+
   it('does not shadow real actions with empty which-key groups', function()
     -- which-key registers its groups at VeryLazy; load it so the resolved spec
     -- exists. Groups are a positional array with the key at [1], not a map.
