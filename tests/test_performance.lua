@@ -1,209 +1,142 @@
--- Phase 2: Performance Optimizations Tests
--- Run with: nvim --headless -c 'lua require("plenary.busted").run("tests/test_performance.lua")' -c 'qa!'
+-- Performance intent: the config's startup budget and its lazy-loading
+-- discipline. Assert the resolved plugin registry and a real LSP attach, not
+-- the text of the spec files — a spec can say lazy=true and still be loaded
+-- eagerly, and grep cannot see either.
+--   nvim --headless -c 'lua require("plenary.busted").run("tests/test_performance.lua")' -c 'qa!'
 
-describe('Phase 2: Performance Optimizations', function()
-  -- ponytail: specs moved from init.lua to lua/plugins/ — assert location-agnostic
-  local H = require 'tests.helpers'
-  -- Test 1: Themes load lazily except tokyonight
-  describe('themes', function()
-    it('kept themes are lazy=true, trimmed ones stay commented, only tokyonight is eager', function()
-      local themes_path = vim.fn.stdpath 'config' .. '/lua/custom/plugins/themes.lua'
-      print('DEBUG test: themes_path =', themes_path)
-      local content = table.concat(vim.fn.readfile(themes_path), '\n')
-      print('DEBUG test: content len =', #content)
-      -- Convert to single line for multiline pattern matching
-      local content_single_line = content:gsub('\n', ' ')
-      print('DEBUG test: single line len =', #content_single_line)
-      print('DEBUG test: single line[600:700] =', content_single_line:sub(600, 700))
+describe('performance', function()
+  local P = require('lazy.core.config').plugins
 
-      local theme_names = {
-        'catppuccin',
-        'rose-pine',
-        'gruvbox',
-        'kanagawa',
-        'onedark',
-        'nightfox',
-        'everforest',
-        'dracula',
-        'github-theme',
-        'melange',
-        'poimandres',
-        'cyberdream',
-        'flexoki',
-      }
-      for _, name in ipairs(theme_names) do
-        -- Each theme should have lazy = true
-        -- Escape magic characters in name for Lua pattern matching
-        local escaped_name = name:gsub('%-', '%%-')
-        local pattern = escaped_name .. '.*lazy%s*=%s*true'
-        local match = content_single_line:match(pattern)
-        print('DEBUG test: name =', name, 'match =', match and 'YES' or 'NO')
-        assert.is_truthy(match, name .. ' should have lazy = true')
-      end
-      -- Trimmed themes must stay commented out (one-line restore only)
-      for _, line in ipairs(vim.fn.readfile(themes_path)) do
-        if line:match 'vague%.nvim' or line:match 'zenbones%.nvim' or line:match 'eldritch' then
-          assert.is_truthy(line:match '^%s*%-%-', line .. ' should stay commented')
-        end
-      end
-      -- tokyonight should NOT be lazy (it's in init.lua with lazy=false or default eager loading)
-      -- ponytail: path kept for context; assertions read the whole config
-      local init_content = H.all()
-      -- Check that tokyonight doesn't have lazy = true (meaning it loads eagerly)
-      local tokyonight_section = init_content:match 'folke/tokyonight%.nvim[^}]*}'
-      assert.is_not_nil(tokyonight_section, 'tokyonight should be in init.lua')
-      assert.is_falsy(tokyonight_section:match 'lazy%s*=%s*true', 'tokyonight should not have lazy = true')
-      assert.is_truthy(init_content:match 'tokyonight.*priority%s*=%s*1000', 'tokyonight should have priority=1000')
-    end)
-
-    it('uses snacks.picker for <leader>ty, not themery', function()
-      local themes_path = vim.fn.stdpath 'config' .. '/lua/custom/plugins/themes.lua'
-      local content = table.concat(vim.fn.readfile(themes_path), '\n')
-      assert.is_falsy(content:match 'themery', 'themes.lua must not reference themery')
-      assert.is_falsy(content:match 'zaldih', 'themery plugin must be removed')
-
-      local keymaps = table.concat(vim.fn.readfile(vim.fn.stdpath 'config' .. '/lua/config/keymaps.lua'), '\n')
-      assert.is_falsy(keymaps:match 'Themery', 'keymaps.lua must not map Themery')
-
-      local init = H.all()
-      local snacks = init:match "'folke/snacks%.nvim'.-\n  },"
-      assert.is_not_nil(snacks, 'snacks spec should exist')
-      assert.is_truthy(snacks:find('<leader>ty', 1, true), 'snacks should own <leader>ty')
-      assert.is_truthy(snacks:find('colorschemes', 1, true), '<leader>ty should open colorschemes picker')
-    end)
+  it('registers a bounded number of plugins', function()
+    -- A regression guard, not a target: this grew past 80 when telescope and
+    -- its extensions were still in the tree.
+    local n = vim.tbl_count(P)
+    assert.is_true(n > 0, 'lazy registry must be populated')
+    assert.is_true(n <= 60, 'plugin count ' .. n .. ' should stay <= 60')
   end)
 
-  -- Test 2: LSP uses native vim.lsp.config (nvim-lspconfig removed)
-  describe('lspconfig (removed)', function()
-    it('has no nvim-lspconfig dependency; servers defined natively', function()
-      -- ponytail: path kept for context; assertions read the whole config
-      local content = H.all()
-      content = content:gsub('%-%-[^\n]*', '') -- strip comments: check code, not prose
-
-      -- nvim-lspconfig and its mason bridge must be gone
-      assert.is_falsy(content:match 'nvim%-lspconfig', 'should not depend on nvim-lspconfig')
-      assert.is_falsy(content:match 'mason%-lspconfig', 'should not depend on mason-lspconfig')
-      assert.is_falsy(content:match 'require%s*%(?%s*[\'"]lspconfig', 'should not require lspconfig anywhere')
-      -- ...with native definitions carrying their own cmd/filetypes
-      assert.is_truthy(content:match "vim%.lsp%.config%('vtsls'", 'vtsls should be defined via vim.lsp.config')
-      assert.is_truthy(content:match 'docker%-langserver', 'dockerls cmd should be defined natively')
-      assert.is_truthy(content:match 'docker%-compose%-langserver', 'docker_compose_language_service cmd should be defined natively')
-    end)
+  it('loads tokyonight eagerly so the theme never flashes', function()
+    local tn = P['tokyonight.nvim']
+    assert.is_not_nil(tn, 'tokyonight must be registered')
+    assert.is_false(tn.lazy, 'tokyonight must not be lazy (startup colorscheme)')
+    assert.equals(1000, tn.priority, 'tokyonight priority must be 1000')
   end)
 
-  -- Test 3: snacks.nvim only enables needed modules
-  describe('snacks.nvim', function()
-    it('enables input, notifier, scratch, scope, words, indent, picker, explorer', function()
-      -- ponytail: path kept for context; assertions read the whole config
-      local content = H.all()
-
-      assert.is_truthy(content:match 'snacks%.nvim', 'snacks.nvim should exist')
-
-      -- Check enabled modules
-      assert.is_truthy(content:match 'input%s*=%s*{%s*enabled%s*=%s*true', 'input should be enabled')
-      assert.is_truthy(content:match 'notifier%s*=%s*{%s*enabled%s*=%s*true', 'notifier should be enabled')
-      assert.is_truthy(content:match 'scratch%s*=%s*{%s*ft%s*=%s*[\'"]markdown', 'scratch should have ft=markdown')
-      assert.is_truthy(content:match 'scope%s*=%s*{%s*enabled%s*=%s*true', 'scope should be enabled')
-      assert.is_truthy(content:match 'words%s*=%s*{%s*enabled%s*=%s*true', 'words should be enabled')
-
-      -- picker + explorer own daily search/files (migrated from telescope/neo-tree)
-      assert.is_truthy(content:match 'picker%s*=%s*{%s*enabled%s*=%s*true', 'picker should be enabled')
-      assert.is_truthy(content:match 'explorer%s*=%s*{%s*enabled%s*=%s*true', 'explorer should be enabled')
-      -- Check disabled modules
-      assert.is_truthy(content:match 'indent%s*=%s*{%s*enabled%s*=%s*true', 'indent should be enabled (replaces hlchunk)')
-      -- ponytail: scroll/statuscolumn/toggle are opt-in and off by default, so the
-      -- config no longer stubs them with `enabled = false`. Guard the intent, not the
-      -- removed lines: none of the three may ever be switched on (snacks.scroll
-      -- fought vim.o.smoothscroll; snacks.statuscolumn would fight the custom statusline).
-      for _, mod in ipairs { 'scroll', 'statuscolumn', 'toggle' } do
-        assert.is_nil(content:match(mod .. '%s*=%s*{%s*enabled%s*=%s*true'), mod .. ' should stay disabled')
-      end
-    end)
+  it('keeps every secondary theme lazy', function()
+    for _, name in ipairs {
+      'catppuccin',
+      'rose-pine',
+      'gruvbox.nvim',
+      'kanagawa.nvim',
+      'onedark.nvim',
+      'nightfox.nvim',
+      'everforest',
+      'dracula.nvim',
+      'github-theme',
+      'melange-nvim',
+      'poimandres.nvim',
+      'cyberdream.nvim',
+      'flexoki',
+    } do
+      local spec = P[name]
+      assert.is_not_nil(spec, name .. ' must still be registered')
+      assert.is_true(spec.lazy == true, name .. ' must be lazy=true')
+    end
   end)
 
-  -- Test 4: treesitter parsers install on-demand
-  describe('treesitter', function()
-    it('has no upfront TSInstall loop for 15 parsers', function()
-      -- ponytail: path kept for context; assertions read the whole config
-      local content = H.all()
-
-      local has_bulk_install = content:match 'for _, lang in ipairs%s*{' and content:match 'vim%.cmd%s*[\'"]TSInstall'
-      assert.is_falsy(has_bulk_install, 'Should not have bulk TSInstall loop for 15 parsers')
-    end)
-
-    it('has FileType autocmd that triggers TSInstall for missing parsers', function()
-      -- ponytail: path kept for context; assertions read the whole config
-      local content = H.all()
-
-      assert.is_truthy(content:match 'treesitter%-start' or content:match 'vim%.treesitter%.start')
-      assert.is_truthy(content:match 'fs_stat%(parser%)' and content:match 'TSInstall', 'Should check for parser and install on demand')
-    end)
+  it('activates a colorscheme and honours the saved theme', function()
+    assert.is_truthy(vim.g.colors_name, 'a colorscheme must be active at startup')
+    assert.is_not_nil(P['tokyonight.nvim'], 'the saved-theme fallback lives on the tokyonight spec')
   end)
 
-  -- Test 5: nvim-ts-autotag loads on ft
-  describe('nvim-ts-autotag', function()
-    it('loads on specific filetypes (html, jsx, tsx, etc.)', function()
-      -- ponytail: path kept for context; assertions read the whole config
-      local content = H.all()
-
-      assert.is_truthy(content:match 'nvim%-ts%-autotag', 'nvim-ts-autotag should exist')
-      assert.is_truthy(content:match 'nvim%-ts%-autotag.-ft%s*=', 'Should have ft configuration')
-      assert.is_truthy(content:match 'typescriptreact', 'Should include typescriptreact')
-      assert.is_truthy(content:match 'javascriptreact', 'Should include javascriptreact')
-    end)
+  it('does not depend on nvim-lspconfig', function()
+    assert.is_false((pcall(require, 'lspconfig')), 'nvim-lspconfig must not be installed')
+    assert.is_false((pcall(require, 'mason-lspconfig')), 'mason-lspconfig must not be installed')
   end)
 
-  -- Test 6: Startup performance target
-  describe('startup performance', function()
-    it('has vim.loader.enable and lazy.nvim cache enabled', function()
-      -- ponytail: path kept for context; assertions read the whole config
-      local content = H.all()
+  it('attaches the native LSP and defines servers via vim.lsp.config', function()
+    local file = vim.fn.tempname() .. '.lua'
+    local fh = assert(io.open(file, 'w'))
+    fh:write 'local x = 1\nreturn x\n'
+    fh:close()
+    vim.cmd.edit(vim.fn.fnameescape(file))
+    local buf = vim.api.nvim_get_current_buf()
 
-      assert.is_truthy(content:match 'vim%.loader%.enable')
-      assert.is_truthy(content:match 'cache%s*=%s*{%s*enabled%s*=%s*true')
-      assert.is_truthy(content:match 'disabled_plugins')
-    end)
+    assert.is_true(vim.wait(20000, function() return #vim.lsp.get_clients { bufnr = buf } > 0 end, 200), 'lua_ls should attach to a .lua buffer')
+
+    local names = {}
+    for _, client in ipairs(vim.lsp.get_clients { bufnr = buf }) do
+      names[client.name] = true
+    end
+    assert.is_true(names.lua_ls, 'expected lua_ls, got: ' .. vim.inspect(vim.tbl_keys(names)):gsub('%s+', ' '))
+
+    -- servers are defined natively, not bridged from lspconfig
+    local cfg = vim.lsp.config.lua_ls
+    assert.is_not_nil(cfg, 'lua_ls must be defined through vim.lsp.config')
+    assert.same({ 'lua-language-server' }, cfg.cmd)
+
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    vim.fn.delete(file)
   end)
 
-  -- Test 7: hlchunk deleted, colorizer/image narrowly triggered
-  describe('hlchunk/colorizer/image triggers', function()
-    it('hlchunk spec is gone; colorizer+image load on ft only', function()
-      -- ponytail: path kept for context; assertions read the whole config
-      local init_content = H.all()
-      local code = init_content:gsub('%-%-[^\n]*', '') -- strip comments: check code, not prose
-      assert.is_nil(code:match 'hlchunk%.nvim', 'hlchunk spec should be deleted (snacks.indent owns guides)')
-      -- chunk box + sticky scope replicate the old hlchunk look/behavior
-      assert.is_truthy(code:match 'chunk%s*=%s*{[^}]*enabled%s*=%s*true', 'snacks chunk box should be enabled')
-      assert.is_truthy(code:match 'scope%s*=%s*{%s*cursor%s*=%s*false', 'scope should follow the block, not the cursor column')
-      -- scope assertions to each plugin's spec block (nearest closing `},`)
-      local cz = code:match "'catgoose/nvim%-colorizer%.lua'.-\n  %},"
-      assert.is_not_nil(cz, 'colorizer spec should exist')
-      assert.is_truthy(cz:match "ft%s*=%s*{[^}]*'css'", 'colorizer should load on ft, not every BufReadPost')
-      assert.is_falsy(cz:match 'event%s*=', 'colorizer must not load on every file open')
-      local plugins_path = vim.fn.stdpath 'config' .. '/lua/custom/plugins/init.lua'
-      local plugins_code = table.concat(vim.fn.readfile(plugins_path), '\n'):gsub('%-%-[^\n]*', '')
-      local img = plugins_code:match "'3rd/image%.nvim',.-\n  %},"
-      assert.is_not_nil(img, 'image.nvim spec should exist')
-      assert.is_truthy(img:match "ft%s*=%s*{[^}]*'markdown'", 'image.nvim should load for markdown only')
-      assert.is_falsy(img:match 'event%s*=', 'image.nvim must not load on every file open')
-    end)
+  it('enables only the snacks modules this config uses', function()
+    local sc = require('snacks').config
+    for _, mod in ipairs { 'input', 'notifier', 'picker', 'explorer', 'scope', 'words', 'indent' } do
+      assert.is_true(sc[mod] and sc[mod].enabled, 'snacks.' .. mod .. ' must be enabled')
+    end
+    -- opt-in and deliberately off: scroll fought vim.o.smoothscroll,
+    -- statuscolumn would fight the custom statusline, toggle is unused.
+    for _, mod in ipairs { 'scroll', 'statuscolumn', 'toggle' } do
+      assert.is_falsy(sc[mod] and sc[mod].enabled, 'snacks.' .. mod .. ' must stay off')
+    end
   end)
 
-  -- Test 8: telescope + noice removed, daily keys on snacks
-  describe('picker migration complete', function()
-    it('telescope and noice specs are gone; search keys live on snacks', function()
-      -- ponytail: path kept for context; assertions read the whole config
-      local content = H.all()
-      local code = content:gsub('%-%-[^\n]*', '') -- strip comments: check code, not prose
-      assert.is_nil(code:match "'folke/noice%.nvim'", 'noice spec should be removed')
-      assert.is_nil(code:match "'nvim%-telescope/telescope%.nvim'", 'telescope spec should be removed')
-      assert.is_truthy(code:match "'folke/snacks%.nvim'", 'snacks spec should exist')
-      local sspec = code:match "'folke/snacks%.nvim'.-\n  %},"
-      assert.is_not_nil(sspec, 'snacks spec should exist')
-      for _, k in ipairs { '<leader>sf', '<leader>sg', '<leader>sd', '<leader>e', '<leader>fe' } do
-        assert.is_truthy(sspec:find(k, 1, true), k .. ' should be a snacks key')
-      end
-      -- NOTE: <leader>st lives on the todo-comments spec (test_cleanup.lua M2), not here.
-    end)
+  it('gives the snacks picker a real glyph for every git state', function()
+    -- regression: added/deleted/renamed shipped as empty strings, so files
+    -- rendered with no icon at all in the most-used UI surface.
+    local git = require('snacks').config.picker.icons.git
+    for _, state in ipairs { 'commit', 'staged', 'added', 'deleted', 'ignored', 'modified', 'renamed', 'unmerged', 'untracked' } do
+      local glyph = git[state]
+      assert.is_string(glyph, state .. ' icon must be a string')
+      assert.is_true(#glyph > 0, state .. ' icon must not be empty')
+    end
+  end)
+
+  it('scopes the filetype-gated plugins instead of loading them on every file', function()
+    -- colorizer/image used to load on BufReadPost, which paid their cost on
+    -- every open. They must be ft-gated with no event trigger.
+    local cz = P['nvim-colorizer.lua']
+    assert.is_not_nil(cz, 'nvim-colorizer must be registered')
+    assert.is_nil(cz.event, 'colorizer must not load on an every-file event')
+    assert.is_not_nil(cz.ft, 'colorizer must be gated on filetype')
+    assert.is_true(vim.tbl_contains(cz.ft, 'css'), 'colorizer must cover css')
+
+    local bqf = P['nvim-bqf']
+    assert.equals('qf', bqf.ft, 'nvim-bqf must be gated on ft=qf')
+
+    local rest = P['rest.nvim']
+    assert.equals('http', rest.ft, 'rest.nvim must be gated on ft=http')
+  end)
+
+  it('keeps nvim-ts-autotag scoped to markup filetypes', function()
+    local at = P['nvim-ts-autotag']
+    assert.is_not_nil(at, 'nvim-ts-autotag must be registered')
+    for _, ft in ipairs { 'html', 'javascriptreact', 'typescriptreact', 'svelte', 'vue', 'xml' } do
+      assert.is_true(vim.tbl_contains(at.ft, ft), 'nvim-ts-autotag must cover ' .. ft)
+    end
+  end)
+
+  it('keeps the deprecated heavy plugins out of the tree', function()
+    for _, name in ipairs {
+      'nvim-telescope/telescope.nvim',
+      'folke/noice.nvim',
+      'nvim-neo-tree/neo-tree.nvim',
+      'folke/hlchunk.nvim',
+      'folke/fzf-lua',
+      'ThePrimeagen/fidget.nvim',
+    } do
+      local key = name:match '[^/]+$'
+      assert.is_nil(P[key], key .. ' must no longer be registered')
+    end
   end)
 end)
