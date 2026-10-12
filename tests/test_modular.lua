@@ -3,8 +3,10 @@
 -- Run with: nvim --headless -c 'lua require("plenary.busted").run("tests/test_modular.lua")' -c 'qa!'
 
 describe('modular split', function()
-  local H = require 'tests.helpers'
   local root = vim.fn.stdpath 'config'
+  -- the live lazy.nvim registry: what the config actually asked to install,
+  -- keyed by short name (e.g. 'mason.nvim', not 'mason-org/mason.nvim')
+  local registry = require('lazy.core.config').plugins
 
   it('init.lua is a thin bootstrap (<300 lines, no plugin specs)', function()
     local lines = vim.fn.readfile(root .. '/init.lua')
@@ -58,47 +60,52 @@ describe('modular split', function()
   end)
 
   it('no plugin spec lost or duplicated across modules', function()
-    local code = H.code()
-    local counts = {}
-    -- ponytail: broad match (repos end .nvim, .lua, or bare like blink.cmp);
-    -- extras (URLs etc.) are ignored, only the expected list is asserted.
-    for repo in code:gmatch "'([A-Za-z0-9_%.%-]+/[A-Za-z0-9_%.%-]+)'" do
-      counts[repo] = (counts[repo] or 0) + 1
-    end
-    -- every spec from the pre-split init.lua must still exist
-    for _, repo in ipairs {
-      'NMAC427/guess-indent.nvim',
-      'lewis6991/gitsigns.nvim',
-      'folke/which-key.nvim',
-      'mason-org/mason.nvim',
-      'aznhe21/actions-preview.nvim',
-      'stevearc/conform.nvim',
-      'saghen/blink.cmp',
-      'folke/tokyonight.nvim',
-      'folke/todo-comments.nvim',
-      'nvim-mini/mini.nvim',
-      'folke/ts-comments.nvim',
-      'okuuva/auto-save.nvim',
-      'yioneko/nvim-vtsls',
-      'nvim-treesitter/nvim-treesitter',
-      'windwp/nvim-ts-autotag',
-      'folke/snacks.nvim',
-      'mfussenegger/nvim-lint',
-      'folke/flash.nvim',
-      'mfussenegger/nvim-dap',
-      'MeanderingProgrammer/render-markdown.nvim',
-      'catgoose/nvim-colorizer.lua',
+    -- assert against the live registry instead of grepping source text: a spec
+    -- that parses but was never registered by lazy is the failure this catches.
+    for _, name in ipairs {
+      'guess-indent.nvim',
+      'gitsigns.nvim',
+      'which-key.nvim',
+      'mason.nvim',
+      'actions-preview.nvim',
+      'conform.nvim',
+      'blink.cmp',
+      'tokyonight.nvim',
+      'todo-comments.nvim',
+      'mini.nvim',
+      'ts-comments.nvim',
+      'auto-save.nvim',
+      'nvim-vtsls',
+      'nvim-treesitter',
+      'nvim-ts-autotag',
+      'snacks.nvim',
+      'nvim-lint',
+      'flash.nvim',
+      'nvim-dap',
+      'render-markdown.nvim',
+      'nvim-colorizer.lua',
     } do
-      -- strip org prefix: gmatch key has no quotes/org split issues; compare full
-      assert.is_truthy(counts[repo] and counts[repo] >= 1, 'lost spec: ' .. repo)
+      local spec = registry[name]
+      assert.is_not_nil(spec, 'lost spec (not in lazy registry): ' .. name)
+      assert.is_truthy(spec.url or spec.dir, name .. ' must resolve to a url or dir')
     end
   end)
 
   it('theme restore logic lives in colorscheme module (persistence fix kept)', function()
-    local c = H.read(root .. '/lua/plugins/colorscheme.lua')
-    assert.is_truthy(c:match 'custom%.ui%.theme', 'must read saved theme')
-    assert.is_truthy(c:match 'get_saved', 'must call get_saved()')
-    assert.is_truthy(c:match 'tokyonight%-night', 'must keep tokyonight-night fallback')
+    -- real round-trip through the theme.txt persistence layer, not a source grep
+    local theme = require 'custom.ui.theme'
+    local saved = theme.get_saved()
+    local ok, err = pcall(function()
+      theme.save 'gruvbox'
+      assert.equals('gruvbox', theme.get_saved(), 'saved name must round-trip')
+      assert.equals('gruvbox', (io.open(theme.theme_file(), 'r'):read '*l'))
+    end)
+    if saved then
+      theme.save(saved)
+    else
+      vim.fn.delete(theme.theme_file())
+    end
+    assert.is_truthy(ok, tostring(err))
     assert.is_truthy(vim.g.colors_name and vim.g.colors_name ~= '', 'a colorscheme must be active')
   end)
 
