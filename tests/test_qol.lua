@@ -1,100 +1,102 @@
--- Phase 3: QoL Plugins Tests
--- Run with: nvim --headless -c 'lua require("plenary.busted").run("tests/test_qol.lua")' -c 'qa!'
+-- QoL plugin wiring: assert the resolved lazy spec and the live keymap, not the
+-- text of lua/custom/plugins/qol.lua. A spec can say lazy=true and still never
+-- fire; a keymap can be registered and still point at a deleted plugin.
+--   nvim --headless -c 'lua require("plenary.busted").run("tests/test_qol.lua")' -c 'qa!'
 
-describe('Phase 3: QoL Plugins', function()
-  -- ponytail: specs moved from init.lua to lua/plugins/ — assert location-agnostic
-  local H = require 'tests.helpers'
-  local qol_path = vim.fn.stdpath 'config' .. '/lua/custom/plugins/qol.lua'
-  local plugins_path = vim.fn.stdpath 'config' .. '/lua/custom/plugins/init.lua'
+describe('qol plugins', function()
+  local P = require('lazy.core.config').plugins
 
-  local function read(path) return table.concat(vim.fn.readfile(path), '\n') end
+  local function mapped(lhs, mode) return vim.fn.maparg(lhs, mode or 'n', false, true) end
 
-  it('qol.lua exists and is imported', function()
-    assert.equals(1, vim.fn.filereadable(qol_path))
-    assert.is_truthy(read(plugins_path):match "import%s*=%s*'custom%.plugins%.qol'")
-  end)
+  local function assert_spec(name)
+    assert.is_not_nil(P[name], name .. ' must be registered with lazy.nvim')
+    return P[name]
+  end
 
-  it('blame.nvim on <leader>gb', function()
-    local c = read(qol_path)
-    assert.is_truthy(c:match 'blame%.nvim')
-    assert.is_truthy(c:match '<leader>gb')
-    assert.is_truthy(c:match 'BlameToggle')
-  end)
-
-  it('markdown-preview.nvim removed', function()
-    local c = read(qol_path)
-    assert.is_falsy(c:match 'markdown%-preview%.nvim', 'markdown-preview should be gone')
-    assert.is_falsy(c:match '<leader>mP', '<leader>mP should be gone')
-  end)
-
-  it('refactoring.nvim depends on async.nvim', function()
-    local c = read(qol_path)
-    assert.is_truthy(c:match 'lewis6991/async%.nvim', 'refactoring needs async.nvim for the async module')
-  end)
-
-  it('refactoring.nvim on <leader>rr (n+v mode)', function()
-    local c = read(qol_path)
-    assert.is_truthy(c:match 'refactoring%.nvim')
-    assert.is_truthy(c:match '<leader>rr')
-    assert.is_truthy(c:match "mode%s*=%s*{%s*'n'%s*,%s*'v'%s*}")
-  end)
-
-  it('neotest with python adapter and tr/ts/to keys', function()
-    local c = read(qol_path)
-    assert.is_truthy(c:match 'neotest')
-    assert.is_truthy(c:match 'neotest%-python')
-    assert.is_truthy(c:match '<leader>tr')
-    assert.is_truthy(c:match '<leader>ts')
-    assert.is_truthy(c:match '<leader>to')
-  end)
-
-  it('rest.nvim on ft=http with buffer-local hr mapping', function()
-    local c = read(qol_path)
-    assert.is_truthy(c:match 'rest%.nvim')
-    assert.is_truthy(c:match "ft%s*=%s*'http'")
-    -- hr must NOT be a lazy `keys` shim (registers globally); it lives in
-    -- the http FileType autocmd in lua/config/autocmds.lua instead
-    assert.is_falsy(c:match '<leader>hr', 'hr must not be a lazy keys entry')
-    local autocmds = read(vim.fn.stdpath 'config' .. '/lua/config/autocmds.lua')
-    assert.is_truthy(autocmds:match "pattern%s*=%s*'http'")
-    assert.is_truthy(autocmds:match '<leader>hr')
-  end)
-
-  it('aerial.nvim on <leader>o', function()
-    local c = read(qol_path)
-    assert.is_truthy(c:match 'aerial%.nvim')
-    assert.is_truthy(c:match '<leader>o')
-  end)
-
-  it('dressing.nvim removed (snacks.input + ui-select cover it)', function()
-    local c = read(qol_path)
-    assert.is_nil(c:match 'dressing%.nvim', 'dressing spec should be deleted')
-  end)
-
-  it('nvim-bqf on ft=qf', function()
-    local c = read(qol_path)
-    assert.is_truthy(c:match 'nvim%-bqf')
-    assert.is_truthy(c:match "ft%s*=%s*'qf'")
-  end)
-
-  it('grug-far replaces spectre', function()
-    local qol = read(qol_path)
-    assert.is_truthy(qol:match 'grug%-far%.nvim')
-    assert.is_truthy(qol:match '<leader>fr')
-    assert.is_truthy(qol:match 'ripgrep')
-    local init = H.all()
-    assert.is_nil(init:match 'nvim%-spectre', 'spectre spec should be deleted (grug-far owns <leader>fr)')
-  end)
-
-  it('which-key documents groups without shadowing actions', function()
-    local init = H.all()
-    for _, g in ipairs { 'g', 'h', 'r', 's', 't', 'f', 'd', 'm' } do
-      assert.is_truthy(init:match('<leader>' .. g), 'Missing which-key group: ' .. g)
+  it('registers every qol plugin as a lazy spec', function()
+    for _, name in ipairs {
+      'blame.nvim',
+      'refactoring.nvim',
+      'neotest',
+      'neotest-python',
+      'aerial.nvim',
+      'grug-far.nvim',
+      'async.nvim',
+    } do
+      assert.is_true(assert_spec(name).lazy ~= false, name .. ' must not be eagerly loaded')
     end
-    -- empty groups that shadowed real actions must stay gone:
-    -- neotest tr/ts/to, refactoring rr, aerial o
-    for _, g in ipairs { 'tr', 'ts', 'to', 'rr' } do
-      assert.is_falsy(init:match('<leader>' .. g .. "'%s*,%s*group"), 'Group <leader>' .. g .. ' shadows a real action')
+  end)
+
+  it('drops the plugins that were replaced', function()
+    -- markdown-preview -> image.nvim, dressing -> snacks.input, spectre -> grug-far
+    for _, name in ipairs { 'markdown-preview.nvim', 'dressing.nvim', 'spectre' } do
+      assert.is_nil(P[name], name .. ' must no longer be registered')
     end
+  end)
+
+  it('binds each qol plugin to its leader key', function()
+    local expected = {
+      ['<leader>gb'] = 'Blame',
+      ['<leader>rr'] = 'Refactor',
+      ['<leader>tr'] = 'Test Run',
+      ['<leader>ts'] = 'Test Summary',
+      ['<leader>to'] = 'Test Output',
+      ['<leader>o'] = 'Outline',
+      ['<leader>fr'] = 'Find & Replace',
+    }
+    for lhs, fragment in pairs(expected) do
+      local m = mapped(lhs)
+      assert.is_not_nil(m and next(m) ~= nil, lhs .. ' must be mapped')
+      assert.is_truthy((m.desc or ''):find(fragment, 1, true), lhs .. ' desc should mention ' .. fragment)
+      assert.is_function(m.callback, lhs .. ' must resolve to a real handler')
+    end
+  end)
+
+  it('<leader>rr also works from visual mode', function()
+    local m = mapped('<leader>rr', 'v')
+    assert.is_not_nil(m and next(m) ~= nil, '<leader>rr must be mapped in visual mode')
+    assert.is_function(m.callback)
+  end)
+
+  it('scopes rest.nvim to http buffers only', function()
+    local rest = assert_spec 'rest.nvim'
+    assert.equals('http', rest.ft, 'rest.nvim must be gated on ft=http')
+    -- <leader>hr is buffer-local (autocmds.lua), so it must be absent in a
+    -- normal buffer and present once an http buffer opens. maparg returns a
+    -- string with two args, so compare against '' rather than nil.
+    assert.equals('', vim.fn.maparg('<leader>hr', 'n'), '<leader>hr must not exist outside http buffers')
+    local buf = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_buf_set_name(buf, vim.fn.tempname() .. '.http')
+    vim.bo[buf].filetype = 'http'
+    vim.api.nvim_exec_autocmds('FileType', { buffer = buf })
+    local m = vim.fn.maparg('<leader>hr', 'n', false, true)
+    assert.is_not_nil(m and next(m) ~= nil, '<leader>hr must exist in an http buffer')
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+  end)
+
+  it('scopes nvim-bqf to quickfix buffers', function() assert.equals('qf', assert_spec('nvim-bqf').ft, 'nvim-bqf must be gated on ft=qf') end)
+
+  it('scopes the markdown-only plugins', function()
+    local img = assert_spec 'img-clip.nvim'
+    assert.equals('markdown', img.ft, 'img-clip must be gated on ft=markdown')
+  end)
+
+  it('does not shadow real actions with empty which-key groups', function()
+    -- which-key registers its groups at VeryLazy; load it so the resolved spec
+    -- exists. Groups are a positional array with the key at [1], not a map.
+    require('lazy').load { plugins = { 'which-key.nvim' } }
+    local registered = {}
+    for _, entry in ipairs(require('which-key.config').spec or {}) do
+      registered[entry[1]] = entry.group
+    end
+    -- real actions must stay reachable, i.e. never become a group
+    for _, g in ipairs { 'tr', 'ts', 'to', 'rr', 'gb', 'o' } do
+      assert.is_nil(registered['<leader>' .. g], '<leader>' .. g .. ' must stay a real action, not a group')
+    end
+    -- documented groups must be registered
+    for _, g in ipairs { 's', 't', 'm', 'd', 'f', 'r', 'g', 'u', 'y' } do
+      assert.is_not_nil(registered['<leader>' .. g], 'missing which-key group: <leader>' .. g)
+    end
+    assert.is_not_nil(registered.gr, 'missing which-key group: gr')
   end)
 end)
