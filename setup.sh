@@ -189,7 +189,7 @@ fi
 step "6/7  Verify"
 if have nvim && (( ! CHECK_ONLY )); then
   info "health check:"
-  nvim --headless -c 'checkhealth config.health' -c 'qa!' 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E '^(OK|WARNING|ERROR)|- (OK|WARNING|ERROR)' | head -12 || true
+  nvim --headless -c 'checkhealth config' -c 'qa!' 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E '^(OK|WARNING|ERROR)|- (OK|WARNING|ERROR)' | head -12 || true
   info "test suites:"
   for t in test_critical_fixes test_keymaps_autocmds test_lsp_servers test_performance test_qol test_polish; do
     res=$(nvim --headless -c "lua require(\"plenary.busted\").run(\"tests/$t.lua\")" -c 'qa!' 2>&1 \
@@ -212,5 +212,5 @@ if (( ${#MISSING[@]} > 0 )) && (( CHECK_ONLY )); then
 elif (( CHECK_ONLY )); then
   echo -e "${GREEN}All checks passed.${RESET}"
 else
-  echo -e "${GREEN}Setup complete.${RESET} Open ${DIM}nvim${RESET}, run ${DIM}:checkhealth config.health${RESET} and ${DIM}:Lazy${RESET}."
+  echo -e "${GREEN}Setup complete.${RESET} Open ${DIM}nvim${RESET}, run ${DIM}:checkhealth config${RESET} and ${DIM}:Lazy${RESET}."
 fi

@@ -19,7 +19,7 @@ nvim --headless -c 'qa'   # boot smoke: must print no error/E5108/traceback
 ```
 
 stylua is not on your PATH by default: `export PATH="$HOME/.local/share/nvim/mason/bin:$PATH"`.
-In nvim, `:checkhealth config.health` is this repo's own check (`lua/config/health.lua`).
+In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`).
 
 ## Layout
 

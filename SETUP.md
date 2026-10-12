@@ -13,13 +13,13 @@ nvim  # lazy.nvim installs all plugins on first launch
 Then inside Neovim:
 
 ```
-:checkhealth config.health   # verify external tools
+:checkhealth config          # verify external tools
 :Mason                       # confirm LSPs/linters installed
 ```
 
 ## Dependencies
 
-Checked by `:checkhealth config.health`. Install what's missing:
+Checked by `:checkhealth config`. Install what's missing:
 
 | Tool | Why | Install |
 | :--- | :--- | :--- |
@@ -67,4 +67,4 @@ Leader is `<Space>`. Essentials:
 | No completions for TS/Python | `:Mason` — server missing? `vtsls`/`pyrefly` on `PATH`? `:LspInfo` |
 | Format-on-save silent on big file | Expected >1MB; use `<leader>ff` |
 | Slow startup | `:StartupTime`, then `:Lazy profile` for the culprit |
-| Plugin errors after update | `:Lazy sync`, restart, `:checkhealth config.health` |
+| Plugin errors after update | `:Lazy sync`, restart, `:checkhealth config` |
