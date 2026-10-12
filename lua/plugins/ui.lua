@@ -46,21 +46,24 @@ return {
       picker = {
         enabled = true,
         -- ponytail: replace upstream's circle git icons (staged ●,
-        -- modified ○) with check/pencil nerd glyphs. Written as
-        -- nr2char() calls — literal emoji bytes get stripped in transit,
-        -- escapes don't. 0xF00C fa-check, 0xF040 fa-pencil.
+        -- modified ○) with status nerd glyphs. Written as nr2char() calls
+        -- — literal emoji bytes get stripped in transit, escapes don't.
+        -- Every entry must be a real glyph: added/deleted/renamed shipped
+        -- as '' and rendered iconless (tests/test_ui.lua guards this).
+        -- F417 fa-tag, F067 diff_added, F068 diff_removed, F059 fa-eye-slash,
+        -- F111 fa-code-fork (rename), F071 diff_type_change (unmerged).
         icons = {
           git = {
             enabled = true,
-            commit = ' ',
+            commit = vim.fn.nr2char(0xF417),
             staged = vim.fn.nr2char(0xF00C),
-            added = '',
-            deleted = '',
-            ignored = ' ',
+            added = vim.fn.nr2char(0xF067),
+            deleted = vim.fn.nr2char(0xF068),
+            ignored = vim.fn.nr2char(0xF059),
             modified = vim.fn.nr2char(0xF040),
-            renamed = '',
-            unmerged = ' ',
-            untracked = '?',
+            renamed = vim.fn.nr2char(0xF111),
+            unmerged = vim.fn.nr2char(0xF071),
+            untracked = vim.fn.nr2char(0xF059),
           },
         },
         -- ponytail: show dotfiles (.env, .gitignore) + gitignored in the
