@@ -110,17 +110,5 @@ describe('modular split', function()
     local ff = vim.fn.maparg('<leader>ff', 'n', false, true)
     assert.is_not_nil(ff and (ff.callback or ff.rhs) and ff, '<leader>ff should be mapped')
   end)
-
-  it('startup stays fast (nested headless --startuptime < 2s)', function()
-    local log = '/tmp/modular_startup.log'
-    vim.fn.system('nvim --headless --startuptime ' .. log .. ' +q')
-    local lines = vim.fn.readfile(log)
-    local total = nil
-    for _, l in ipairs(lines) do
-      local ms = l:match '^(%S+)%s+%S+: %-%-%- NVIM STARTED %-%-%-$'
-      if ms then total = tonumber(ms) end
-    end
-    assert.is_not_nil(total, 'startup log should contain NVIM STARTED')
-    assert.is_true(total < 2000, string.format('startup %.1fms should be < 2000ms', total))
-  end)
+  -- startup budget lives in tests/test_startup.lua (real median gate, not <2000ms)
 end)
