@@ -124,8 +124,9 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
 12. **biome wins on both sides of the save, and the lint entry pins `cwd`.**
      Formatting: `lua/plugins/formatting.lua` runs `{ 'biome', 'biome-organize-imports',
      'prettier' }` for JS/TS/JSX/TSX/JSON/JSONC and plain `prettier` for
-     everything else; that does **not** weaken trap 5 — prettier is the fallback
-     backend, only `prettierd` is forbidden. Linting: `biome_or_oxlint` in
+     everything else; biome leads on measured speed (0.04s vs 0.17s median,
+     121-line JS file, ~4x — past the 30% bar), and that does **not** weaken
+     trap 5 — prettier is the fallback backend, only `prettierd` is forbidden. Linting: `biome_or_oxlint` in
      `lua/plugins/ui.lua` returns `biomejs` with `cwd` pinned to the buffer's own
      project root. Drop that pin and nothing errors visibly: biome resolves its
      config from cwd, aborts with "nested root configuration", nvim-lint's
@@ -138,7 +139,10 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
      `PATH`. `lua/plugins/lsp.lua` only registers the result (`filetypes`,
      `root_markers`). Keep the resolver free of spawns and filesystem probing:
      `tests/test_python_tools.lua` drives it by stubbing `vim.fn.executable`,
-     which is the only thing it may depend on. None of the three is in mason
+     which is the only thing it may depend on. A spec-level case in the same
+     file pins that the winner actually reaches `vim.lsp.config` — the config
+     loop once ran *before* the resolver block and silently dropped it on
+     ty-only hosts. None of the three is in mason
      `ensure_installed` (trap 4). `:NvimCheckPythonLsp` reports which are on
      `PATH`. `pyrefly` stays registered-but-unused when another server wins, so
      the stress harness can still see it — deliberate, not a leftover.

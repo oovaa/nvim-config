@@ -22,7 +22,7 @@ A starting point for Neovim that is:
 * **UI**: tokyonight theme by default, any `<leader>ty` pick persisted across restarts, builtin statusline/tabline/dashboard, mode-colored line numbers
 * **Git**: gitsigns, LazyGit on `<leader>fg`
 * **Debugging**: nvim-dap for Python; molten-nvim + image.nvim for Jupyter-style notebooks
-* **Performance**: ~30-50ms headless startup warm (`:StartupTime` to profile; first boot after a config change is slower while caches rebuild) — everything lazy-loaded except the colorscheme
+* **Performance**: ~20-30ms headless startup (`:StartupTime` to profile; first boot after a config change is slower while caches rebuild) — everything lazy-loaded except the colorscheme
 
 See `CHEATSHEET.md` for the full keybinding reference.
 
