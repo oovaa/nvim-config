@@ -1132,11 +1132,14 @@ do
   )
   H.pass('integrity: modules checked', ('%d'):format(vim.tbl_count(mods)))
 
+  local unmapped -- source-declared commands that no live mapping points at
   H.t('integrity: every command the config binds to exists', function()
     -- A plugin whose checkout is missing its entry point loads silently and then
     -- every keymap bound to it raises E492 (molten-nvim v1.9.2 did: its commands
     -- live in rplugin/ and only exist after :UpdateRemotePlugins). Report
     -- the cause once instead of one failure per key.
+    -- Only a *bound* command can raise E492: a spec whose `cond` is false never
+    -- loads, so nothing is bound and those commands are counted, not failed.
     require('lazy').load { plugins = vim.tbl_map(function(p) return p.name end, require('lazy').plugins()) }
     local cmds = {}
     for _, f in ipairs(H.lua_files()) do
@@ -1150,13 +1153,36 @@ do
         end
       end
     end
-    local missing = {}
+    -- what a real keymap points at right now. lazy.nvim holds `keys =` specs
+    -- behind an expr handler (rhs comes back nil) and swaps in the spec's own
+    -- `<Cmd>…<CR>` rhs once it has loaded the owner — the load above does that.
+    local bound = {}
+    for _, mode in ipairs { 'n', 'v', 'x', 's', 'o', 'i', 'c', 't' } do
+      for _, m in ipairs(vim.api.nvim_get_keymap(mode)) do
+        for c in tostring(m.rhs or ''):gmatch '<[Cc]md>([%w_]+)' do
+          bound[c] = true
+        end
+      end
+    end
+    local missing, unmapped_cmds = {}, {}
     for c in pairs(cmds) do
-      if vim.fn.exists(':' .. c) == 0 then missing[#missing + 1] = c end
+      if vim.fn.exists(':' .. c) == 0 then
+        if bound[c] then
+          missing[#missing + 1] = c
+        else
+          unmapped_cmds[#unmapped_cmds + 1] = c
+        end
+      end
     end
     table.sort(missing)
-    return #missing == 0 or ('not defined by any loaded plugin: ' .. table.concat(missing, ', '))
+    table.sort(unmapped_cmds)
+    unmapped = unmapped_cmds
+    return #missing == 0 or ('bound but not defined by any loaded plugin: ' .. table.concat(missing, ', '))
   end)
+  H.pass(
+    'integrity: commands declared in conditionally-loaded specs (nothing bound them)',
+    ('%d commands skipped: %s'):format(#(unmapped or {}), table.concat(unmapped or {}, ', '))
+  )
   H.t('integrity: nvim-treesitter is on the main branch rewrite', function()
     local p = require('lazy.core.config').plugins['nvim-treesitter']
     if not p then return 'nvim-treesitter is not installed' end
