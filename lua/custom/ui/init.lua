@@ -6,9 +6,9 @@
 local M = {}
 
 function M.setup()
-  pcall(function() require('custom.ui.spec').setup_lualine() end)
-  pcall(function() require('custom.ui.spec').setup_bufferline() end)
-  pcall(function() require('custom.ui.spec').setup_starter() end)
+  pcall(function() require('custom.ui.statusline').setup_lualine() end)
+  pcall(function() require('custom.ui.tabline').setup_bufferline() end)
+  pcall(function() require('custom.ui.dashboard').setup_starter() end)
 end
 
 return M
