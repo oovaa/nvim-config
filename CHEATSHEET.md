@@ -113,8 +113,11 @@ Press `<leader>e` to toggle the file explorer. Inside it:
 | `<leader>yd` | Yank all diagnostics on current line | built-in |
 | `<leader>uc` | Toggle colorizer (inline color previews) | `colorizer` |
 | `<leader>us` | Toggle spell checking | built-in |
+| `<leader>uw` | Toggle line wrap | built-in |
+| `<leader>tb` | Toggle dark/light background | built-in |
 | `<leader>ur` | Reload config | built-in |
 | `<leader>fy` | Yank file path (count = absolute) | built-in |
+| `<leader>R` / `<leader>rf` | Run current file (bun / python3 / gcc) | built-in |
 | `:DiffOrig` | Diff buffer against saved file | built-in |
 | `<leader>ff` | Format buffer | `conform.nvim` |
 | `<leader>fe` | File explorer | `snacks.nvim` |
@@ -136,6 +139,9 @@ Press `<leader>e` to toggle the file explorer. Inside it:
 | `<leader>fg` | Open LazyGit (floating window) | built-in |
 | `[c` | Previous Hunk | `gitsigns` |
 | `]c` | Next Hunk | `gitsigns` |
+| `<leader>gd` | Diff buffer against index (split) | `gitsigns` |
+| `<leader>gp` | Preview hunk under cursor | `gitsigns` |
+| `<leader>gt` | Toggle showing deleted lines | `gitsigns` |
 
 ## 🧠 LSP (Language Server Protocol)
 
@@ -152,6 +158,7 @@ Press `<leader>e` to toggle the file explorer. Inside it:
 | `gO` | Open Document Symbols |
 | `gW` | Open Workspace Symbols |
 | `<leader>th` | Toggle Inlay Hints |
+| `<leader>lr` | Restart LSP servers on this buffer |
 
 ## ✂️ Text Objects & Surround (`mini.nvim`)
 
