@@ -138,6 +138,12 @@ vim.keymap.set('n', '<leader>lr', '<cmd>lsp restart<cr>', { desc = '[L]SP [R]est
 vim.keymap.set('n', '<S-h>', '<cmd>bprev<cr>', { desc = 'Prev Buffer' })
 vim.keymap.set('n', '<S-l>', '<cmd>bnext<cr>', { desc = 'Next Buffer' })
 vim.keymap.set('n', '<leader>bd', '<cmd>bdelete<cr>', { desc = '[B]uffer [D]elete' })
+-- Pin = the buffer drops out of :bnext/:ls but stays open, so `:bd`/`<S-h>`
+-- reach it. Nothing renders the pin: the state lives in 'buflisted' alone.
+vim.keymap.set('n', '<leader>bp', function()
+  vim.bo.buflisted = not vim.bo.buflisted
+  vim.notify('Buffer ' .. (vim.bo.buflisted and 'pinned' or 'unpinned'), vim.log.levels.INFO)
+end, { desc = '[B]uffer [P]in toggle' })
 
 -- Cmdline pum: keep <Up>/<Down> as history navigation. With auto-shown
 -- completion (:h cmdline-autocompletion) they would otherwise select matches;
