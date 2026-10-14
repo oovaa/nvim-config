@@ -299,27 +299,10 @@ return {
       }
 
       -- Add the selected Python LSP without making it a required Mason install.
+      -- The ladder itself (which binary wins) lives in config/python_lsp.lua so
+      -- tests/test_python_tools.lua can drive it without this whole spec.
       do
-        local python_server = nil
-        if vim.fn.executable 'ty' == 1 then
-          python_server = {
-            name = 'ty',
-            cmd = { 'ty', 'server' },
-            settings = nil,
-          }
-        elseif vim.fn.executable 'pyrefly' == 1 then
-          python_server = {
-            name = 'pyrefly',
-            cmd = { 'pyrefly', 'lsp' },
-            settings = { python = { pyrefly = { typeCheckingMode = 'default' } } },
-          }
-        elseif vim.fn.executable 'pyright-langserver' == 1 then
-          python_server = {
-            name = 'pyright',
-            cmd = { 'pyright-langserver', '--stdio' },
-            settings = nil,
-          }
-        end
+        local python_server = require('config.python_lsp').resolve()
         if python_server then
           servers[python_server.name] = {
             cmd = python_server.cmd,
@@ -353,11 +336,7 @@ return {
       end
 
       vim.api.nvim_create_user_command('NvimCheckPythonLsp', function()
-        local candidates = { 'ty', 'pyrefly', 'pyright-langserver' }
-        local found = {}
-        for _, c in ipairs(candidates) do
-          if vim.fn.executable(c) == 1 then found[#found + 1] = c end
-        end
+        local found = require('config.python_lsp').installed()
         if #found > 0 then
           vim.notify('Python LSP available: ' .. table.concat(found, ', '))
         else
