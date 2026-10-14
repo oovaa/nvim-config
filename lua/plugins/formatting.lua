@@ -3,14 +3,13 @@
 -- Split from init.lua (see SECTION INDEX there). Comments kept verbatim.
 
 -- Shared values for plugin specs below.
--- conform fallback chain for all web languages.
--- ponytail: `prettier` only. prettierd's node cold start measured 850-2300ms
--- inside nvim on this box (vs 270-470ms for plain prettier, and 316ms for a
--- *warm* prettierd), so it blew the save timeout on the first save of every
--- session and reported "Formatter failed" while formatting nothing. It also
--- leaves an orphan daemon per session. Re-add 'prettierd' in front of
--- 'prettier' if a node start ever gets under ~200ms here.
+-- conform chain for web languages. prettier remains the compatibility backend;
+-- biome is allowed for JS/TS/JSON where it is installed, prettier stays in the
+-- chain as fallback/import-less environments still work.
+-- ponytail: `prettier` only historically. prettierd is deliberately excluded
+-- because its cold start measured 850-2300ms here.
 local prettier = { 'prettier' }
+local biome = { 'biome', 'biome-organize-imports', 'prettier' }
 
 ---@module 'lazy'
 ---@type LazySpec
@@ -119,13 +118,15 @@ return {
       formatters_by_ft = {
         python = { 'ruff_organize_imports', 'ruff_format' },
         -- Prefer prettier (matches .prettierrc in projects; biome ignores it)
-        javascript = prettier,
-        typescript = prettier,
-        javascriptreact = prettier,
-        typescriptreact = prettier,
+        -- biome primary + prettier retained (conform picks whichever is
+        -- configured first and usable; see conform formatters_by_ft behavior)
+        javascript = biome,
+        typescript = biome,
+        javascriptreact = biome,
+        typescriptreact = biome,
+        json = biome,
+        jsonc = biome,
         vue = prettier,
-        json = prettier,
-        jsonc = prettier,
         html = prettier,
         css = prettier,
         scss = prettier,
