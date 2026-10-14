@@ -25,13 +25,14 @@ return {
       -- with, so the FileType autocmd below usually finds them already built.
       -- Scheduled after startup so no buffer open waits on a compile, pcall'd so
       -- a missing toolchain is a debug line and not an error, and attempted at
-      -- most once per session (vim.g survives <leader>ur; the table is keyed by
-      -- a fixed language list, so it cannot grow per reload).
-      -- ponytail: no executable detection here — the treesitter grammars are C,
-      -- so only a C compiler matters, and TSInstall's pcall covers its absence.
+      -- most once per session (vim.g survives <leader>ur; the table only ever gains
+      -- one key per language, so it cannot grow per reload).
+      -- ponytail: no executable detection here — nvim-treesitter compiles every
+      -- grammar with the tree-sitter CLI, and TSInstall's pcall covers its
+      -- absence; :checkhealth config reports a missing CLI.
       -- shortcut: one flat install attempt per language per session, with no
-      -- compiler probe — check `cc` per language when you need preconditions.
-      -- Headless is skipped: nothing to highlight and it would only cost time.
+      -- toolchain probe — check `tree-sitter` per language when you need
+      -- preconditions. Headless is skipped: nothing to highlight to save time.
       vim.g.treesitter_bootstrap = vim.g.treesitter_bootstrap or {}
       vim.defer_fn(function()
         if #vim.api.nvim_list_uis() == 0 then return end
