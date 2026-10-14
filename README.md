@@ -15,10 +15,10 @@ A starting point for Neovim that is:
 
 ## Features
 
-* **LSP**: vtsls (fast TypeScript), pyrefly (Python), lua_ls, oxlint, Dockerfile + docker-compose servers — all with completions via [blink.cmp](https://github.com/Saghen/blink.cmp)
-* **Formatting**: [conform.nvim](https://github.com/stevearc/conform.nvim) on save (prettierd, stylua, ruff)
-* **Fuzzy finding**: snacks picker — files, grep, symbols (`<leader>ls` document / `<leader>lS` workspace), projects (Telescope kept for bookmarks + `vim.ui.select`)
-* **Explorer**: snacks explorer on `<leader>e` (`:Neotree` fallback)
+* **LSP**: vtsls (fast TypeScript), a Python server picked from `ty` / `pyrefly` / `pyright-langserver`, lua_ls, oxlint + biome, Dockerfile + docker-compose servers — all with completions via [blink.cmp](https://github.com/Saghen/blink.cmp)
+* **Formatting**: [conform.nvim](https://github.com/stevearc/conform.nvim) on save (biome + prettier, stylua, ruff)
+* **Fuzzy finding**: snacks picker — files, grep, symbols (`<leader>ls` document / `<leader>lS` workspace), projects, and `vim.ui.select` (code actions, quickfix, mason)
+* **Explorer**: snacks explorer on `<leader>e`
 * **UI**: tokyonight theme by default, any `<leader>ty` pick persisted across restarts, builtin statusline/tabline/dashboard, mode-colored line numbers
 * **Git**: gitsigns, LazyGit on `<leader>fg`
 * **Debugging**: nvim-dap for Python; molten-nvim + image.nvim for Jupyter-style notebooks
@@ -51,11 +51,11 @@ running Neovim for the first time.
 **Required (checked by `:checkhealth`):**
 - [Neovim](https://github.com/neovim/neovim/releases) **>= 0.12** (health check
   enforces >= 0.11, but this config relies on 0.12 APIs)
-- `git`, `make`, `unzip`, `curl` — basic build/utils used by plugins (e.g. telescope-fzf-native)
-- A C compiler (`gcc`/`clang`) — needed to compile `telescope-fzf-native.nvim`
+- `git`, `make`, `unzip`, `curl` — basic build/utils used by plugins
+- A C compiler (`gcc`/`clang`) — needed to build tree-sitter parsers and other plugin native code
 - [ripgrep](https://github.com/BurntSushi/ripgrep#installation) (`rg`) — fuzzy
-  finding / grep backend for Telescope
-- [fd](https://github.com/sharkdp/fd#installation) (`fd`) — file finder backend for Telescope
+  finding / grep backend for the snacks picker
+- [fd](https://github.com/sharkdp/fd#installation) (`fd`) — file finder backend for the snacks picker
 
 **Strongly recommended:**
 - A [Nerd Font](https://www.nerdfonts.com/) **is required** for this config —
@@ -65,7 +65,10 @@ running Neovim for the first time.
 - A clipboard tool: `xclip` (X11), `wl-clipboard` (Wayland), or `win32yank`
   (Windows). The config sets `clipboard = 'unnamedplus'`.
 - [tree-sitter CLI](https://github.com/tree-sitter/tree-sitter/blob/master/crates/cli/README.md#installation)
-  — handy for parsing/debugging; `:TSInstall` works without it but some flows use it.
+  — **required**, not optional: `nvim-treesitter` is on the `main` branch, where
+  no grammar ships prebuilt, so `:TSInstall` shells out to `tree-sitter build`
+  for every language. It is deliberately *not* installed via Mason (Mason's
+  `bin` dir would shadow it on `PATH`).
 
 **For the bundled extra plugins:**
 - [`molten-nvim`](https://github.com/benlubas/molten-nvim) + interactive code
@@ -73,13 +76,16 @@ running Neovim for the first time.
   ```sh
   pip install pynvim jupyter ipykernel
   ```
+  It also ships its commands as a *remote plugin*, so run `:UpdateRemotePlugins`
+  once and then **restart** Neovim — until the manifest lists molten, the
+  `<leader>m*` keys raise `E492`.
 - [`image.nvim`](https://github.com/3rd/image.nvim) renders images and is
   configured with the **`kitty` backend** — images only render in a
   [kitty](https://sw.kovidgoyal.net/kitty/) (or compatible) terminal.
 
 **Language tooling (installed automatically via Mason on first run):**
 - [Mason](https://github.com/mason-org/mason.nvim) installs most LSP servers,
-  linters and formatters for you (lua_ls, ruff, eslint, prettier, debugpy, ...).
+  linters and formatters for you (lua_ls, ruff, oxlint, prettier, stylua, ...).
   For the languages you use, have the matching toolchain available:
   - Go: `go`
   - Python: `python3`
@@ -94,11 +100,20 @@ running Neovim for the first time.
   ```sh
   npm install -g @vtsls/language-server
   ```
-- [`pyrefly`](https://github.com/facebook/pyrefly) — Python LSP, installed via
-  Homebrew/Linuxbrew (Mason's auto-install skips it):
+- [`@biomejs/biome`](https://biomejs.dev) — JS/TS/JSON formatter (leads the
+  conform chain, prettier is the fallback) and linter in biome-configured
+  projects:
+  ```sh
+  bun add -g @biomejs/biome   # or npm i -g @biomejs/biome
+  ```
+- A Python LSP — the config takes the first of `ty`, `pyrefly`,
+  `pyright-langserver` it finds on `PATH` at load time; run `:NvimCheckPythonLsp`
+  to see which are available:
   ```sh
   brew install pyrefly
   ```
+- [`tree-sitter`](https://github.com/tree-sitter/tree-sitter) CLI — builds every
+  parser (see above). Mason is skipped so it can't shadow your own binary.
 
 **Recommended:**
 - [bun](https://bun.sh) — `<leader>R` (code_runner) executes JS/TS with `bun`.
@@ -227,19 +242,6 @@ After installing all the dependencies continue with the [Install Kickstart](#ins
 
 #### Windows Installation
 
-<details><summary>Windows with Microsoft C++ Build Tools and CMake</summary>
-Installation may require installing build tools and updating the run command for `telescope-fzf-native`
-
-See `telescope-fzf-native` documentation for [more details](https://github.com/nvim-telescope/telescope-fzf-native.nvim#installation)
-
-This requires:
-
-- Install CMake and the Microsoft C++ Build Tools on Windows
-
-```lua
-{'nvim-telescope/telescope-fzf-native.nvim', build = 'cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release && cmake --install build --prefix build' }
-```
-</details>
 <details><summary>Windows with gcc/make using chocolatey</summary>
 Alternatively, one can install gcc and make which don't require changing the config,
 the easiest way is to use choco:
