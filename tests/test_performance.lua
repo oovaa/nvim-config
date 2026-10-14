@@ -138,42 +138,85 @@ describe('performance', function()
     )
   end)
 
+  -- A real buffer with a real filetype: `noautocmd setlocal` keeps the rest of
+  -- the FileType chain (LSP, ftplugins) out of the unit test. Never call this
+  -- with vim.cmd stubbed — the stub would swallow the `:setlocal`.
+  local function ft_buffer(kb, ft)
+    local name = vim.fn.tempname() .. '.' .. ft
+    vim.fn.writefile({ string.rep('x', kb * 1024) }, name) -- size is the point
+    local buf = vim.api.nvim_create_buf(false, false)
+    vim.api.nvim_buf_set_name(buf, name)
+    vim.api.nvim_buf_call(buf, function() vim.cmd('noautocmd setlocal filetype=' .. ft) end)
+    return buf, name
+  end
+
+  -- Fire the real FileType handler with its two side effects stubbed out:
+  -- :TSInstall builds a parser over the network on a parser-less runner, and
+  -- vim.treesitter.start asserts a parser exists. Restored even if it throws.
+  local function fire_treesitter(buf)
+    local rec = { started = {}, installed = {} }
+    local real_start, real_cmd = vim.treesitter.start, vim.cmd
+    local ok, err = pcall(function()
+      vim.treesitter.start = function(b) rec.started[#rec.started + 1] = b end
+      vim.cmd = function(c)
+        if tostring(c):match '^TSInstall' then rec.installed[#rec.installed + 1] = tostring(c) end
+      end
+      vim.api.nvim_exec_autocmds('FileType', { group = 'treesitter-start', buffer = buf })
+    end)
+    vim.treesitter.start, vim.cmd = real_start, real_cmd
+    if not ok then error(err) end
+    return rec
+  end
+
   it('starts treesitter on a normal buffer but not on one over the 200KB cap', function()
     require('lazy').load { plugins = { 'nvim-treesitter' } }
-    -- What is under test is the size guard, so record the two calls it sits
-    -- between instead of making them: :TSInstall builds a parser over the
-    -- network on a parser-less runner, and vim.treesitter.start asserts one.
-    local started, installed, bufs, files = {}, {}, {}, {}
-    local real_start, real_cmd = vim.treesitter.start, vim.cmd
-    vim.treesitter.start = function(buf) started[#started + 1] = buf end
-    vim.cmd = function(c)
-      -- a FileType handler runs with its own buffer current
-      if tostring(c):match '^TSInstall' then installed[#installed + 1] = vim.api.nvim_get_current_buf() end
-    end
-
-    local function open(kb)
-      local name = vim.fn.tempname() .. '.lua'
-      vim.fn.writefile({ string.rep('x', kb * 1024) }, name) -- size is the point
-      local buf = vim.api.nvim_create_buf(false, false)
-      vim.api.nvim_buf_set_name(buf, name)
-      vim.api.nvim_buf_call(buf, function() vim.cmd 'noautocmd setlocal filetype=lua' end)
-      vim.api.nvim_exec_autocmds('FileType', { group = 'treesitter-start', buffer = buf })
-      bufs[#bufs + 1], files[#files + 1] = buf, name
-      return buf
-    end
     -- the treesitter cap (200KB) is stricter than large_file_size (1 MiB)
-    local big, small = open(256), open(8)
+    local big, big_name = ft_buffer(256, 'lua')
+    local small, small_name = ft_buffer(8, 'lua')
+    local on_big, on_small = fire_treesitter(big), fire_treesitter(small)
+    pcall(vim.api.nvim_buf_delete, big, { force = true })
+    pcall(vim.api.nvim_buf_delete, small, { force = true })
+    vim.fn.delete(big_name)
+    vim.fn.delete(small_name)
 
-    vim.treesitter.start, vim.cmd = real_start, real_cmd -- restore before asserting
-    for _, buf in ipairs(bufs) do
-      pcall(vim.api.nvim_buf_delete, buf, { force = true })
-    end
-    for _, f in ipairs(files) do
-      vim.fn.delete(f)
-    end
+    assert.same({ small }, on_small.started, 'the small buffer must start highlighting')
+    assert.same({}, on_big.started, 'the oversized buffer must not start highlighting')
+  end)
 
-    assert.same({ small }, started, 'only the small buffer may start highlighting')
-    assert.is_false(vim.tbl_contains(installed, big), 'the oversized buffer must not reach the install path')
+  it('attempts a parser install at most once per language per session', function()
+    require('lazy').load { plugins = { 'nvim-treesitter' } }
+    -- :TSInstall only runs for a language with no parser built, so drive one
+    -- this box has not built (none of these are in the 16-language bootstrap)
+    local site = vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser')
+    local lang
+    for _, l in ipairs { 'sh', 'elixir', 'scala', 'haskell' } do
+      if vim.uv.fs_stat(vim.fs.joinpath(site, l .. '.so')) == nil then
+        lang = l
+        break
+      end
+    end
+    assert.is_not_nil(lang, 'test premise: one of these languages must have no parser built')
+
+    local marked, marked_name = ft_buffer(1, lang)
+    -- seed the attempt state the way the config writes it: vim.g hands out a
+    -- copy of a dict global, so the whole table goes back, not just one key
+    local marks = vim.g.treesitter_bootstrap or {}
+    marks[lang] = true -- already attempted this session
+    vim.g.treesitter_bootstrap = marks
+    local after_mark = fire_treesitter(marked)
+    local fresh, fresh_name = ft_buffer(1, lang)
+    marks[lang] = nil
+    vim.g.treesitter_bootstrap = marks
+    local after_clear = fire_treesitter(fresh)
+    marks[lang] = nil -- leave no state for the rest of the run
+    vim.g.treesitter_bootstrap = marks
+    pcall(vim.api.nvim_buf_delete, marked, { force = true })
+    pcall(vim.api.nvim_buf_delete, fresh, { force = true })
+    vim.fn.delete(marked_name)
+    vim.fn.delete(fresh_name)
+
+    assert.same({}, after_mark.installed, 'a language already attempted must not be installed again')
+    assert.same({ 'TSInstall ' .. lang }, after_clear.installed, 'an unattempted language installs once, by base name')
   end)
 
   it('keeps nvim-ts-autotag scoped to markup filetypes', function()
