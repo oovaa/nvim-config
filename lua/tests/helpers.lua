@@ -78,4 +78,17 @@ function M.slowest(log, n)
   return out
 end
 
+--- Counts autocmds grouped by named augroup from `vim.api.nvim_get_autocmds({})`.
+--- Returns table mapping augroup name -> count. Anonymous (`''`) groups included
+--- so a missing clear group shows up as growth, but the test asserts tracked
+--- groups are non-empty strings (Neovim permits empty-string groups).
+function M.autocmd_count()
+  local counts = {}
+  for _, ac in ipairs(vim.api.nvim_get_autocmds {}) do
+    local group = ac.group_name or ac.group or ''
+    counts[group] = (counts[group] or 0) + 1
+  end
+  return counts
+end
+
 return M
