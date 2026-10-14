@@ -4,8 +4,9 @@
 
 -- Shared values for plugin specs below.
 -- conform chain for web languages. prettier remains the compatibility backend;
--- biome is allowed for JS/TS/JSON where it is installed, prettier stays in the
--- chain as fallback/import-less environments still work.
+-- biome leads for JS/TS/JSON where installed: measured 0.04s vs prettier 0.17s
+-- median (7 runs each, 121-line JS file, this machine) — ~4x, past the 30% bar.
+-- prettier stays in the chain as fallback/import-less environments still work.
 -- ponytail: `prettier` only historically. prettierd is deliberately excluded
 -- because its cold start measured 850-2300ms here.
 local prettier = { 'prettier' }
