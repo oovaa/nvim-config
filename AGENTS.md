@@ -51,13 +51,18 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
    `tests/stress.lua` sources `$MYVIMRC` 4x and fails on any autocmd/keymap growth.
 3. **No lockfile is committed** (`.gitignore` has `lazy-lock.json`), so CI's
    `lazy.sync()` picks up whatever upstream released. Known case: `molten-nvim`
-   v1.9.2 ships no `plugin/` and no `lua/molten/init.lua` *by design* — its 41
-   commands come from `rplugin/python3/molten` and only exist after
-   `:UpdateRemotePlugins`, which silently registers nothing when the pynvim host
-   can't `import jupyter_client` (the spec's `build` runs it; that python needs
-   `jupyter_client` + `ipykernel`). So if all 9 `<leader>m*` keys raise `E492`,
-   check `:command Molten` and remote-plugin registration before touching the spec.
-   Upstream also renamed `MoltenHide` → `MoltenHideOutput` (config binds the new name).
+   v1.9.2 ships no `plugin/` and no `lua/molten/init.lua` *by design* — its
+   commands come from the **manifest**, not from python: startup sources
+   `stdpath('data')/rplugin.vim` (written by `:UpdateRemotePlugins`), which
+   calls `remote#host#RegisterPlugin('python3', ...)` and *defines* the 41 specs
+   (24 commands, 17 functions). No `import jupyter_client` happens at
+   registration — python only runs when a command is invoked. The spec's `cond`
+   therefore just greps that manifest for `molten`
+   (`lua/custom/plugins/init.lua`); it is evaluated **once**, at
+   `lazy.setup()`, so after `:UpdateRemotePlugins` (the spec's `build`) you must
+   **restart** — reloading won't turn the spec on. If all 9 `<leader>m*` keys
+   raise `E492`, check `:command Molten` and the manifest before touching the
+   spec. Upstream also renamed `MoltenHide` → `MoltenHideOutput` (config binds the new name).
 4. **mason cannot install Python packages on this host** (`python3` has no
    `ensurepip`). `debugpy` and `nginx-config-formatter` are deliberately left out
    of `ensure_installed`, with comments, in `lua/plugins/lsp.lua` and
@@ -73,6 +78,10 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
    (`snacks/init.lua:219`). A monkey-patch installed at startup is dead by the
    first notification — see the throttle in `init.lua` for the re-wrap pattern.
    Also `require('snacks.config')` does not exist; use `require('snacks').config`.
+   Its own `picker.ui_select` option is *not* what wires `vim.ui.select` here:
+   snacks installs that only from its `UIEnter` setup, which never fires
+   headless, so the snacks spec's `config` in `lua/plugins/ui.lua` assigns
+   `vim.ui.select` explicitly right after `setup()`.
 7. **0.12-only options are set unguarded** in `lua/config/options.lua`
    (`smoothscroll`, `winborder`, `inccommand = 'split'`) and CI pins nvim v0.12.6.
    A pre-0.11 option needs a guard. Related trap that already bit:
@@ -81,16 +90,29 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
 8. **Highlight columns are byte offsets, not display cells.**
    `nvim_buf_add_highlight` takes byte cols, so a nerd glyph advances by `#icon`,
    not `strdisplaywidth(icon)` (3 bytes vs 1 cell). See the dashboard in
-   `lua/custom/ui/spec.lua`.
+   `lua/custom/ui/dashboard.lua`; `lua/custom/ui/spec.lua` is only a compat
+   facade that re-exports it. Statusline and tabline are its siblings
+   (`statusline.lua`, `tabline.lua`) in the same directory.
 9. **`nvim-treesitter` is pinned to `branch = 'main'`** (the rewrite), so
    `nvim-treesitter.{query,configs,parsers}` no longer exist. mini.ai and
    mini.surround silently lose treesitter support (all their uses are `pcall`-guarded),
    nvim-ts-autotag degrades. Don't add plugins that need the master-branch API.
+   On `main` there is no prebuilt grammar: every `:TSInstall` shells out to
+   `system({ 'tree-sitter', 'build', '-o', 'parser.so' })`
+   (`nvim-treesitter/lua/nvim-treesitter/install.lua:305`), so **the tree-sitter
+   CLI is the gate, not `cc`** — without it the build dies at spawn however good
+   the C toolchain is. `cc` is still needed one level down (the CLI compiles).
+   Mason is deliberately *not* asked for `tree-sitter-cli`: `mason.setup()` puts
+   `mason/bin` on `PATH` (`mason/init.lua:25`), so its copy would silently
+   shadow the homebrew CLI this host actually uses.
 10. **Sessions** are named `<escaped-cwd>-<sha256[:8]>.vim` under
     `stdpath('data')/sessions`; the trailing-slash and `%`-collision cases are
-    handled in `session_file_for` (`lua/config/sessions.lua`), which the dashboard
-    `s` picker also calls via `_G._builtin_session_file` — keep them in sync.
-    `~/`, `~/Downloads`, `/etc`, `/tmp` are suppressed (exact match, not subdirs).
+    handled in `session_file_for` (`lua/config/sessions.lua`). **The module is
+    canonical**: the dashboard `s` picker resolves `config.sessions` first and
+    only falls back to `_G._builtin_find_session` / `_G._builtin_session_files`
+    (`custom/ui/dashboard.lua`), which are plain aliases kept for the stress
+    harness and legacy reload callers — don't "fix" the picker back onto the
+    `_G` names. `~/`, `~/Downloads`, `/etc`, `/tmp` are suppressed (exact match, not subdirs).
 11. **Auto-save and format-on-save are coupled across insert mode.** `defer_save`
     includes `TextChanged`, so normal-mode edits — and mid-insert pauses — save
     without leaving insert mode; `format_on_save` returns nil while the mode is
@@ -98,6 +120,22 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
     selection shifts its anchors, so the next keystroke deletes code), or `R*`
     (replace), because those writes must stay raw (formatting a half-typed
     line reflows it and jumps the cursor). Don't remove one side without the other.
+12. **biome wins on both sides of the save, and the lint entry pins `cwd`.**
+     Formatting: `lua/plugins/formatting.lua` runs `{ 'biome', 'biome-organize-imports',
+     'prettier' }` for JS/TS/JSX/TSX/JSON/JSONC and plain `prettier` for
+     everything else; that does **not** weaken trap 5 — prettier is the fallback
+     backend, only `prettierd` is forbidden. Linting: `biome_or_oxlint` in
+     `lua/plugins/ui.lua` returns `biomejs` with `cwd` pinned to the buffer's own
+     project root. Drop that pin and nothing errors visibly: biome resolves its
+     config from cwd, aborts with "nested root configuration", nvim-lint's
+     `ignore_exitcode` swallows the exit 1, and the buffer just gets zero
+     diagnostics.
+13. **The Python LSP is a ladder, not a fixed server.** `lua/plugins/lsp.lua`
+     picks at load time with `vim.fn.executable`: `ty` → `pyrefly` →
+     `pyright-langserver`, first hit wins, and none of the three is in mason
+     `ensure_installed` (trap 4). `:NvimCheckPythonLsp` reports which are on
+     `PATH`. `pyrefly` stays registered-but-unused when another server wins, so
+     the stress harness can still see it — deliberate, not a leftover.
 
 ## Conventions
 
