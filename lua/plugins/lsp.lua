@@ -277,7 +277,7 @@ return {
       vim.defer_fn(function()
         if vim.g.nvim_disable_mason then return end
         if #vim.api.nvim_list_uis() == 0 then return end -- headless
-        if vim.fn.has('gui_running') == 0 and not (vim.env.TERM and #vim.env.TERM > 0) then return end
+        if vim.fn.has 'gui_running' == 0 and not (vim.env.TERM and #vim.env.TERM > 0) then return end
         require('mason-tool-installer').setup { ensure_installed = ensure_installed }
       end, 250)
 

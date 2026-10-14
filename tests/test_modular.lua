@@ -122,9 +122,9 @@ end)
 
 describe('ui split modules', function()
   it('statusline, tabline, dashboard load independently and set up', function()
-    local statusline = require('custom.ui.statusline')
-    local tabline = require('custom.ui.tabline')
-    local dashboard = require('custom.ui.dashboard')
+    local statusline = require 'custom.ui.statusline'
+    local tabline = require 'custom.ui.tabline'
+    local dashboard = require 'custom.ui.dashboard'
     assert.is_table(statusline)
     assert.is_table(tabline)
     assert.is_table(dashboard)

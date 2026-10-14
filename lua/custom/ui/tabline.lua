@@ -1,6 +1,6 @@
 ---@module 'custom.ui.tabline'
 local M = {}
-local statusline = require('custom.ui.statusline')
+local statusline = require 'custom.ui.statusline'
 
 -- builtin tabline (replaces bufferline.nvim) — buffers as tabs, diagnostics + modified dot
 function M.setup_bufferline()

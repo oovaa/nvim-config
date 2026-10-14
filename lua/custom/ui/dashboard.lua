@@ -228,12 +228,9 @@ function M.setup_starter()
   })
 end
 
-
 -- aliases for modular entry points
 M.setup = M.setup_starter
 -- dashboard entry (VimEnter handler registered by setup_starter)
-_G._builtin_start = function()
-  M.setup_starter()
-end
+_G._builtin_start = function() M.setup_starter() end
 
 return M
