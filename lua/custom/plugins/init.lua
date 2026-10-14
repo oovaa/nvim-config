@@ -11,11 +11,18 @@ return {
     'benlubas/molten-nvim',
     version = '^1',
     cond = function()
-      -- Molten commands come from a python3 remote plugin, so they only
-      -- exist once `jupyter_client` and `ipykernel` import successfully;
+      -- Molten commands come from a python3 remote plugin, so they only exist
+      -- if Neovim's rplugin manifest (written by :UpdateRemotePlugins) lists
+      -- them; a blank section means the host never imported the module, so
       -- skip the spec instead of registering keymaps to missing commands.
-      local out = vim.fn.system { 'python3', '-c', 'import jupyter_client, ipykernel' }
-      return vim.v.shell_error == 0
+      -- Do NOT "simplify" this back to `vim.fn.system {'python3', ...}`: cond
+      -- runs on every startup and one fork/exec cost 0.02s -> 0.17s here.
+      local ok, lines = pcall(vim.fn.readfile, vim.fn.stdpath 'data' .. '/rplugin.vim')
+      if not ok then return false end -- no manifest yet -> no remote plugins
+      for _, line in ipairs(lines) do
+        if line:find('molten', 1, true) then return true end
+      end
+      return false
     end,
     build = ':UpdateRemotePlugins',
     dependencies = { '3rd/image.nvim' },
