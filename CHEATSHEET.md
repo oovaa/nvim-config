@@ -40,7 +40,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<S-h>` | Previous Buffer | built-in |
 | `<S-l>` | Next Buffer | built-in |
 | `<leader>bd` | Delete Current Buffer | built-in |
-| `<leader>bp` | Pin Buffer (unlist it; still reachable via `<leader>bd` / `:bnext`) | built-in |
+| `<leader>bp` | Pin Buffer (unlist it; stays open, skipped by `:bnext`, jump back by name) | built-in |
 | `s` | Fast Jump (Flash) | `flash.nvim` |
 | `S` | Fast Jump Treesitter Mode | `flash.nvim` |
 | `<C-h/j/k/l>` | Switch focus between windows (editor, terminal, explorer) | built-in |

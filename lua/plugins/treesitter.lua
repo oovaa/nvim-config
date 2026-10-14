@@ -23,7 +23,9 @@ return {
 
       -- Bootstrap the parsers for the filetypes this config is actually used
       -- with, so the FileType autocmd below usually finds them already built.
-      -- Scheduled after startup so no buffer open waits on a compile, pcall'd so
+      -- Scheduled after startup so opening one of these 16 languages never
+      -- blocks on a compile; a language OUTSIDE the list still compiles
+      -- synchronously on first open via the FileType fallback below. pcall'd so
       -- a missing toolchain is a debug line and not an error, and attempted at
       -- most once per session (vim.g survives <leader>ur; the table only ever gains
       -- one key per language, so it cannot grow per reload).

@@ -102,16 +102,17 @@ function M.check()
   else
     vim.health.error('vim.g.large_file_size unset', 'Set it in lua/config/options.lua')
   end
-  -- Molten requires these imported by the python3 host: try a dry import,
-  -- surfaced as optional because Molten is a personal/output workflow.
+  -- Molten cells need these imported by the python3 host. Missing modules do
+  -- NOT unregister Molten (registration follows the rplugin manifest) — they
+  -- only mean :MoltenEvaluate* cannot run until the import succeeds.
   for _, mod in ipairs { 'jupyter_client', 'ipykernel' } do
     local ok = vim.system({ 'python3', '-c', 'import ' .. mod }, { text = true }):wait()
     if ok and ok.code == 0 then
       vim.health.ok('python import: ' .. mod .. ' found')
     else
       vim.health.warn(
-        'python import missing: ' .. mod .. ' — Molten registration disabled',
-        'python3 -m pip install --user ' .. mod .. (mod == 'jupyter_client' and ' ipykernel' or '') .. ' then :UpdateRemotePlugins'
+        'python import missing: ' .. mod .. ' — Molten cells cannot run',
+        'python3 -m pip install --user ' .. mod .. (mod == 'jupyter_client' and ' ipykernel' or '')
       )
     end
   end

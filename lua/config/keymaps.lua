@@ -138,8 +138,9 @@ vim.keymap.set('n', '<leader>lr', '<cmd>lsp restart<cr>', { desc = '[L]SP [R]est
 vim.keymap.set('n', '<S-h>', '<cmd>bprev<cr>', { desc = 'Prev Buffer' })
 vim.keymap.set('n', '<S-l>', '<cmd>bnext<cr>', { desc = 'Next Buffer' })
 vim.keymap.set('n', '<leader>bd', '<cmd>bdelete<cr>', { desc = '[B]uffer [D]elete' })
--- Pin = the buffer drops out of :bnext/:ls but stays open, so `:bd`/`<S-h>`
--- reach it. Nothing renders the pin: the state lives in 'buflisted' alone.
+-- Pin = the buffer drops out of the :bnext/:bprev cycle and :ls listing but
+-- stays open; jump back by name (:b) or picker. Deleting still works while it
+-- is the current buffer.
 vim.keymap.set('n', '<leader>bp', function()
   vim.bo.buflisted = not vim.bo.buflisted
   vim.notify('Buffer ' .. (vim.bo.buflisted and 'pinned' or 'unpinned'), vim.log.levels.INFO)
