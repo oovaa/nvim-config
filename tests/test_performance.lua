@@ -118,6 +118,28 @@ describe('performance', function()
     assert.equals('http', rest.ft, 'rest.nvim must be gated on ft=http')
   end)
 
+  it('bootstraps treesitter parsers without paying for them at startup', function()
+    -- The scheduled bootstrap only exists to pre-build parsers; it must never
+    -- make nvim-treesitter load eagerly (that would cost every startup) and
+    -- the FileType path that actually highlights must stay registered.
+    local ts = P['nvim-treesitter']
+    assert.is_not_nil(ts, 'nvim-treesitter must be registered')
+    assert.is_falsy(ts.lazy == false, 'nvim-treesitter must stay lazy')
+    assert.same({ 'BufReadPost', 'BufNewFile' }, ts.event, 'treesitter must keep its lazy-open events')
+
+    -- Once loaded, the highlight path is a cleared augroup so <leader>ur
+    -- cannot stack a second FileType handler.
+    local tmp = vim.fn.tempname() .. '.lua'
+    vim.fn.writefile({ 'local x = 1', 'return x' }, tmp)
+    vim.cmd.edit(vim.fn.fnameescape(tmp))
+    assert.is_true(
+      vim.wait(5000, function() return #vim.api.nvim_get_autocmds { group = 'treesitter-start', event = 'FileType' } > 0 end, 50),
+      'treesitter-start FileType augroup must be registered after load'
+    )
+    pcall(vim.api.nvim_buf_delete, vim.api.nvim_get_current_buf(), { force = true })
+    vim.fn.delete(tmp)
+  end)
+
   it('keeps nvim-ts-autotag scoped to markup filetypes', function()
     local at = P['nvim-ts-autotag']
     assert.is_not_nil(at, 'nvim-ts-autotag must be registered')

@@ -18,7 +18,47 @@ return {
     config = function()
       -- main branch setup only takes install_dir; highlighting/indent come from vim.treesitter.start below
       require('nvim-treesitter').setup {}
-      -- Parsers install on-demand via FileType autocmd below
+
+      local function parser_path(lang) return vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser', lang .. '.so') end
+
+      -- Bootstrap the parsers for the filetypes this config is actually used
+      -- with, so the FileType autocmd below usually finds them already built.
+      -- Scheduled after startup so no buffer open waits on a compile, pcall'd so
+      -- a missing toolchain is a debug line and not an error, and attempted at
+      -- most once per session (vim.g survives <leader>ur; the table is keyed by
+      -- a fixed language list, so it cannot grow per reload).
+      -- ponytail: no executable detection here — the treesitter grammars are C,
+      -- so only a C compiler matters, and TSInstall's pcall covers its absence.
+      -- Headless is skipped: nothing to highlight and it would only cost time.
+      vim.g.treesitter_bootstrap = vim.g.treesitter_bootstrap or {}
+      vim.defer_fn(function()
+        if #vim.api.nvim_list_uis() == 0 then return end
+        local todo = {}
+        for _, lang in ipairs {
+          'lua',
+          'vim',
+          'javascript',
+          'typescript',
+          'tsx',
+          'html',
+          'css',
+          'python',
+          'json',
+          'yaml',
+          'markdown',
+          'bash',
+          'c',
+          'cpp',
+          'rust',
+          'go',
+        } do
+          if not vim.g.treesitter_bootstrap[lang] and vim.uv.fs_stat(parser_path(lang)) == nil then
+            vim.g.treesitter_bootstrap[lang] = true -- at most one attempt per session
+            table.insert(todo, lang)
+          end
+        end
+        if #todo > 0 then pcall(vim.cmd, 'TSInstall ' .. table.concat(todo, ' ')) end
+      end, 250)
 
       -- Enable treesitter highlighting via Neovim built-in APIs (main branch doesn't support old config)
       vim.api.nvim_create_autocmd('FileType', {
@@ -38,8 +78,7 @@ return {
             -- ponytail: compound fts (yaml.docker-compose) have no own parser;
             -- TSInstall would error, so install/check the base language.
             local lang = ft:match '^[^.]+'
-            local parser = vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser', lang .. '.so')
-            if vim.uv.fs_stat(parser) == nil then pcall(vim.cmd, 'TSInstall ' .. lang) end
+            if vim.uv.fs_stat(parser_path(lang)) == nil then pcall(vim.cmd, 'TSInstall ' .. lang) end
           end
           pcall(vim.treesitter.start, args.buf)
         end,
