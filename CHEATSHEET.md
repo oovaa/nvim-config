@@ -8,12 +8,12 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 
 | Tool | Purpose |
 | :--- | :--- |
-| `pyrefly` | LSP (autocomplete, type checking, goto definition, etc.) |
+| `pyrefly` | LSP (autocomplete, type checking, goto definition, etc.) — first of `ty` / `pyrefly` / `pyright-langserver` found on `PATH`; `:NvimCheckPythonLsp` |
 | `ruff` | Linting + formatting (replaces flake8, isort, black) |
 | Treesitter | Syntax highlighting for Python |
 
 - **Autoformat on save** is enabled for Python (ruff).
-- LSP and formatters are auto-installed via Mason (pyrefly is installed globally via brew).
+- `ruff` is installed via Mason; the Python LSP is not (`:NvimCheckPythonLsp` reports what this machine has).
 - Works with virtualenvs automatically.
 
 ## 🚀 Session Management
@@ -40,13 +40,14 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<S-h>` | Previous Buffer | built-in |
 | `<S-l>` | Next Buffer | built-in |
 | `<leader>bd` | Delete Current Buffer | built-in |
+| `<leader>bp` | Pin Buffer (unlist it; still reachable via `<leader>bd` / `:bnext`) | built-in |
 | `s` | Fast Jump (Flash) | `flash.nvim` |
 | `S` | Fast Jump Treesitter Mode | `flash.nvim` |
 | `<C-h/j/k/l>` | Switch focus between windows (editor, terminal, explorer) | built-in |
 
 ### 🗂️ Explorer Tricks
 
-Press `<leader>e` to toggle the file explorer (`:Neotree` fallback). Inside it:
+Press `<leader>e` to toggle the file explorer. Inside it:
 
 | Key | Action |
 | :--- | :--- |
@@ -115,11 +116,6 @@ Press `<leader>e` to toggle the file explorer (`:Neotree` fallback). Inside it:
 | `<leader>ur` | Reload config | built-in |
 | `<leader>fy` | Yank file path (count = absolute) | built-in |
 | `:DiffOrig` | Diff buffer against saved file | built-in |
-| `<leader>mt` | Toggle bookmark on current line | `vim-bookmarks` |
-| `<leader>mc` | Annotate bookmark | `vim-bookmarks` |
-| `<leader>mj` | Jump to next bookmark | `vim-bookmarks` |
-| `<leader>mk` | Jump to previous bookmark | `vim-bookmarks` |
-| `<leader>mb` | List all bookmarks | `telescope-vim-bookmarks` |
 | `<leader>ff` | Format buffer | `conform.nvim` |
 | `<leader>fe` | File explorer | `snacks.nvim` |
 | `<leader>fE` | File explorer (reveal current file) | `snacks.nvim` |
@@ -217,11 +213,11 @@ Press `<leader>e` to toggle the file explorer (`:Neotree` fallback). Inside it:
 | `<leader>gb` | Toggle inline git blame | `blame.nvim` |
 | `<leader>rr` | Refactoring menu (normal + visual) | `refactoring.nvim` |
 | `<leader>tr` / `<leader>ts` / `<leader>to` | Run test / summary / output panel | `neotest` |
-| `<leader>hr` | Send HTTP request (in `.http` files) | `rest.nvim` |
+| `:Rest` / `:Rest!` | Send HTTP request (in `.http` files) | `rest.nvim` |
 | `<leader>o` | Toggle outline sidebar | `aerial.nvim` |
 | `<leader>fr` | Project find & replace | `grug-far.nvim` |
 
-`snacks.nvim` (`vim.ui.input`) and `nvim-bqf` (quickfix preview) have no keybindings — they improve existing UI automatically.
+`snacks.nvim` (`vim.ui.input` + `vim.ui.select`, so code actions, quickfix and mason pickers all look like the rest of the UI) and `nvim-bqf` (quickfix preview) have no keybindings — they improve existing UI automatically.
 
 ### 🔁 grug-far (project find & replace)
 
