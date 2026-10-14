@@ -213,7 +213,7 @@ Press `<leader>e` to toggle the file explorer. Inside it:
 | `<leader>gb` | Toggle inline git blame | `blame.nvim` |
 | `<leader>rr` | Refactoring menu (normal + visual) | `refactoring.nvim` |
 | `<leader>tr` / `<leader>ts` / `<leader>to` | Run test / summary / output panel | `neotest` |
-| `:Rest` / `:Rest!` | Send HTTP request (in `.http` files) | `rest.nvim` |
+| `<leader>hr` | Send HTTP request (in `.http` files, buffer-local) | `rest.nvim` |
 | `<leader>o` | Toggle outline sidebar | `aerial.nvim` |
 | `<leader>fr` | Project find & replace | `grug-far.nvim` |
 
