@@ -13,12 +13,15 @@ local required = {
 
 local optional = {
   { bin = 'bun', why = 'JS/TS tooling, vtsls install' },
-  { bin = 'python3', why = 'molten-nvim, neotest-python, pyrefly' },
+  { bin = 'python3', why = 'molten-nvim, neotest-python, pyrefly/ty' },
   { bin = 'make', why = 'LuaSnip jsregexp build' },
   { bin = 'fd', why = 'snacks picker speed' },
   { bin = 'lazygit', why = '<leader>fg float' },
   { bin = 'docker', why = 'dockerls, docker_compose_language_service (optional)' },
-  { bin = 'pyrefly', why = 'python LSP' },
+  { bin = 'pyrefly', why = 'python LSP (optional; uv tool install pyrefly)' },
+  { bin = 'ty', why = 'fast python LSP fallback (optional)' },
+  { bin = 'biome', why = 'fast JS/TS/JSON formatting + lint (optional)' },
+  { bin = 'nginx-language-server', why = 'nginx LSP (optional)' },
   { bin = 'nginxfmt', why = 'nginx format on <leader>ff (pip install nginx-config-formatter)' },
 }
 
@@ -61,6 +64,19 @@ function M.check()
     vim.health.ok('large_file_size = ' .. vim.g.large_file_size)
   else
     vim.health.error('vim.g.large_file_size unset', 'Set it in lua/config/options.lua')
+  end
+  -- Molten requires these imported by the python3 host: try a dry import,
+  -- surfaced as optional because Molten is a personal/output workflow.
+  for _, mod in ipairs { 'jupyter_client', 'ipykernel' } do
+    local ok = vim.system({ 'python3', '-c', 'import ' .. mod }, { text = true }):wait()
+    if ok and ok.code == 0 then
+      vim.health.ok('python import: ' .. mod .. ' found')
+    else
+      vim.health.warn(
+        'python import missing: ' .. mod .. ' — Molten registration disabled',
+        'python3 -m pip install --user ' .. mod .. (mod == 'jupyter_client' and ' ipykernel' or '') .. ' then :UpdateRemotePlugins'
+      )
+    end
   end
 end
 
