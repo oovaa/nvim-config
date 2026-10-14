@@ -16,7 +16,7 @@ return {
     'mason-org/mason.nvim',
     -- Load on FileType (not at startup) to keep the LSP stack out of
     -- the startup path; FileType autocmds below enable servers on demand.
-    event = 'FileType',
+    event = { 'FileType', 'VimEnter' },
     ---@module 'mason.settings'
     ---@type MasonSettings
     ---@diagnostic disable-next-line: missing-fields
@@ -272,7 +272,14 @@ return {
         -- picks it up via debugpy_path below. Re-add after apt fix.
       })
 
-      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+      -- Defer Mason's ensure_installed so opening a file never blocks on
+      -- network/package installs. Runs once, shortly after startup.
+      vim.defer_fn(function()
+        if vim.g.nvim_disable_mason then return end
+        if #vim.api.nvim_list_uis() == 0 then return end -- headless
+        if vim.fn.has('gui_running') == 0 and not (vim.env.TERM and #vim.env.TERM > 0) then return end
+        require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+      end, 250)
 
       -- Choose the fastest Python LSP host tools can provide; if none are
       -- available, Python simply has no LSP attach until one is installed.
