@@ -4,6 +4,8 @@
 
 ---@module 'lazy'
 ---@type LazySpec
+local snacks_excludes = require 'config.snacks_excludes'
+
 return {
   -- BUILTIN UI (replaces bufferline/lualine/alpha — no plugin, zero loss)
   -- statusline/tabline/dashboard via lua/custom/ui/spec.lua (pure nvim 0.12)
@@ -74,60 +76,15 @@ return {
           explorer = {
             hidden = true,
             ignored = true,
-            exclude = {
-              'node_modules',
-              'dist',
-              'build',
-              'out',
-              'target',
-              'vendor',
-              'coverage',
-              '__pycache__',
-              '.venv',
-              '.next',
-              '.nuxt',
-              '.git',
-              '.turbo',
-              '.pytest_cache',
-            },
+            exclude = vim.tbl_deep_extend('force', {}, snacks_excludes),
           },
           files = {
             hidden = true,
             ignored = true,
-            exclude = {
-              'node_modules',
-              'dist',
-              'build',
-              'out',
-              'target',
-              'vendor',
-              'coverage',
-              '__pycache__',
-              '.venv',
-              '.next',
-              '.nuxt',
-              '.git',
-              '.turbo',
-              '.pytest_cache',
-            },
+            exclude = vim.tbl_deep_extend('force', {}, snacks_excludes),
           },
           grep = {
-            exclude = {
-              'node_modules',
-              'dist',
-              'build',
-              'out',
-              'target',
-              'vendor',
-              'coverage',
-              '__pycache__',
-              '.venv',
-              '.next',
-              '.nuxt',
-              '.git',
-              '.turbo',
-              '.pytest_cache',
-            },
+            exclude = vim.tbl_deep_extend('force', {}, snacks_excludes),
           },
         },
         -- ponytail: builtin `yank` copies the full item text
