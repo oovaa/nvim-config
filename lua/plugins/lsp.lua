@@ -174,10 +174,9 @@ return {
           root_markers = { 'nginx.conf', '.git' },
         },
         -- gopls = {},
-        pyrefly = {
-          cmd = { 'pyrefly', 'lsp' },
-          settings = { python = { pyrefly = { typeCheckingMode = 'default' } } },
-        }, -- LSP: fast type-checking for Python (installed via brew)
+        -- Python LSP is selected below according to installed host tools:
+        -- ty (fastest, Astral) -> pyrefly -> pyright/pyright-langserver.
+        -- None of them are installed by Mason here because pyenv 3.15+ is not supported.
         -- rust_analyzer = {},
         --
         -- Some languages (like typescript) have enhanced LSP plugins:
@@ -275,6 +274,8 @@ return {
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
+      -- Choose the fastest Python LSP host tools can provide; if none are
+      -- available, Python simply has no LSP attach until one is installed.
       -- Configure servers but don't enable them globally
       -- Instead, enable on-demand via FileType autocmds for better startup performance
       for name, server in pairs(servers) do
@@ -283,13 +284,46 @@ return {
 
       -- Only enable LSP servers when their filetype is opened
       local lsp_filetypes = {
-        pyrefly = { 'python' },
         lua_ls = { 'lua' },
         jsonls = { 'json', 'jsonc' },
         docker_compose_language_service = { 'yaml.docker-compose' },
         dockerls = { 'dockerfile' },
         nginx_language_server = { 'nginx' },
       }
+
+      -- Add the selected Python LSP without making it a required Mason install.
+      do
+        local python_server = nil
+        if vim.fn.executable 'ty' == 1 then
+          python_server = {
+            name = 'ty',
+            cmd = { 'ty', 'server' },
+            settings = nil,
+          }
+        elseif vim.fn.executable 'pyrefly' == 1 then
+          python_server = {
+            name = 'pyrefly',
+            cmd = { 'pyrefly', 'lsp' },
+            settings = { python = { pyrefly = { typeCheckingMode = 'default' } } },
+          }
+        elseif vim.fn.executable 'pyright-langserver' == 1 then
+          python_server = {
+            name = 'pyright',
+            cmd = { 'pyright-langserver', '--stdio' },
+            settings = nil,
+          }
+        end
+        if python_server then
+          servers[python_server.name] = {
+            cmd = python_server.cmd,
+            filetypes = { 'python' },
+            root_markers = { 'pyproject.toml', 'setup.cfg', 'requirements.txt', 'setup.py', '.git' },
+            settings = python_server.settings,
+          }
+          lsp_filetypes[python_server.name] = { 'python' }
+        end
+      end
+
       for server, filetypes in pairs(lsp_filetypes) do
         vim.api.nvim_create_autocmd('FileType', {
           group = vim.api.nvim_create_augroup('lsp-on-demand-' .. server, { clear = true }),
@@ -298,6 +332,19 @@ return {
           callback = function() vim.lsp.enable(server) end,
         })
       end
+
+      vim.api.nvim_create_user_command('NvimCheckPythonLsp', function()
+        local candidates = { 'ty', 'pyrefly', 'pyright-langserver' }
+        local found = {}
+        for _, c in ipairs(candidates) do
+          if vim.fn.executable(c) == 1 then found[#found + 1] = c end
+        end
+        if #found > 0 then
+          vim.notify('Python LSP available: ' .. table.concat(found, ', '))
+        else
+          vim.notify('No Python LSP selected; install ty or pyrefly (optional)', vim.log.levels.WARN)
+        end
+      end, { desc = 'Report the selected Python LSP tooling' })
     end,
   },
 }
