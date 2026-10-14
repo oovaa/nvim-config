@@ -131,6 +131,10 @@ function M.setup_lualine()
       yellow = fg_of 'DiagnosticWarn' or '#e0af68',
       cyan = fg_of 'Identifier' or '#73daca',
       lsp = fg_of 'DiagnosticOk' or '#9ece6a',
+      -- hints are the least urgent, so they take Comment's muted grey rather
+      -- than another accent (Identifier resolves to the same magenta as
+      -- Statement in most themes, which made hint and branch look identical).
+      hint = fg_of 'Comment' or '#565f89',
     }
     local modes = {
       normal = c.blue,
@@ -158,6 +162,14 @@ function M.setup_lualine()
     hl('SL_diff_delete', mid_bg, c.red)
     -- search count ([cur/total], only visible while searching)
     hl('SL_search', mid_bg, c.yellow)
+    -- ponytail: severity is the one thing you read at a glance, so each level
+    -- gets its own theme accent (error bold). Branch too, so the middle isn't
+    -- one flat run of text.
+    hl('SL_branch', mid_bg, c.magenta)
+    hl('SL_diag_e', mid_bg, c.red, 'bold')
+    hl('SL_diag_w', mid_bg, c.yellow)
+    hl('SL_diag_i', mid_bg, c.blue)
+    hl('SL_diag_h', mid_bg, c.hint)
   end
   define_hl()
   -- ponytail: augroups matter here — `<leader>ur` re-runs setup(), and
@@ -218,7 +230,7 @@ function M.setup_lualine()
     -- branch
     local branch = vim.b.gitsigns_head or vim.g.gitsigns_head or ''
     -- plain 'git:' label instead of a nerd glyph: tofu on unpatched fonts
-    local branch_s = branch ~= '' and ('git:' .. branch) or ''
+    local branch_s = branch ~= '' and ('%#SL_branch#git:' .. branch .. hl_b) or ''
     -- diff (gitsigns_status_dict)
     local diff_s = ''
     local d = vim.b.gitsigns_status_dict
@@ -232,13 +244,13 @@ function M.setup_lualine()
     -- diagnostics — cached counts (refreshed on DiagnosticChanged), not get() per redraw
     local buf0 = vim.api.nvim_get_current_buf()
     local cnt = M._diag_counts[buf0] or M._count_diags(buf0)
-    -- ASCII severity letters instead of nerd glyphs: tofu on unpatched fonts
-    local icons = { 'E:', 'W:', 'I:', 'H:' }
+    -- ASCII severity letters instead of nerd glyphs: tofu on unpatched fonts.
+    -- Each level carries its own color so severity reads without counting.
     local diag_parts = {}
-    if cnt.e > 0 then diag_parts[#diag_parts + 1] = icons[1] .. cnt.e end
-    if cnt.w > 0 then diag_parts[#diag_parts + 1] = icons[2] .. cnt.w end
-    if cnt.i > 0 then diag_parts[#diag_parts + 1] = icons[3] .. cnt.i end
-    if cnt.h > 0 then diag_parts[#diag_parts + 1] = icons[4] .. cnt.h end
+    if cnt.e > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_e#E:' .. cnt.e .. hl_b end
+    if cnt.w > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_w#W:' .. cnt.w .. hl_b end
+    if cnt.i > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_i#I:' .. cnt.i .. hl_b end
+    if cnt.h > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_h#H:' .. cnt.h .. hl_b end
     local diag_s = table.concat(diag_parts, ' ')
 
     local b_parts = {}
