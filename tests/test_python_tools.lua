@@ -83,4 +83,19 @@ describe('python lsp ladder', function()
     with_path({}, function() assert.equals(0, vim.fn.executable 'nvim', 'stub must be in force inside with_path') end)
     assert.equals(real, vim.fn.executable 'nvim', 'stub must not outlive with_path')
   end)
+
+  it('registers the resolved server with vim.lsp.config (drives the spec)', function()
+    -- Guards the real bug: the vim.lsp.config loop used to run BEFORE the
+    -- resolver added the ladder winner, so enable('ty') was a silent no-op.
+    -- This loads the plugin spec itself, not the resolver in isolation.
+    with_path({ 'ty' }, function()
+      for _, spec in ipairs(require 'plugins.lsp') do
+        if spec.config then spec.config() end
+      end
+      local ty = vim.lsp.config['ty']
+      assert.is_truthy(ty, 'ty-only host must get a ty config')
+      assert.same({ 'ty', 'server' }, ty.cmd)
+      assert.is_truthy(vim.lsp.config['pyrefly'], 'pyrefly fallback must stay registered')
+    end)
+  end)
 end)

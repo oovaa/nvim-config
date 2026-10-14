@@ -283,12 +283,6 @@ return {
 
       -- Choose the fastest Python LSP host tools can provide; if none are
       -- available, Python simply has no LSP attach until one is installed.
-      -- Configure servers but don't enable them globally
-      -- Instead, enable on-demand via FileType autocmds for better startup performance
-      for name, server in pairs(servers) do
-        vim.lsp.config(name, server)
-      end
-
       -- Only enable LSP servers when their filetype is opened
       local lsp_filetypes = {
         lua_ls = { 'lua' },
@@ -324,7 +318,13 @@ return {
           settings = { python = { pyrefly = { typeCheckingMode = 'default' } } },
         }
       lsp_filetypes.pyrefly = lsp_filetypes.pyrefly or { 'python' }
-      vim.lsp.config('pyrefly', servers.pyrefly)
+
+      -- Register every server AFTER the resolver above has added the python
+      -- winner: vim.lsp.enable() on a name with no config is a silent no-op,
+      -- so registering first meant a ty-only host got no python LSP at all.
+      for name, server in pairs(servers) do
+        vim.lsp.config(name, server)
+      end
 
       for server, filetypes in pairs(lsp_filetypes) do
         vim.api.nvim_create_autocmd('FileType', {
