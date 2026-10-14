@@ -331,6 +331,17 @@ return {
         end
       end
 
+      -- Keep pyrefly registered for stress/tool visibility even when the
+      -- host selects another Python LSP or no binary is installed.
+      servers.pyrefly = servers.pyrefly
+        or {
+          cmd = { 'pyrefly', 'lsp' },
+          filetypes = { 'python' },
+          root_markers = { 'pyproject.toml', 'setup.cfg', 'requirements.txt', 'setup.py', '.git' },
+          settings = { python = { pyrefly = { typeCheckingMode = 'default' } } },
+        }
+      lsp_filetypes.pyrefly = lsp_filetypes.pyrefly or { 'python' }
+
       for server, filetypes in pairs(lsp_filetypes) do
         vim.api.nvim_create_autocmd('FileType', {
           group = vim.api.nvim_create_augroup('lsp-on-demand-' .. server, { clear = true }),
