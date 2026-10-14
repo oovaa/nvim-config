@@ -29,6 +29,8 @@ return {
       -- a fixed language list, so it cannot grow per reload).
       -- ponytail: no executable detection here — the treesitter grammars are C,
       -- so only a C compiler matters, and TSInstall's pcall covers its absence.
+      -- shortcut: one flat install attempt per language per session, with no
+      -- compiler probe — check `cc` per language when you need preconditions.
       -- Headless is skipped: nothing to highlight and it would only cost time.
       vim.g.treesitter_bootstrap = vim.g.treesitter_bootstrap or {}
       vim.defer_fn(function()
@@ -78,7 +80,12 @@ return {
             -- ponytail: compound fts (yaml.docker-compose) have no own parser;
             -- TSInstall would error, so install/check the base language.
             local lang = ft:match '^[^.]+'
-            if vim.uv.fs_stat(parser_path(lang)) == nil then pcall(vim.cmd, 'TSInstall ' .. lang) end
+            -- same once-per-session state as the bootstrap above, so a language
+            -- whose build failed is not retried on every buffer of that type
+            if not vim.g.treesitter_bootstrap[lang] and vim.uv.fs_stat(parser_path(lang)) == nil then
+              vim.g.treesitter_bootstrap[lang] = true
+              pcall(vim.cmd, 'TSInstall ' .. lang)
+            end
           end
           pcall(vim.treesitter.start, args.buf)
         end,
