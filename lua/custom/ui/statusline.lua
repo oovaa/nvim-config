@@ -230,7 +230,7 @@ function M.setup_lualine()
     -- branch
     local branch = vim.b.gitsigns_head or vim.g.gitsigns_head or ''
     -- plain 'git:' label instead of a nerd glyph: tofu on unpatched fonts
-    local branch_s = branch ~= '' and ('%#SL_branch#git:' .. branch .. hl_b) or ''
+    local branch_s = branch ~= '' and ('%#SL_branch#' .. vim.fn.nr2char(0xe0a0) .. ' ' .. branch .. hl_b) or ''
     -- diff (gitsigns_status_dict)
     local diff_s = ''
     local d = vim.b.gitsigns_status_dict
@@ -244,13 +244,13 @@ function M.setup_lualine()
     -- diagnostics — cached counts (refreshed on DiagnosticChanged), not get() per redraw
     local buf0 = vim.api.nvim_get_current_buf()
     local cnt = M._diag_counts[buf0] or M._count_diags(buf0)
-    -- ASCII severity letters instead of nerd glyphs: tofu on unpatched fonts.
-    -- Each level carries its own color so severity reads without counting.
+    -- Nerd glyphs with per-severity color; fallback comment kept for maintainers.
+    local icons = { vim.fn.nr2char(0xf057), vim.fn.nr2char(0xf071), vim.fn.nr2char(0xf05a), vim.fn.nr2char(0xf0eb) }
     local diag_parts = {}
-    if cnt.e > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_e#E:' .. cnt.e .. hl_b end
-    if cnt.w > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_w#W:' .. cnt.w .. hl_b end
-    if cnt.i > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_i#I:' .. cnt.i .. hl_b end
-    if cnt.h > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_h#H:' .. cnt.h .. hl_b end
+    if cnt.e > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_e#' .. icons[1] .. cnt.e .. hl_b end
+    if cnt.w > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_w#' .. icons[2] .. cnt.w .. hl_b end
+    if cnt.i > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_i#' .. icons[3] .. cnt.i .. hl_b end
+    if cnt.h > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_h#' .. icons[4] .. cnt.h .. hl_b end
     local diag_s = table.concat(diag_parts, ' ')
 
     local b_parts = {}
@@ -282,7 +282,7 @@ function M.setup_lualine()
       if fname == '' then fname = '[No Name]' end
     end
     if vim.bo.modified then fname = fname .. ' [+]' end
-    if vim.bo.readonly then fname = fname .. ' [ro]' end
+    if vim.bo.readonly then fname = fname .. ' ' .. vim.fn.nr2char(0xf033e) end
     -- spell flag mirrors the <leader>us toggle (visible state, only when on)
     if vim.wo.spell then fname = fname .. ' %#SL_search#SPELL' .. hl_c end
 
@@ -310,7 +310,8 @@ function M.setup_lualine()
     -- ponytail: vim.lsp.status() carries $/progress text while servers work;
     -- show it live, fall back to the cached client name when idle; %-escape for statusline safety.
     local prog = vim.lsp.status():gsub('%%', '%%%%')
-    local lsp_s = prog ~= '' and ('%#SL_lsp#' .. prog .. hl_c) or (M._lsp_name.name == '' and '' or '%#SL_lsp#lsp: ' .. M._lsp_name.name .. hl_c)
+    local lsp_s = prog ~= '' and ('%#SL_lsp#' .. prog .. hl_c)
+      or (M._lsp_name.name == '' and '' or '%#SL_lsp#' .. vim.fn.nr2char(0xf0136) .. ' ' .. M._lsp_name.name .. hl_c)
 
     local enc = (vim.bo.fileencoding ~= '' and vim.bo.fileencoding or vim.o.encoding)
     local ff = vim.bo.fileformat
