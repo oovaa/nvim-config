@@ -15,10 +15,10 @@ function M.setup_starter()
     { key = 'e', icon = '', label = 'New File', action = '<cmd>ene<CR>' },
     { key = 'f', icon = '', label = 'Find File', action = function() require('snacks').picker.files() end },
     { key = 'r', icon = '', label = 'File Explorer', action = function() require('snacks').explorer() end },
-    { key = 'g', icon = '', label = 'Git (LazyGit)', action = function() vim.cmd 'terminal lazygit' end },
+    { key = 'g', icon = '', label = 'Git (LazyGit)', action = function() vim.cmd 'terminal lazygit' end },
     {
       key = 's',
-      icon = '',
+      icon = '',
       label = 'Recent Sessions',
       action = function()
         -- ponytail: restore current cwd session; if none, pick from sessions dir (readable `cd` dir, deduped)
@@ -98,8 +98,8 @@ function M.setup_starter()
         pick()
       end,
     },
-    { key = 'u', icon = '', label = 'Update Plugins', action = '<cmd>Lazy sync<CR>' },
-    { key = 'q', icon = '', label = 'Quit', action = '<cmd>qa<CR>' },
+    { key = 'u', icon = '', label = 'Update Plugins', action = '<cmd>Lazy sync<CR>' },
+    { key = 'q', icon = '', label = 'Quit', action = '<cmd>qa<CR>' },
   }
   local config_dir = vim.fn.stdpath 'config'
   local function collect_recent()
