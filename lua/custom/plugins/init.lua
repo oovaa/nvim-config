@@ -17,6 +17,8 @@ return {
       -- skip the spec instead of registering keymaps to missing commands.
       -- Do NOT "simplify" this back to `vim.fn.system {'python3', ...}`: cond
       -- runs on every startup and one fork/exec cost 0.02s -> 0.17s here.
+      -- cond is evaluated once, at lazy.setup(): after :UpdateRemotePlugins,
+      -- restart nvim or the spec stays off for the rest of the session.
       local ok, lines = pcall(vim.fn.readfile, vim.fn.stdpath 'data' .. '/rplugin.vim')
       if not ok then return false end -- no manifest yet -> no remote plugins
       for _, line in ipairs(lines) do
