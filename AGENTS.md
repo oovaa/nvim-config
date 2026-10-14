@@ -25,8 +25,9 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
 
 - `init.lua` — bootstrap only. `require 'config.{options,keymaps,autocmds}'` run
   **before** `lazy.setup` because `<leader>` and `vim.o` must exist early.
-- `lua/config/` — core config, hand-required. `options` `keymaps` `autocmds`
-  (pre-lazy); `sessions` `terminal` `runner` `health` (post-lazy, from `init.lua`).
+- `lua/config/` — core config. `options` `keymaps` `autocmds` (pre-lazy, hand-required
+  from `init.lua`); `sessions` `terminal` `runner` `health` (post-lazy, from `init.lua`);
+  `python_lsp` (required lazily by the lsp spec, not by `init.lua`).
 - `lua/plugins/*.lua` — lazy specs, one file per section, auto-imported via
   `{ import = 'plugins' }`. No index file; adding a file is enough.
 - `lua/custom/plugins/*.lua` — personal specs, auto-imported too.
@@ -130,9 +131,14 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
      config from cwd, aborts with "nested root configuration", nvim-lint's
      `ignore_exitcode` swallows the exit 1, and the buffer just gets zero
      diagnostics.
-13. **The Python LSP is a ladder, not a fixed server.** `lua/plugins/lsp.lua`
-     picks at load time with `vim.fn.executable`: `ty` → `pyrefly` →
-     `pyright-langserver`, first hit wins, and none of the three is in mason
+13. **The Python LSP is a ladder, not a fixed server.**
+     `lua/config/python_lsp.lua` holds the choice — `M.resolve()` returns
+     `{ name, cmd, settings }` for the first hit among `ty` → `pyrefly` →
+     `pyright-langserver` (or `nil`), and `M.installed()` reports what is on
+     `PATH`. `lua/plugins/lsp.lua` only registers the result (`filetypes`,
+     `root_markers`). Keep the resolver free of spawns and filesystem probing:
+     `tests/test_python_tools.lua` drives it by stubbing `vim.fn.executable`,
+     which is the only thing it may depend on. None of the three is in mason
      `ensure_installed` (trap 4). `:NvimCheckPythonLsp` reports which are on
      `PATH`. `pyrefly` stays registered-but-unused when another server wins, so
      the stress harness can still see it — deliberate, not a leftover.
