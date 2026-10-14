@@ -5,6 +5,7 @@
 -- `nvim` with no args in a cwd restores that cwd's session if present (buffers + last file)
 
 vim.o.sessionoptions = 'blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions'
+local M = {}
 local suppressed = { ['~/'] = true, ['~/Downloads'] = true, ['/etc'] = true, ['/tmp'] = true }
 local function suppressed_dir(cwd)
   cwd = (cwd or vim.uv.cwd() or vim.fn.getcwd()):gsub('/+$', '')
@@ -81,7 +82,16 @@ local function find_session_for(cwd)
   if best then return best end
   return f
 end
--- expose for dashboard s picker
+-- module-visible accessors (primary API)
+M.find_session_for = find_session_for
+M.session_files = session_files
+M.session_file_for = session_file_for
+-- compatible names for callers / brief examples
+M.find_session = find_session_for
+M.session_file = session_file
+-- compat shim: keep _G globals working during transition. They remain direct
+-- aliases to the module functions above, so behavior and identity are unchanged.
+-- Log any legacy use by grepping _G._builtin_* call sites; tracked centrally.
 _G._builtin_find_session = find_session_for
 _G._builtin_session_files = session_files
 -- expose the path builder too, so the dashboard's `s` cannot drift from the
@@ -114,3 +124,5 @@ vim.api.nvim_create_autocmd('VimLeavePre', {
     vim.cmd('silent! mksession! ' .. vim.fn.fnameescape(session_file()))
   end,
 })
+
+return M

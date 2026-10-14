@@ -442,7 +442,13 @@ function M.setup_starter()
         local function close_dashboard()
           if vim.bo.filetype == 'dashboard' then pcall(vim.cmd, 'bwipeout!') end
         end
-        local f = _G._builtin_find_session and _G._builtin_find_session(nil) or nil
+        -- Prefer require('config.sessions') after the module API migration;
+        -- retain _G fallback for reload/legacy callers.
+        local sess_mod = nil
+        local ok, m = pcall(require, 'config.sessions')
+        if ok and type(m) == 'table' then sess_mod = m end
+        local find_session_fn = (sess_mod and (sess_mod.find_session_for or sess_mod.find_session)) or _G._builtin_find_session
+        local f = find_session_fn and find_session_fn(nil) or nil
         if not f then
           local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
           f = sess_dir .. '/' .. vim.fn.fnamemodify(vim.uv.cwd() or vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'
@@ -453,7 +459,8 @@ function M.setup_starter()
           return
         end
         local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
-        local sess_files = _G._builtin_session_files and _G._builtin_session_files(sess_dir) or {}
+        local list_fn = (sess_mod and sess_mod.session_files) or _G._builtin_session_files
+        local sess_files = list_fn and list_fn(sess_dir) or {}
         local mtime, files = {}, {}
         for _, e in ipairs(sess_files) do
           mtime[e.path] = e.mtime

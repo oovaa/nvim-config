@@ -9,12 +9,15 @@ local function scratch_dir()
 end
 
 describe('config.sessions', function()
-  local session_file = _G._builtin_session_file
-  local session_files = _G._builtin_session_files
+  local sessions = require 'config.sessions'
+  local session_file = sessions.session_file_for
+  local session_files = sessions.session_files
 
   it('exports its helpers for the dashboard session picker', function()
     assert.is_function(session_file, 'must export the path builder')
     assert.is_function(session_files, 'must export the listing fn')
+    assert.is_function(sessions.find_session_for)
+    -- compat shim remains usable
     assert.is_function(_G._builtin_find_session)
   end)
 
@@ -74,7 +77,9 @@ describe('config.sessions', function()
     fd:write('badd 1\n' .. 'cd ' .. target .. '\n')
     fd:close()
 
-    assert.equals(p, _G._builtin_find_session(target), 'should find the session whose cd matches the cwd')
+    assert.equals(p, sessions.find_session_for(target), 'should find the session whose cd matches the cwd')
+    -- old global access path still works during transition
+    assert.equals(p, _G._builtin_find_session(target))
     vim.fn.delete(p)
     vim.fn.delete(dir, 'rf')
   end)

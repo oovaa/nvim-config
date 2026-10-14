@@ -63,7 +63,7 @@
 
 ## Phase A — Baseline And Safety Net
 
-### Task A1: Record hard baselines before changing anything
+### Task 1: (A1) Record hard baselines before changing anything
 
 **Files:**
 - Modify: `docs/superpowers/plans/2026-10-14-nvim-improvement-plan.md` (this plan) only if the baseline numbers change on rerun.
@@ -74,7 +74,7 @@
 - [ ] Verify health state: `:checkhealth config` missing row count is exactly the known optional misses (`pyrefly`, `nginx-language-server`, `jupyter_client`).
 - [ ] Commit nothing — this is the control point for every later measurement.
 
-### Task A2: Add a regression assertion for autocmd count
+### Task 2: (A2) Add a regression assertion for autocmd count
 
 **Files:**
 - Create: `tests/test_autocmd_idempotency.lua`
@@ -92,7 +92,7 @@
 
 ## Phase B — Code Cleanliness And Modularity
 
-### Task B1: Split `custom/ui/spec.lua` into focused modules
+### Task 3: (B1) Split `custom/ui/spec.lua` into focused modules
 
 **Files:**
 - Create: `lua/custom/ui/statusline.lua`
@@ -116,7 +116,7 @@
 
 Note: split should reduce the largest file without changing global function names because the dashboard depends on session helper functions.
 
-### Task B2: Extract markdown list formatter and de-duplicate snacks excludes
+### Task 4: (B2) Extract markdown list formatter and de-duplicate snacks excludes
 
 **Files:**
 - Create: `lua/config/markdown.lua`
@@ -132,7 +132,7 @@ Note: split should reduce the largest file without changing global function name
 - [ ] Add byte-offset assertions already covered by tests; no line logic changes.
 - [ ] Commit `refactor: extract markdown lists and snacks excludes`.
 
-### Task B3: Normalize session and terminal globals into a module-local API
+### Task 5: (B3) Normalize session and terminal globals into a module-local API
 
 **Files:**
 - Modify: `lua/config/sessions.lua`
@@ -149,7 +149,7 @@ Note: split should reduce the largest file without changing global function name
 
 Risk: The dashboard Lua copy currently references `_G` directly. Accessors must preserve Lua module caches and `require('config.sessions')` nil behavior after `<leader>ur` reload.
 
-### Task B4: Health checks for optional tools and imports
+### Task 6: (B4) Health checks for optional tools and imports
 
 **Files:**
 - Modify: `lua/config/health.lua`
@@ -165,7 +165,7 @@ Risk: The dashboard Lua copy currently references `_G` directly. Accessors must 
 
 ## Phase C — Performance (runtime, not startup)
 
-### Task C1: Preinstall Tree-sitter parsers and stop on-demand installs from feeling interactive
+### Task 7: (C1) Preinstall Tree-sitter parsers and stop on-demand installs from feeling interactive
 
 **Files:**
 - Modify: `lua/plugins/treesitter.lua`
@@ -180,7 +180,7 @@ Risk: The dashboard Lua copy currently references `_G` directly. Accessors must 
 
 Note: this is likely a net performance and QoL change, not an attempt to fix the Tree-sitter `main` warning itself.
 
-### Task C2: Background Mason `ensure_installed` from `FileType` entry path
+### Task 8: (C2) Background Mason `ensure_installed` from `FileType` entry path
 
 **Files:**
 - Modify: `lua/plugins/lsp.lua`
@@ -193,7 +193,7 @@ Note: this is likely a net performance and QoL change, not an attempt to fix the
 - [ ] Keep current python/binary exclusions documented.
 - [ ] Commit `perf: defer mason bootstrap out of file open`.
 
-### Task C3: Session save and terminal helpers transaction cost
+### Task 9: (C3) Session save and terminal helpers transaction cost
 
 **Files:**
 - Modify: `lua/config/sessions.lua`, `lua/config/terminal.lua`
@@ -206,7 +206,7 @@ Validation: measure in normal/buffer terminal mode.
 
 ## Phase D — Faster Tooling
 
-### Task D1: Add Biome as additive formatter for JS/TS/JSON
+### Task 10: (D1) Add Biome as additive formatter for JS/TS/JSON
 
 **Files:**
 - Create: `lua/plugins/tooling.lua` (or integrate into `lua/plugins/formatting.lua`)
@@ -226,7 +226,7 @@ Validation: measure in normal/buffer terminal mode.
 - [ ] Health in `checkhealth config` marks biome optional.
 - [ ] Commit `feat: optional biome formatting backend (prettier fallback)`.
 
-### Task D2: Linting and diagnostics with Biome (cleaner tool chain)
+### Task 11: (D2) Linting and diagnostics with Biome (cleaner tool chain)
 
 **Files:**
 - Modify: `lua/plugins/ui.lua` (nvim-lint config)
@@ -236,7 +236,7 @@ Validation: measure in normal/buffer terminal mode.
 - [ ] Ensure no overlapping duplicate diagnostic messages, or define preference rule: Biome if config file, else oxlint.
 - [ ] Health check says which linter is active based on cwd.
 
-### Task D3: Python LSP/toolchain decision
+### Task 12: (D3) Python LSP/toolchain decision
 
 **Files:**
 - Modify `lua/plugins/lsp.lua`
@@ -253,7 +253,7 @@ Validation: measure in normal/buffer terminal mode.
 - [ ] Run stress/lsp tests.
 - [ ] Commit `feat: make python lsp fallback and health explicit`.
 
-### Task D4: Java/TS server cleanup tradeoff
+### Task 13: (D4) Java/TS server cleanup tradeoff
 
 - [ ] Keep `vtsls` as canonical TypeScript LSP (measured already reduced cost).
 - [ ] Lower maximum `maxTsServerMemory` to `2048` only if project tests show TypeScript types degrade, and set optional `maximumMemory` to `4096` for large monorepos via local override.
@@ -262,7 +262,7 @@ Validation: measure in normal/buffer terminal mode.
 
 ## Phase E — Quality Of Life And UI/UX
 
-### Task E1: Replace handmade dashboard with snacks.dashboard (carefully)
+### Task 14: (E1) Replace handmade dashboard with snacks.dashboard (carefully)
 
 **Files:**
 - Modify: `lua/custom/ui/dashboard.lua`
@@ -280,7 +280,7 @@ Validation: measure in normal/buffer terminal mode.
 
 Risk: snacks dashboards differ from bespoke visual layout; keep old dashboard behind a git tag/commit so rollback is trivial.
 
-### Task E2: Molten either works or is explicit (QoL decision)
+### Task 15: (E2) Molten either works or is explicit (QoL decision)
 
 **Files:**
 - Modify `lua/custom/plugins/init.lua`
@@ -293,7 +293,7 @@ Risk: snacks dashboards differ from bespoke visual layout; keep old dashboard be
 - [ ] Ensure `<leader>m*` mapping failure is no longer an unresolved stress error.
 - [ ] Commit `fix: make molten registration explicit`.
 
-### Task E3: UI alignment and accessibility polish
+### Task 16: (E3) UI alignment and accessibility polish
 
 **Files:**
 - `lua/custom/ui/statusline.lua`, `lua/custom/ui/tabline.lua`
@@ -305,7 +305,7 @@ Risk: snacks dashboards differ from bespoke visual layout; keep old dashboard be
 - [ ] Use `winborder` for all plugin popups (blink docs, snacks picker is already).
 - [ ] Commit only after `test_ui` and dialog tests.
 
-### Task E4: Better shell session QoL
+### Task 17: (E4) Better shell session QoL
 
 **Files:**
 - Modify keymaps/config only as needed.
@@ -317,7 +317,7 @@ Risk: snacks dashboards differ from bespoke visual layout; keep old dashboard be
 
 ## Phase F — Docs, Tests, Rollout
 
-### Task F1: Update docs from actual config and health
+### Task 18: (F1) Update docs from actual config and health
 
 **Files:**
 - `AGENTS.md`, `README.md`, `SETUP.md`, `CHEATSHEET.md`, `health.lua`
@@ -327,7 +327,7 @@ Risk: snacks dashboards differ from bespoke visual layout; keep old dashboard be
 - [ ] Keep trap comments synchronized.
 - [ ] Run documentation-only workflow.
 
-### Task F2: Enforce new tests and baseline
+### Task 19: (F2) Enforce new tests and baseline
 
 - [ ] `tests/test_autocmd_idempotency.lua` added in Phase A.
 - [ ] Add behavior assertion for markdown spacing, bufferline states, restore.
@@ -335,7 +335,7 @@ Risk: snacks dashboards differ from bespoke visual layout; keep old dashboard be
 - [ ] Add `test_python_tools.lua` to check resolver function behavior (mock executable).
 - [ ] Update `tests/test_performance.lua` with concur pair checks.
 
-### Task F3: Final validation and report
+### Task 20: (F3) Final validation and report
 
 - [ ] `stylua .`
 - [ ] Plenary all suites
