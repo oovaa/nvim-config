@@ -10,6 +10,13 @@ return {
   {
     'benlubas/molten-nvim',
     version = '^1',
+    cond = function()
+      -- Molten commands come from a python3 remote plugin, so they only
+      -- exist once `jupyter_client` and `ipykernel` import successfully;
+      -- skip the spec instead of registering keymaps to missing commands.
+      local out = vim.fn.system { 'python3', '-c', 'import jupyter_client, ipykernel' }
+      return vim.v.shell_error == 0
+    end,
     build = ':UpdateRemotePlugins',
     dependencies = { '3rd/image.nvim' },
     config = function()
