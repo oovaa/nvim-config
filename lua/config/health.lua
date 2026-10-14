@@ -57,19 +57,16 @@ function M.check()
       vim.health.warn('mason: ' .. bin .. ' missing', 'Run :Mason to install')
     end
   end
-  -- The tree-sitter grammars are C, so the scheduled parser bootstrap builds
-  -- nothing without one of these — everything else degrades to regex highlighting.
-  local cc
-  for _, bin in ipairs { 'cc', 'gcc', 'clang' } do
-    if vim.fn.executable(bin) == 1 then
-      cc = bin
-      break
-    end
-  end
-  if cc then
-    vim.health.ok(cc .. ' found (tree-sitter parser builds)')
+  -- nvim-treesitter compiles every grammar with the tree-sitter CLI
+  -- (`tree-sitter build`, install.lua:do_compile), which itself needs a C
+  -- toolchain. No CLI => :TSInstall dies at spawn, whatever cc says.
+  if vim.fn.executable 'tree-sitter' == 1 then
+    vim.health.ok 'tree-sitter found (nvim-treesitter parser builds; its CLI compiles with a C toolchain)'
   else
-    vim.health.warn('no C compiler — tree-sitter parsers cannot be built', 'Install cc/gcc/clang, then :TSInstall lua')
+    vim.health.warn(
+      'tree-sitter missing — nvim-treesitter cannot build parsers',
+      'npm i -g tree-sitter-cli (or brew install tree-sitter, or :Mason install tree-sitter-cli)'
+    )
   end
   -- nvim-lint picks the JS/TS linter per buffer (biome_or_oxlint in ui.lua),
   -- so this row answers for this cwd only: :checkhealth runs with its own
