@@ -217,7 +217,8 @@ function M.setup_lualine()
 
     -- branch
     local branch = vim.b.gitsigns_head or vim.g.gitsigns_head or ''
-    local branch_s = branch ~= '' and (' ' .. branch) or ''
+    -- plain 'git:' label instead of a nerd glyph: tofu on unpatched fonts
+    local branch_s = branch ~= '' and ('git:' .. branch) or ''
     -- diff (gitsigns_status_dict)
     local diff_s = ''
     local d = vim.b.gitsigns_status_dict
@@ -231,7 +232,8 @@ function M.setup_lualine()
     -- diagnostics — cached counts (refreshed on DiagnosticChanged), not get() per redraw
     local buf0 = vim.api.nvim_get_current_buf()
     local cnt = M._diag_counts[buf0] or M._count_diags(buf0)
-    local icons = { ' ', ' ', ' ', ' ' }
+    -- ASCII severity letters instead of nerd glyphs: tofu on unpatched fonts
+    local icons = { 'E:', 'W:', 'I:', 'H:' }
     local diag_parts = {}
     if cnt.e > 0 then diag_parts[#diag_parts + 1] = icons[1] .. cnt.e end
     if cnt.w > 0 then diag_parts[#diag_parts + 1] = icons[2] .. cnt.w end
@@ -268,7 +270,7 @@ function M.setup_lualine()
       if fname == '' then fname = '[No Name]' end
     end
     if vim.bo.modified then fname = fname .. ' [+]' end
-    if vim.bo.readonly then fname = fname .. ' 󰌾' end
+    if vim.bo.readonly then fname = fname .. ' [ro]' end
     -- spell flag mirrors the <leader>us toggle (visible state, only when on)
     if vim.wo.spell then fname = fname .. ' %#SL_search#SPELL' .. hl_c end
 
@@ -296,7 +298,7 @@ function M.setup_lualine()
     -- ponytail: vim.lsp.status() carries $/progress text while servers work;
     -- show it live, fall back to the cached client name when idle; %-escape for statusline safety.
     local prog = vim.lsp.status():gsub('%%', '%%%%')
-    local lsp_s = prog ~= '' and ('%#SL_lsp#' .. prog .. hl_c) or (M._lsp_name.name == '' and '' or '%#SL_lsp#󰄶 ' .. M._lsp_name.name .. hl_c)
+    local lsp_s = prog ~= '' and ('%#SL_lsp#' .. prog .. hl_c) or (M._lsp_name.name == '' and '' or '%#SL_lsp#lsp: ' .. M._lsp_name.name .. hl_c)
 
     local enc = (vim.bo.fileencoding ~= '' and vim.bo.fileencoding or vim.o.encoding)
     local ff = vim.bo.fileformat
