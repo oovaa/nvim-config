@@ -36,7 +36,7 @@ return {
       vim.g.treesitter_bootstrap = vim.g.treesitter_bootstrap or {}
       vim.defer_fn(function()
         if #vim.api.nvim_list_uis() == 0 then return end
-        local todo = {}
+        local marks, todo = vim.g.treesitter_bootstrap or {}, {}
         for _, lang in ipairs {
           'lua',
           'vim',
@@ -55,11 +55,14 @@ return {
           'rust',
           'go',
         } do
-          if not vim.g.treesitter_bootstrap[lang] and vim.uv.fs_stat(parser_path(lang)) == nil then
-            vim.g.treesitter_bootstrap[lang] = true -- at most one attempt per session
+          if not marks[lang] and vim.uv.fs_stat(parser_path(lang)) == nil then
+            marks[lang] = true -- at most one attempt per session
             table.insert(todo, lang)
           end
         end
+        -- vim.g hands out a copy of a dict global, so assign the marks back as
+        -- a whole table: `vim.g.treesitter_bootstrap[lang] = true` is a no-op.
+        vim.g.treesitter_bootstrap = marks
         if #todo > 0 then pcall(vim.cmd, 'TSInstall ' .. table.concat(todo, ' ')) end
       end, 250)
 
@@ -83,8 +86,10 @@ return {
             local lang = ft:match '^[^.]+'
             -- same once-per-session state as the bootstrap above, so a language
             -- whose build failed is not retried on every buffer of that type
-            if not vim.g.treesitter_bootstrap[lang] and vim.uv.fs_stat(parser_path(lang)) == nil then
-              vim.g.treesitter_bootstrap[lang] = true
+            local marks = vim.g.treesitter_bootstrap or {}
+            if not marks[lang] and vim.uv.fs_stat(parser_path(lang)) == nil then
+              marks[lang] = true
+              vim.g.treesitter_bootstrap = marks -- whole table, see the note above
               pcall(vim.cmd, 'TSInstall ' .. lang)
             end
           end
