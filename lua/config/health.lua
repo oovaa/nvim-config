@@ -25,6 +25,14 @@ local optional = {
   { bin = 'nginxfmt', why = 'nginx format on <leader>ff (pip install nginx-config-formatter)' },
 }
 
+--- The biome.json root rule nvim-lint's biome_or_oxlint applies
+--- (lua/plugins/ui.lua), applied to `anchor` (a file or a directory). The rule
+--- is shared; the anchor is not — the linter uses the buffer, checkhealth uses
+--- the cwd, so the two answer differently in a two-project session.
+---@param anchor string
+---@return 'biome'|'oxlint'
+function M.js_linter(anchor) return vim.fs.root(anchor, { 'biome.json', 'biome.jsonc' }) and 'biome' or 'oxlint' end
+
 function M.check()
   vim.health.start 'nvim-config'
   for _, t in ipairs(required) do
@@ -63,10 +71,24 @@ function M.check()
   else
     vim.health.warn('no C compiler — tree-sitter parsers cannot be built', 'Install cc/gcc/clang, then :TSInstall lua')
   end
-  -- Which JS/TS linter nvim-lint runs for this cwd — same predicate as the
-  -- biome_or_oxlint entry in ui.lua, so this never lies about the live choice.
-  local biome_root = vim.fs.root(vim.uv.cwd() or vim.fn.getcwd(), { 'biome.json', 'biome.jsonc' })
-  vim.health.ok('JS/TS lint: ' .. (biome_root and 'biome' or 'oxlint') .. ' (biome.json in project root, else oxlint)')
+  -- nvim-lint picks the JS/TS linter per buffer (biome_or_oxlint in ui.lua),
+  -- so this row answers for this cwd only: :checkhealth runs with its own
+  -- report buffer current, so there is no user buffer to ask about.
+  local biome_root = M.js_linter(vim.uv.cwd()) == 'biome'
+  if biome_root and vim.fn.executable 'biome' == 0 and vim.fn.filereadable './node_modules/.bin/biome' == 0 then
+    vim.health.warn(
+      'JS/TS lint for this cwd: biome — the project configures biome but the binary is missing, so every save errors',
+      'Install biome on PATH or in ./node_modules/.bin'
+    )
+  else
+    vim.health.ok(
+      'JS/TS lint for this cwd: '
+        .. (biome_root and 'biome' or 'oxlint')
+        .. ' ('
+        .. (biome_root and 'biome.json in project root' or 'no biome.json in project root')
+        .. ')'
+    )
+  end
   local debugpy = vim.fn.stdpath 'data' .. '/mason/packages/debugpy/venv/bin/python'
   if vim.fn.executable(debugpy) == 1 then
     vim.health.ok 'mason: debugpy venv found'
