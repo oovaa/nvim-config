@@ -49,6 +49,10 @@ function M.check()
       vim.health.warn('mason: ' .. bin .. ' missing', 'Run :Mason to install')
     end
   end
+  -- Which JS/TS linter nvim-lint runs for this cwd — same predicate as the
+  -- biome_or_oxlint entry in ui.lua, so this never lies about the live choice.
+  local biome_root = vim.fs.root(vim.uv.cwd() or vim.fn.getcwd(), { 'biome.json', 'biome.jsonc' })
+  vim.health.ok('JS/TS lint: ' .. (biome_root and 'biome' or 'oxlint') .. ' (biome.json in project root, else oxlint)')
   local debugpy = vim.fn.stdpath 'data' .. '/mason/packages/debugpy/venv/bin/python'
   if vim.fn.executable(debugpy) == 1 then
     vim.health.ok 'mason: debugpy venv found'

@@ -162,12 +162,22 @@ return {
     event = { 'BufReadPost', 'BufNewFile' },
     config = function()
       local lint = require 'lint'
+      -- ponytail: biome wins only where the project actually configures it
+      -- (biome.json/c in the buffer's root); everywhere else oxlint stays the
+      -- single JS/TS linter, so diagnostics are never reported twice.
+      -- A function linter is re-resolved per run (lint.lua: `type(linter) ==
+      -- 'function'`), so the choice follows the buffer, not the load order.
+      lint.linters.biome_or_oxlint = function()
+        local bufname = vim.api.nvim_buf_get_name(0)
+        if vim.fs.root(bufname, { 'biome.json', 'biome.jsonc' }) then return lint.linters.biomejs end
+        return lint.linters.oxlint
+      end
       lint.linters_by_ft = {
         -- ponytail: oxlint over eslint — ms per save, no daemon; type-aware rules don't fire (that's the RAM hog)
-        javascript = { 'oxlint' },
-        typescript = { 'oxlint' },
-        javascriptreact = { 'oxlint' },
-        typescriptreact = { 'oxlint' },
+        javascript = { 'biome_or_oxlint' },
+        typescript = { 'biome_or_oxlint' },
+        javascriptreact = { 'biome_or_oxlint' },
+        typescriptreact = { 'biome_or_oxlint' },
         python = { 'ruff' },
       }
       vim.api.nvim_create_autocmd({ 'BufWritePost', 'InsertLeave' }, {
