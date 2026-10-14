@@ -11,13 +11,16 @@ function M.setup_starter()
     ' _/ |\\___\\__,_|_| |_|',
     '|__/                ',
   }
+  -- nerd glyphs written as codepoints: a literal PUA char is invisible in source and
+  -- an unpatched font renders tofu. Codepoints keep the diff readable either way.
   local buttons = {
-    { key = 'e', label = 'New File', action = '<cmd>ene<CR>' },
-    { key = 'f', label = 'Find File', action = function() require('snacks').picker.files() end },
-    { key = 'r', label = 'File Explorer', action = function() require('snacks').explorer() end },
-    { key = 'g', label = 'Git (LazyGit)', action = function() vim.cmd 'terminal lazygit' end },
+    { key = 'e', icon = vim.fn.nr2char(0xf15b), label = 'New File', action = '<cmd>ene<CR>' },
+    { key = 'f', icon = vim.fn.nr2char(0xf002), label = 'Find File', action = function() require('snacks').picker.files() end },
+    { key = 'r', icon = vim.fn.nr2char(0xf115), label = 'File Explorer', action = function() require('snacks').explorer() end },
+    { key = 'g', icon = vim.fn.nr2char(0xf126), label = 'Git (LazyGit)', action = function() vim.cmd 'terminal lazygit' end },
     {
       key = 's',
+      icon = vim.fn.nr2char(0xf017),
       label = 'Recent Sessions',
       action = function()
         -- ponytail: restore current cwd session; if none, pick from sessions dir (readable `cd` dir, deduped)
@@ -97,8 +100,8 @@ function M.setup_starter()
         pick()
       end,
     },
-    { key = 'u', label = 'Update Plugins', action = '<cmd>Lazy sync<CR>' },
-    { key = 'q', label = 'Quit', action = '<cmd>qa<CR>' },
+    { key = 'u', icon = vim.fn.nr2char(0xf021), label = 'Update Plugins', action = '<cmd>Lazy sync<CR>' },
+    { key = 'q', icon = vim.fn.nr2char(0xf011), label = 'Quit', action = '<cmd>qa<CR>' },
   }
   local config_dir = vim.fn.stdpath 'config'
   local function collect_recent()
@@ -139,7 +142,7 @@ function M.setup_starter()
         label_w = math.max(label_w, vim.fn.strdisplaywidth(b.label))
       end
       for _, b in ipairs(buttons) do
-        raw[#raw + 1] = string.format('  %s  %s', b.key, pad_disp(b.label, label_w))
+        raw[#raw + 1] = string.format('  %s  %s  %s', b.key, b.icon, pad_disp(b.label, label_w))
       end
       raw[#raw + 1] = ''
       for i, r in ipairs(recent) do
@@ -177,12 +180,17 @@ function M.setup_starter()
         pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Include', i - 1, block_pad, -1)
       end
       pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Comment', #lines - 1, block_pad, -1)
-      -- button rows: key char Special, then label as Function
+      -- button rows: key char Special, icon Title, label Function
       local btn_start = pad_top + 1 + 1 + #header + 1 -- pad_top + 2 blanks + header lines + 1 blank
       for i, b in ipairs(buttons) do
         local row = btn_start + i - 1
+        -- ponytail: extmark columns are BYTE offsets, so the icon advance must be
+        -- #icon, not strdisplaywidth(icon) — a nerd glyph is 3 utf-8 bytes but 1
+        -- display cell, which put the label highlight 2 columns to its left.
+        local icon_end = block_pad + 5 + #b.icon
         pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Special', row, block_pad + 2, block_pad + 3)
-        pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Function', row, block_pad + 5, -1)
+        pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Title', row, block_pad + 5, icon_end)
+        pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Function', row, icon_end + 2, -1)
       end
       -- recent file rows: Number on the index, Directory on the rest.
       -- The blank separator after the buttons is raw index 9+#buttons, so the

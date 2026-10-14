@@ -415,10 +415,9 @@ S.dashboard = function()
   if hi then
     local col = hline:find('New File', 1, true)
     local row = hls(buf, hi - 1)
-    -- Two groups: the key char (Special) and the label (Function). The old
-    -- third group (Title) highlighted the icon, which no longer exists.
-    H.t('dashboard: the button row highlights the key char and the label', function()
-      for _, g in ipairs { 'Special', 'Function' } do
+    -- Three groups: the key char (Special), the nerd icon (Title), the label (Function).
+    H.t('dashboard: the button row has all three highlight groups', function()
+      for _, g in ipairs { 'Special', 'Title', 'Function' } do
         if not row[g] then return ('row %d is missing %s (has %s)'):format(hi, g, vim.inspect(vim.tbl_keys(row))) end
       end
       return true

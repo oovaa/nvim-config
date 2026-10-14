@@ -10,6 +10,37 @@
 
 **Spec:** User request: "do a deep scan and analysis into my nvim config and create a plan for improvement in terms of performance, tooling update with faster tools, QoL, ui/ux improvemnts, and code cleannes and modularity improvemnts. construct a plan and we review before executing."
 
+## Status (recorded 2026-10-14, after the 66-commit pull)
+
+The matching commit is the evidence a task shipped; nothing else ticked.
+
+| Task | State | Commit |
+|---|---|---|
+| A1 baselines | done (control point) | — |
+| A2 autocmd idempotency | done | `c40e46c` |
+| B1 split `custom/ui` | done | `fe5fb09` |
+| B2 markdown lists + snacks excludes | done | `b37bc2c` |
+| B3 session module API | done | `934b422` |
+| B4 health rows | done | `deb5ebf`, `bb49d83` |
+| C1 background treesitter parsers | done | `adc4c48` |
+| C2 mason off the open path | done | `85e3b6c` |
+| C3 session/terminal scan cost | not started | — |
+| D1 biome formatting | done | `33fe343` |
+| D2 biome lint | done | `63a74e3` |
+| D3 python lsp ladder | done | `8a109ba`, `311a7c7` |
+| D4 JS/TS server tuning | not started | — |
+| E1 snacks.dashboard | not started — custom dashboard kept | — |
+| E2 molten explicit | done | `ab69340`, `1119673` |
+| E3 UI polish | partial — statusline color, then icons back | `7f23565`, `6d09083` |
+| E4 QoL | partial — buffer pin, `vim.ui.select`; no undo tree | `8ce87a8`, `5b10595` |
+| F1 docs | done | `cc5d331`, `a78e1f6`, `ba7ca97`, `98a174b` |
+| F2 tests | done | `tests/e2e_features.lua`, `test_formatting.lua`, `test_python_tools.lua` |
+| F3 final validation | stress 894 PASS / 1 FAIL | — |
+
+The one FAIL is the baseline FAIL, unchanged: no `<leader>m` mapping, because the
+Molten commands never register on this host (trap 3). Everything else is trap-level
+noise: the treesitter `main` warning, the `gc`/`gcc` prefix, clipboard over ssh.
+
 ## Global Constraints
 
 - Neovim floor remains effectively 0.11+; CI pins 0.12.6. 0.12-only options (`smoothscroll`, `winborder`, `pumborder`) stay as they are.

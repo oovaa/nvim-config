@@ -229,7 +229,7 @@ function M.setup_lualine()
 
     -- branch
     local branch = vim.b.gitsigns_head or vim.g.gitsigns_head or ''
-    -- plain 'git:' label instead of a nerd glyph: tofu on unpatched fonts
+    -- branch glyph as a codepoint, not a literal PUA char (invisible in source)
     local branch_s = branch ~= '' and ('%#SL_branch#' .. vim.fn.nr2char(0xe0a0) .. ' ' .. branch .. hl_b) or ''
     -- diff (gitsigns_status_dict)
     local diff_s = ''
@@ -244,7 +244,7 @@ function M.setup_lualine()
     -- diagnostics — cached counts (refreshed on DiagnosticChanged), not get() per redraw
     local buf0 = vim.api.nvim_get_current_buf()
     local cnt = M._diag_counts[buf0] or M._count_diags(buf0)
-    -- Nerd glyphs with per-severity color; fallback comment kept for maintainers.
+    -- nerd glyphs with per-severity color so severity reads without counting
     local icons = { vim.fn.nr2char(0xf057), vim.fn.nr2char(0xf071), vim.fn.nr2char(0xf05a), vim.fn.nr2char(0xf0eb) }
     local diag_parts = {}
     if cnt.e > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_e#' .. icons[1] .. cnt.e .. hl_b end
