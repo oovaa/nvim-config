@@ -49,6 +49,20 @@ function M.check()
       vim.health.warn('mason: ' .. bin .. ' missing', 'Run :Mason to install')
     end
   end
+  -- The tree-sitter grammars are C, so the scheduled parser bootstrap builds
+  -- nothing without one of these — everything else degrades to regex highlighting.
+  local cc
+  for _, bin in ipairs { 'cc', 'gcc', 'clang' } do
+    if vim.fn.executable(bin) == 1 then
+      cc = bin
+      break
+    end
+  end
+  if cc then
+    vim.health.ok(cc .. ' found (tree-sitter parser builds)')
+  else
+    vim.health.warn('no C compiler — tree-sitter parsers cannot be built', 'Install cc/gcc/clang, then :TSInstall lua')
+  end
   -- Which JS/TS linter nvim-lint runs for this cwd — same predicate as the
   -- biome_or_oxlint entry in ui.lua, so this never lies about the live choice.
   local biome_root = vim.fs.root(vim.uv.cwd() or vim.fn.getcwd(), { 'biome.json', 'biome.jsonc' })
