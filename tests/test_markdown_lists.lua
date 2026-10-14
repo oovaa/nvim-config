@@ -36,7 +36,33 @@ describe('markdown lists', function()
     { 'nest: O on inner stops at outer', { '1. a', '  1. x', '  2. y', '2. b' }, { 2, 1 }, 'O', { '1. a', '  1. ', '  2. x', '  3. y', '2. b' } },
     { 'plain: O falls back to native', { 'hello' }, { 1, 1 }, 'O', { '', 'hello' } },
     { 'plain: enter untouched', { 'hello' }, { 1, 5 }, 'A<CR>', { 'hello', '' } },
+    -- continuation spacing: a new item is always `indent + n + delim + ' '`,
+    -- while renumbering rewrites only the number and copies each item's own
+    -- tail verbatim, so wide/tab spacing survives an insert.
+    { 'num: extra spacing kept, new item gets one space', { '1.   a', '2.   b' }, { 1, 6 }, 'A<CR>', { '1.   a', '2. ', '3.   b' } },
+    { 'num: tab after marker kept', { '1.\ta', '2.\tb' }, { 1, 4 }, 'A<CR>', { '1.\ta', '2. ', '3.\tb' } },
+    { 'nest: sublist enter keeps indent, one space', { '1. a', '  1.   x', '  2.   y' }, { 2, 9 }, 'A<CR>', { '1. a', '  1.   x', '  2. ', '  3.   y' } },
+    { 'num: O above keeps each tail spacing', { '1.   a', '2.   b' }, { 1, 7 }, 'O', { '1. ', '2.   a', '3.   b' } },
   }
+
+  it('markdown ftplugin overwrites comments with the b: leader flag', function()
+    -- the leader spacing only repeats at all because of 'b:': the runtime
+    -- markdown ftplugin's 'fb:-'/'fb:*'/'fb:+' carry the f flag ("leader only
+    -- on the very first line"), so appending b:- entries would be shadowed and
+    -- none of the cases above would continue the list.
+    vim.cmd 'enew!'
+    local buf = vim.api.nvim_get_current_buf()
+    vim.bo[buf].filetype = 'markdown'
+    -- vim.bo returns the comma list as one string
+    assert.same({ 'b:-', 'b:*', 'b:+', 'n:>' }, vim.split(vim.bo[buf].comments, ','))
+    -- r = repeat leader on <CR>, o = open line with indent, n = keep the
+    -- continuation line unindented
+    local fo = vim.bo[buf].formatoptions
+    for _, flag in ipairs { 'r', 'o', 'n' } do
+      assert.is_truthy(fo:match(flag), ('formatoptions must carry %q (got %q)'):format(flag, fo))
+    end
+    vim.cmd 'bwipeout!'
+  end)
 
   for _, c in ipairs(cases) do
     local name, lines, cur, seq, want, want_row = c[1], c[2], c[3], c[4], c[5], c[6]
