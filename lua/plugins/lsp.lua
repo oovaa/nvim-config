@@ -341,6 +341,7 @@ return {
           settings = { python = { pyrefly = { typeCheckingMode = 'default' } } },
         }
       lsp_filetypes.pyrefly = lsp_filetypes.pyrefly or { 'python' }
+      vim.lsp.config('pyrefly', servers.pyrefly)
 
       for server, filetypes in pairs(lsp_filetypes) do
         vim.api.nvim_create_autocmd('FileType', {
