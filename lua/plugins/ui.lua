@@ -168,8 +168,13 @@ return {
       -- A function linter is re-resolved per run (lint.lua: `type(linter) ==
       -- 'function'`), so the choice follows the buffer, not the load order.
       lint.linters.biome_or_oxlint = function()
-        local bufname = vim.api.nvim_buf_get_name(0)
-        if vim.fs.root(bufname, { 'biome.json', 'biome.jsonc' }) then return lint.linters.biomejs end
+        local root = vim.fs.root(vim.api.nvim_buf_get_name(0), { 'biome.json', 'biome.jsonc' })
+        -- ponytail: cwd pinned to the buffer's own root — biome resolves its
+        -- config from cwd, and from a foreign cwd it aborts ("nested root
+        -- configuration", exit 1) which ignore_exitcode swallows, so the
+        -- buffer would silently get zero diagnostics. tbl_extend, not mutation:
+        -- lint.lua stamps `name` on the table it gets.
+        if root then return vim.tbl_extend('force', lint.linters.biomejs, { cwd = root }) end
         return lint.linters.oxlint
       end
       lint.linters_by_ft = {
