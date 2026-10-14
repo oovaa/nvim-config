@@ -40,8 +40,8 @@ return {
     opts = { layout = { min_width = 28 }, attach_mode = 'global', backends = { 'lsp', 'treesitter', 'markdown', 'man' } },
   },
 
-  -- Command palette: vim.ui.input via snacks.nvim, vim.ui.select via
-  -- builtin (plain) until a picker override is chosen.
+  -- Command palette: vim.ui.input via snacks.nvim; vim.ui.select is claimed by
+  -- snacks in lua/plugins/ui.lua (the spec's own config function).
 
   -- Better quickfix (bqf.nvim)
   {

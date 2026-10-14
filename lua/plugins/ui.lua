@@ -102,6 +102,19 @@ return {
       scratch = { ft = 'markdown' }, -- ponytail: always markdown, never inherits python/js ft (no pyrefly/eslint in scratch)
       words = { enabled = true },
     },
+    -- ponytail: explicit config (instead of bare `opts`) only to claim
+    -- vim.ui.select AFTER setup() — lazy's implicit setup() would run first
+    -- anyway, but the ordering has to be visible here.
+    config = function(_, opts)
+      require('snacks').setup(opts)
+      -- LSP code actions, quickfix, mason and the dashboard's `s` all go
+      -- through vim.ui.select; route them at the snacks picker so they match
+      -- the rest of the UI. Snacks' own `picker.ui_select` would do this too,
+      -- but only from its UIEnter setup — which never fires headless, so
+      -- tests/CI would keep the builtin float. No process spawn: the picker is
+      -- built lazily on first call, well after startup.
+      vim.ui.select = require('snacks').picker.select
+    end,
     keys = {
       { '<leader>.', function() require('snacks').scratch() end, desc = 'Toggle Scratch Buffer' },
       { '<leader>S', function() require('snacks').scratch.select() end, desc = 'Select Scratch Buffer' },
