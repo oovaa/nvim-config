@@ -1140,12 +1140,14 @@ do
     -- the cause once instead of one failure per key.
     -- Only a *bound* command can raise E492: a spec whose `cond` is false never
     -- loads, so nothing is bound and those commands are counted, not failed.
+    -- The scan below sees the same `<[Cc]md>` spelling both halves of a mapping
+    -- can use — a `<Cmd>`-spelled source line used to escape this check.
     require('lazy').load { plugins = vim.tbl_map(function(p) return p.name end, require('lazy').plugins()) }
     local cmds = {}
     for _, f in ipairs(H.lua_files()) do
       if not f:match '/tests/' then
         local src = table.concat(vim.fn.readfile(f), '\n')
-        for c in src:gmatch '<cmd>([%w_]+)' do
+        for c in src:gmatch '<[Cc]md>([%w_]+)' do
           cmds[c] = true
         end
         for c in src:gmatch "cmd%s*=%s*'([%w_]+)'" do
@@ -1179,10 +1181,16 @@ do
     unmapped = unmapped_cmds
     return #missing == 0 or ('bound but not defined by any loaded plugin: ' .. table.concat(missing, ', '))
   end)
-  H.pass(
-    'integrity: commands declared in conditionally-loaded specs (nothing bound them)',
-    ('%d commands skipped: %s'):format(#(unmapped or {}), table.concat(unmapped or {}, ', '))
-  )
+  -- WARN, never pass: a non-empty list means the scan could not see the binding
+  -- (buffer-local maps, a filetype this run never opened, an rhs built at
+  -- runtime), so a real E492 there would be reported here as green.
+  H.t('integrity: commands declared but not bound (no global mapping points at them)', function()
+    if #unmapped == 0 then return true end
+    return {
+      level = 'WARN',
+      msg = ('%d commands no live mapping points at (global maps only): %s'):format(#unmapped, table.concat(unmapped, ', ')),
+    }
+  end)
   H.t('integrity: nvim-treesitter is on the main branch rewrite', function()
     local p = require('lazy.core.config').plugins['nvim-treesitter']
     if not p then return 'nvim-treesitter is not installed' end

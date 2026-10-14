@@ -124,20 +124,56 @@ describe('performance', function()
     -- the FileType path that actually highlights must stay registered.
     local ts = P['nvim-treesitter']
     assert.is_not_nil(ts, 'nvim-treesitter must be registered')
-    assert.is_falsy(ts.lazy == false, 'nvim-treesitter must stay lazy')
+    assert.is_true(ts.lazy, 'nvim-treesitter must stay lazy')
     assert.same({ 'BufReadPost', 'BufNewFile' }, ts.event, 'treesitter must keep its lazy-open events')
 
-    -- Once loaded, the highlight path is a cleared augroup so <leader>ur
-    -- cannot stack a second FileType handler.
-    local tmp = vim.fn.tempname() .. '.lua'
-    vim.fn.writefile({ 'local x = 1', 'return x' }, tmp)
-    vim.cmd.edit(vim.fn.fnameescape(tmp))
+    -- Load it directly: once loaded, the highlight path is a cleared augroup so
+    -- <leader>ur cannot stack a second FileType handler. :edit on a temp file
+    -- would fire that handler, and on a runner with no parser it installs one
+    -- over the network inside a unit test.
+    require('lazy').load { plugins = { 'nvim-treesitter' } }
     assert.is_true(
-      vim.wait(5000, function() return #vim.api.nvim_get_autocmds { group = 'treesitter-start', event = 'FileType' } > 0 end, 50),
+      #vim.api.nvim_get_autocmds { group = 'treesitter-start', event = 'FileType' } > 0,
       'treesitter-start FileType augroup must be registered after load'
     )
-    pcall(vim.api.nvim_buf_delete, vim.api.nvim_get_current_buf(), { force = true })
-    vim.fn.delete(tmp)
+  end)
+
+  it('starts treesitter on a normal buffer but not on one over the 200KB cap', function()
+    require('lazy').load { plugins = { 'nvim-treesitter' } }
+    -- What is under test is the size guard, so record the two calls it sits
+    -- between instead of making them: :TSInstall builds a parser over the
+    -- network on a parser-less runner, and vim.treesitter.start asserts one.
+    local started, installed, bufs, files = {}, {}, {}, {}
+    local real_start, real_cmd = vim.treesitter.start, vim.cmd
+    vim.treesitter.start = function(buf) started[#started + 1] = buf end
+    vim.cmd = function(c)
+      -- a FileType handler runs with its own buffer current
+      if tostring(c):match '^TSInstall' then installed[#installed + 1] = vim.api.nvim_get_current_buf() end
+    end
+
+    local function open(kb)
+      local name = vim.fn.tempname() .. '.lua'
+      vim.fn.writefile({ string.rep('x', kb * 1024) }, name) -- size is the point
+      local buf = vim.api.nvim_create_buf(false, false)
+      vim.api.nvim_buf_set_name(buf, name)
+      vim.api.nvim_buf_call(buf, function() vim.cmd 'noautocmd setlocal filetype=lua' end)
+      vim.api.nvim_exec_autocmds('FileType', { group = 'treesitter-start', buffer = buf })
+      bufs[#bufs + 1], files[#files + 1] = buf, name
+      return buf
+    end
+    -- the treesitter cap (200KB) is stricter than large_file_size (1 MiB)
+    local big, small = open(256), open(8)
+
+    vim.treesitter.start, vim.cmd = real_start, real_cmd -- restore before asserting
+    for _, buf in ipairs(bufs) do
+      pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    end
+    for _, f in ipairs(files) do
+      vim.fn.delete(f)
+    end
+
+    assert.same({ small }, started, 'only the small buffer may start highlighting')
+    assert.is_false(vim.tbl_contains(installed, big), 'the oversized buffer must not reach the install path')
   end)
 
   it('keeps nvim-ts-autotag scoped to markup filetypes', function()
