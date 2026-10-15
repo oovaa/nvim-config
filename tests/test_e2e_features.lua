@@ -52,7 +52,7 @@ describe('e2e: shipped features', function()
     ]]
     -- Fake `ty` on PATH, and hide the real pyrefly/pyright so the ladder picks ty.
     local path = bin .. ':' .. vim.env.PATH
-    local stdout = boot(probe:gsub('%s+', ' '), {
+    local stdout = boot((probe:gsub('%s+', ' ')), {
       env = {
         PATH = path,
       },
@@ -68,7 +68,7 @@ describe('e2e: shipped features', function()
       local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
       io.stdout:write(table.concat(lines, '\n'))
     ]]
-    local stdout = boot(probe:gsub('%s+', ' '))
+    local stdout = boot((probe:gsub('%s+', ' ')))
     assert.is_truthy(stdout:lower():match 'tree%-s?sitter', 'health must name the tree-sitter CLI: ' .. stdout)
     assert.is_truthy(stdout:lower():match 'biome', 'health must name the JS linter: ' .. stdout)
   end)
@@ -90,7 +90,7 @@ describe('e2e: shipped features', function()
       end
       io.stdout:write('molten_keys=' .. n .. ' cmd=' .. vim.fn.exists(':MoltenInit'))
     ]]
-    local stdout = boot(keys:gsub('%s+', ' '), { env = env })
+    local stdout = boot((keys:gsub('%s+', ' ')), { env = env })
     assert.is_truthy(stdout:match 'molten_keys=0', 'a blank manifest must bind nothing: ' .. stdout)
     assert.is_truthy(stdout:match 'cmd=0', 'Molten commands must be absent: ' .. stdout)
 
@@ -99,7 +99,7 @@ describe('e2e: shipped features', function()
     local body = manifest and manifest:read '*a' or ''
     if manifest then manifest:close() end
     write(std .. '/rplugin.vim', vim.split(body, '\n'))
-    local stdout2 = boot(keys:gsub('%s+', ' '), { env = env })
+    local stdout2 = boot((keys:gsub('%s+', ' ')), { env = env })
     assert.is_truthy(stdout2:match 'cmd=2', 'MoltenInit must exist once the manifest lists molten: ' .. stdout2)
     assert.is_truthy(stdout2:match 'molten_keys=%d' and not stdout2:match 'molten_keys=0', 'molten keys must be bound: ' .. stdout2)
     vim.fn.delete(data, 'rf')
@@ -108,7 +108,9 @@ describe('e2e: shipped features', function()
   it('formats a javascript file with biome on save', function()
     assert.are.equal(1, vim.fn.executable 'biome', 'this case needs biome on PATH')
     local proj = tmpdir 'fmt'
-    write(proj .. '/biome.json', { '{"formatter":{"quoteStyle":"single","semicolons":"always"}}' })
+    -- biome v2 moved quoteStyle/semicolons under `javascript.formatter`; the v1
+    -- shape makes biome exit non-zero ("unknown key"), so this fixture pins v2.
+    write(proj .. '/biome.json', { '{"javascript":{"formatter":{"quoteStyle":"single","semicolons":"always"}}}' })
     local file = proj .. '/a.js'
     write(file, { 'const x =   1+2', 'console.log( x )' })
 
@@ -120,7 +122,7 @@ describe('e2e: shipped features', function()
       ]],
       vim.fn.fnameescape(file)
     )
-    local stdout = boot(probe:gsub('%s+', ' '))
+    local stdout = boot((probe:gsub('%s+', ' ')))
     assert.is_truthy(stdout:match 'ft=javascript', 'expected a javascript buffer: ' .. stdout)
     local body = table.concat(vim.fn.readfile(file), '\n')
     assert.is_truthy(body:match 'const x = %d+ %+ %d+;', 'biome must add the semicolon: ' .. body)
@@ -131,7 +133,8 @@ describe('e2e: shipped features', function()
   it('lints with biome from a foreign cwd', function()
     assert.are.equal(1, vim.fn.executable 'biome', 'this case needs biome on PATH')
     local proj, other = tmpdir 'lintproj', tmpdir 'lintcwd'
-    write(proj .. '/biome.json', { '{"linter":{"rules":{"useConst":"error"}}}' })
+    -- `recommended` is spelled the same in v1 and v2; `useConst`/`noVar` are not.
+    write(proj .. '/biome.json', { '{"linter":{"rules":{"recommended":true}}}' })
     local file = proj .. '/b.js'
     write(file, { 'let value = 1;', 'console.log(value)' })
 
@@ -147,7 +150,7 @@ describe('e2e: shipped features', function()
       vim.fn.fnameescape(other),
       vim.fn.fnameescape(file)
     )
-    local stdout = boot(probe:gsub('%s+', ' '))
+    local stdout = boot((probe:gsub('%s+', ' ')))
     assert.is_truthy(stdout:match 'diags=%d' and not stdout:match 'diags=0', 'biome must report from a foreign cwd: ' .. stdout)
     assert.is_truthy(stdout:match 'src=biome', 'the linter must be biomejs: ' .. stdout)
     vim.fn.delete(proj, 'rf')
@@ -159,13 +162,18 @@ describe('e2e: shipped features', function()
       vim.cmd('enew')
       vim.cmd('file /tmp/nvim-e2e-pin-a')
       local listed = vim.bo.buflisted
-      vim.cmd('normal ' .. vim.fn.keytrans '<leader>bp')
+      -- keytrans() does NOT expand <leader> (it returns "<lt>leader>bp" even
+      -- with mapleader set), so feed the real leader through replace_termcodes.
+      local function press(lhs)
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(vim.g.mapleader .. lhs, true, false, true), 'x', false)
+      end
+      press 'bp'
       local after1 = vim.bo.buflisted
-      vim.cmd('normal ' .. vim.fn.keytrans '<leader>bp')
+      press 'bp'
       local after2 = vim.bo.buflisted
       io.stdout:write('start=' .. tostring(listed) .. ' one=' .. tostring(after1) .. ' two=' .. tostring(after2))
     ]]
-    local stdout = boot(probe:gsub('%s+', ' '))
+    local stdout = boot((probe:gsub('%s+', ' ')))
     assert.is_truthy(stdout:match 'start=true one=false two=true', 'pin must toggle both ways: ' .. stdout)
   end)
 
@@ -176,7 +184,7 @@ describe('e2e: shipped features', function()
       end)
       io.stdout:write('ok=' .. tostring(ok) .. ' err=' .. tostring(err))
     ]]
-    local stdout = boot(probe:gsub('%s+', ' '))
+    local stdout = boot((probe:gsub('%s+', ' ')))
     assert.is_truthy(stdout:match 'ok=true', 'vim.ui.select must not throw: ' .. stdout)
   end)
 
@@ -187,7 +195,7 @@ describe('e2e: shipped features', function()
       local tl = _G._builtin_tabline and _G._builtin_tabline() or ''
       io.stdout:write('sl=' .. #sl .. ' tl=' .. #tl .. ' click=' .. type(_G._builtin_tabclick))
     ]]
-    local stdout = boot(probe:gsub('%s+', ' '))
+    local stdout = boot((probe:gsub('%s+', ' ')))
     local n = stdout:match 'sl=(%d+)'
     local m = stdout:match 'tl=(%d+)'
     assert.is_true(n and tonumber(n) > 0, 'statusline must render: ' .. stdout)
@@ -197,7 +205,9 @@ describe('e2e: shipped features', function()
 
   it('keeps the config root the only thing a boot needs', function()
     assert.are.equal(root, vim.fn.stdpath 'config')
-    local res = run { 'nvim', '--headless', '-c', 'lua print("ok")', '-c', 'qa!' }
+    -- `print` goes to the message system, not stdout, under --headless; this
+    -- case could only ever have failed, and did not run until now.
+    local res = run { 'nvim', '--headless', '-c', 'lua io.stdout:write("ok")', '-c', 'qa!' }
     assert.are.equal(0, res.code)
     assert.is_truthy(res.stdout:match 'ok')
   end)
