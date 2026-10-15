@@ -64,6 +64,7 @@ return {
       },
 
       completion = {
+        ghost_text = { enabled = true },
         documentation = {
           auto_show = true,
           auto_show_delay_ms = 300,
@@ -97,9 +98,10 @@ return {
 
       -- Blink.cmp includes an optional, recommended rust fuzzy matcher,
       -- which automatically downloads a prebuilt binary when enabled.
+      -- Pin lua: no network fetch on first use.
       --
       -- See :h blink-cmp-config-fuzzy for more information
-      -- fuzzy = { implementation = 'lua' },
+      fuzzy = { implementation = 'lua' },
 
       -- Shows a signature help window while you type arguments for a function
       signature = { enabled = true },

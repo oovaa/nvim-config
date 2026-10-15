@@ -136,12 +136,15 @@ return {
     ft = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
     config = function()
       local capabilities = require('blink.cmp').get_lsp_capabilities()
+      -- Registers VtsExec/VtsRename + the move-to-file handler via the
+      -- plugin's LspAttach autocmd; without this enableMoveToFileCodeAction is dead.
+      require('vtsls').config {}
       -- Native equivalent of the old require('vtsls').lspconfig bridge:
       -- same cmd/filetypes/root priority, same settings (user's plus the
       -- updateImportsOnFileMove/enableMoveToFileCodeAction defaults lspconfig merged in).
       vim.lsp.config('vtsls', {
         cmd = { 'vtsls', '--stdio' },
-        filetypes = { 'javascript', 'javascriptreact', 'javascript.jsx', 'typescript', 'typescriptreact', 'typescript.tsx' },
+        filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
         root_markers = { 'tsconfig.json', 'jsconfig.json', 'package.json', '.git' },
         capabilities = capabilities,
         settings = {
@@ -169,10 +172,7 @@ return {
             autoUseWorkspaceTsdk = true,
             enableMoveToFileCodeAction = true,
             experimental = {
-              completion = {
-                enableServerSideFuzzyMatch = true,
-                entriesLimit = 30,
-              },
+              completion = { enableServerSideFuzzyMatch = true },
             },
           },
         },
