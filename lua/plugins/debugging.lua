@@ -40,10 +40,13 @@ return {
       dap.listeners.before.event_terminated['dapui_config'] = function() dapui.close() end
       dap.listeners.before.event_exited['dapui_config'] = function() dapui.close() end
 
-      -- Python debugging with debugpy (Mason-installed venv). If debugpy isn't
-      -- installed yet, skip setup so dap-python falls back to python3.
-      local debugpy_path = vim.fn.stdpath 'data' .. '/mason/packages/debugpy/venv/bin/python'
-      if vim.uv.fs_stat(debugpy_path) ~= nil then require('dap-python').setup(debugpy_path) end
+      -- Python debugging. dap-python's default adapter is already
+      -- `python3 -m debugpy`, so this needs no path argument: the old gate
+      -- looked for a mason venv that cannot exist on this host (python3 has no
+      -- ensurepip, Trap 4), which left the adapter unconfigured *and* unusable
+      -- because debugpy is not importable either. `:checkhealth config` reports
+      -- the missing debugpy; install it with pip/uv, not mason.
+      require('dap-python').setup {}
     end,
   },
 }

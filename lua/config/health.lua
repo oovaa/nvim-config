@@ -86,11 +86,17 @@ function M.check()
         .. ')'
     )
   end
-  local debugpy = vim.fn.stdpath 'data' .. '/mason/packages/debugpy/venv/bin/python'
-  if vim.fn.executable(debugpy) == 1 then
-    vim.health.ok 'mason: debugpy venv found'
+  -- debugpy cannot come from mason on a host whose python3 lacks ensurepip
+  -- (Trap 4), so probe the import the adapter actually runs and give advice
+  -- that works.
+  local debugpy = vim.system({ 'python3', '-c', 'import debugpy' }, { text = true }):wait()
+  if debugpy and debugpy.code == 0 then
+    vim.health.ok 'python import: debugpy found (<leader>dc runs)'
   else
-    vim.health.warn('mason: debugpy venv missing', 'Run :Mason to install debugpy')
+    vim.health.warn(
+      'python import missing: debugpy — <leader>dc cannot launch',
+      'uv pip install --system debugpy (needs write access to site-packages; not :Mason, see trap 4)'
+    )
   end
   if vim.fn.executable 'ueberzugpp' == 1 then
     vim.health.ok 'image backend: ueberzugpp found'

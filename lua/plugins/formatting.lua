@@ -90,6 +90,7 @@ return {
           markdown = true,
           yaml = true,
           graphql = true,
+          lua = true,
           -- ponytail: nginx is NOT auto-formatted. conform's nginxfmt backend
           -- is a python package that mason cannot install here (no ensurepip),
           -- so listing it in enabled_filetypes only produced a silent no-op.
@@ -109,6 +110,15 @@ return {
       end,
       default_format_opts = {
         lsp_format = 'fallback', -- Use external formatters if configured below, otherwise use LSP formatting. Set to `false` to disable LSP formatting entirely.
+        -- conform otherwise runs EVERY available entry in formatters_by_ft, so
+        -- the biome list ended with prettier and prettier's output won -- paying
+        -- prettier's 270-470ms cold start on every JS/TS save and erasing the
+        -- measured 4x. Stopping at the first hit makes the list a real
+        -- preference chain: biome when installed, prettier when not.
+        -- ponytail: biome-organize-imports never runs as a consequence (it is
+        -- second in the chain). Drop the entry if biome's own import sorting
+        -- covers it; re-add a dedicated organize pass if you need it.
+        stop_after_first = true,
       },
       formatters = {
         prettier = {
@@ -118,6 +128,10 @@ return {
       -- You can also specify external formatters in here.
       formatters_by_ft = {
         python = { 'ruff_organize_imports', 'ruff_format' },
+        -- lua_ls has documentFormattingProvider = false (lua/plugins/lsp.lua
+        -- disables it), so without this row conform fell through to the LSP
+        -- fallback, found nothing, and <leader>ff reported "no formatters".
+        lua = { 'stylua' },
         -- Prefer prettier (matches .prettierrc in projects; biome ignores it)
         -- biome primary + prettier retained (conform picks whichever is
         -- configured first and usable; see conform formatters_by_ft behavior)
