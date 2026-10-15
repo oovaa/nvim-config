@@ -11,6 +11,19 @@
 -- because its cold start measured 850-2300ms here.
 local prettier = { 'prettier' }
 local biome = { 'biome', 'biome-organize-imports', 'prettier' }
+-- Filetypes whose conform chain starts with the real formatter: stopping at
+-- the first hit makes the list a preference chain (biome when installed,
+-- prettier when not). Everywhere else the chain must run to the end, because
+-- python's is organize-then-format and stopping after the organize no-op
+-- would silently drop ruff_format (T1.4b caught exactly this).
+local stop_after_first_fts = {
+  javascript = true,
+  typescript = true,
+  javascriptreact = true,
+  typescriptreact = true,
+  json = true,
+  jsonc = true,
+}
 
 ---@module 'lazy'
 ---@type LazySpec
@@ -38,7 +51,10 @@ return {
         -- ponytail: <leader>ff (not f) — bare `f` is a prefix for
         -- fe/fE/fg/fr, so a bare-f action delayed every one of them.
         '<leader>ff',
-        function() require('conform').format { async = true } end,
+        function()
+          local ft = vim.bo.filetype
+          require('conform').format { async = true, stop_after_first = stop_after_first_fts[ft] or false }
+        end,
         mode = '',
         desc = '[F]ormat buffer',
       },
@@ -103,22 +119,16 @@ return {
           -- but 750 also timed out on prettier's ~470ms cold start, so the first
           -- save of a session silently skipped formatting. 2000 only costs you
           -- when the formatter is genuinely slow.
-          return { timeout_ms = 2000 }
+          return { timeout_ms = 2000, stop_after_first = stop_after_first_fts[vim.bo[bufnr].filetype] or false }
         else
           return nil
         end
       end,
       default_format_opts = {
         lsp_format = 'fallback', -- Use external formatters if configured below, otherwise use LSP formatting. Set to `false` to disable LSP formatting entirely.
-        -- conform otherwise runs EVERY available entry in formatters_by_ft, so
-        -- the biome list ended with prettier and prettier's output won -- paying
-        -- prettier's 270-470ms cold start on every JS/TS save and erasing the
-        -- measured 4x. Stopping at the first hit makes the list a real
-        -- preference chain: biome when installed, prettier when not.
-        -- ponytail: biome-organize-imports never runs as a consequence (it is
-        -- second in the chain). Drop the entry if biome's own import sorting
-        -- covers it; re-add a dedicated organize pass if you need it.
-        stop_after_first = true,
+        -- NOTE: no stop_after_first here on purpose. It is returned per-buffer
+        -- by format_on_save below (and per-press by <leader>ff): the biome
+        -- chains want it, python's organize-then-format chain must run whole.
       },
       formatters = {
         prettier = {
