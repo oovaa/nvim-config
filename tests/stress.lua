@@ -217,6 +217,24 @@ do
   local wk = lz.plugins['which-key.nvim']
   local opts = (wk and wk.opts) or {}
   local maps = vim.api.nvim_get_keymap 'n'
+  -- A group with no mapping is a real regression — unless the spec that owns
+  -- its keys is cond-disabled (Trap 3: molten when rplugin.vim lists no
+  -- molten). Cond-disabled specs live in lazy's spec.disabled, not plugins.
+  local function keys_owner(prefix)
+    local function owns(keys)
+      for _, k in ipairs(keys or {}) do
+        if type(k[1]) == 'string' and (k[1]:gsub('<leader>', vim.g.mapleader)):sub(1, #prefix) == prefix then return true end
+      end
+      return false
+    end
+    for name, p in pairs(lz.plugins) do
+      if owns(p.keys) then return { name = name, disabled = false } end
+    end
+    for name, p in pairs(lz.spec.disabled or {}) do
+      local mt = getmetatable(p)
+      if owns((mt and mt.__index and mt.__index.keys) or p.keys) then return { name = name, disabled = true } end
+    end
+  end
   for _, g in ipairs(opts.spec or {}) do
     local lhs = (g[1]:gsub('<leader>', vim.g.mapleader))
     local global, buffer = false, false
@@ -233,6 +251,8 @@ do
     H.t('which-key group ' .. g[1], function()
       if global then return true end
       if buffer then return { level = 'WARN', msg = ('only buffer-local mappings start with %s'):format(g[1]) } end
+      local owner = keys_owner(lhs)
+      if owner and owner.disabled then return { level = 'WARN', msg = ('%s: %s spec cond-disabled, so its keys never registered'):format(g[1], owner.name) } end
       return ('no mapping starts with %s (which-key shows an empty group)'):format(g[1])
     end)
   end
@@ -908,7 +928,7 @@ do
         if not src:find(name .. ' = {', 1, true) then missing[#missing + 1] = name end
       end
     end
-    return true
+    return #missing == 0 or ('no FileType trigger for: ' .. table.concat(missing, ', '))
   end)
   H.t('lsp: every configured server is reachable via vim.lsp.config', function()
     local names = { 'docker_compose_language_service', 'dockerls', 'jsonls', 'lua_ls', 'nginx_language_server', 'pyrefly' }
@@ -921,13 +941,15 @@ do
   H.t('lsp: every configured server appears in lsp_filetypes', function()
     local src = table.concat(vim.fn.readfile(root .. '/lua/plugins/lsp.lua'), '\n')
     local block = src:match 'local servers = {(.-)\n        }'
+    -- strip comment lines: `-- clangd = {},` would otherwise match as declared
+    block = block:gsub('%-%-[^\n]*', '')
     local missing = {}
     for name in block:gmatch '(%a[%w_]*) = {' do
       if not src:find(name .. ' = {', src:find('local lsp_filetypes', 1, true) and src:find('local lsp_filetypes', 1, true) or 1) then
         missing[#missing + 1] = name
       end
     end
-    return true
+    return #missing == 0 or ('missing from lsp_filetypes: ' .. table.concat(missing, ', '))
   end)
   H.t('lsp: all mason ensure_installed names are real packages', function()
     require('lazy').load { plugins = { 'mason.nvim' } }
