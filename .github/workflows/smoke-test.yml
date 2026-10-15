@@ -34,6 +34,12 @@ jobs:
           ln -sfn "$GITHUB_WORKSPACE" ~/.config/nvim
           nvim --version | head -1
 
+      - name: Install external toolchain (biome, tree-sitter CLI, ruff)
+        run: |
+          npm i -g @biomejs/biome tree-sitter-cli
+          pip install ruff
+          node --version; biome --version; tree-sitter --version; ruff --version
+
       - name: Boot headless (fails if init.lua errors)
         run: |
           nvim --headless -c 'qa' 2>&1 | tee /tmp/boot.log
@@ -98,6 +104,12 @@ jobs:
           mkdir -p ~/.config
           ln -sfn "$GITHUB_WORKSPACE" ~/.config/nvim
           nvim --version | head -1
+
+      - name: Install external toolchain (biome, tree-sitter CLI, ruff)
+        run: |
+          npm i -g @biomejs/biome tree-sitter-cli
+          pip install ruff
+          node --version; biome --version; tree-sitter --version; ruff --version
 
       - name: Install plugins via lazy.nvim
         run: |
