@@ -59,6 +59,17 @@ jobs:
           for f in tests/test_*.lua; do
             echo "::group:: $f"
             nvim --headless --cmd "cd $GITHUB_WORKSPACE" -c "lua require('plenary.busted').run('$f')" -c 'qa!' 2>&1 | tee /tmp/test.log
+            # `| tee` swallows nvim's exit status, and plenary signals a load
+            # failure with `cq` (exit 2) rather than a non-zero Failed count. A
+            # file that loads but holds zero describes prints no summary and
+            # exits 0. Both cases used to pass this gate, so read PIPESTATUS and
+            # require a "Success:" summary to exist.
+            status=${PIPESTATUS[0]}
+            if [ "$status" -ne 0 ] || ! sed 's/\x1b\[[0-9;]*m//g' /tmp/test.log | grep -qE 'Success:[[:space:]]+[0-9]+'; then
+              echo "::error::$f failed to load or produced no results (exit $status)"
+              cat /tmp/test.log
+              exit 1
+            fi
             # Strip ANSI; only non-zero Failed/Errors counts fail (summary always prints "Failed : 0").
             if sed 's/\x1b\[[0-9;]*m//g' /tmp/test.log | grep -qE 'Failed *:.*[1-9]|Errors *:.*[1-9]'; then
               echo "::error:: $f failed"
