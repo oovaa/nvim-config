@@ -20,9 +20,12 @@ local optional = {
   { bin = 'docker', why = 'dockerls, docker_compose_language_service (optional)' },
   { bin = 'pyrefly', why = 'python LSP (optional; uv tool install pyrefly)' },
   { bin = 'ty', why = 'fast python LSP fallback (optional)' },
+  { bin = 'vtsls', why = 'typescript LSP (not a mason package; resolved from ~/.bun/bin — absence silently disables TS)' },
   { bin = 'biome', why = 'fast JS/TS/JSON formatting + lint (optional)' },
   { bin = 'nginx-language-server', why = 'nginx LSP (optional)' },
   { bin = 'nginxfmt', why = 'nginx format on <leader>ff (pip install nginx-config-formatter)' },
+  { bin = 'jupyter', why = 'molten notebooks (external binary, see init.lua)' },
+  { bin = 'jupytext', why = 'molten notebooks (external binary, see init.lua)' },
 }
 
 --- The biome.json root rule nvim-lint's biome_or_oxlint applies
@@ -50,12 +53,21 @@ function M.check()
     end
   end
   local mason_bin = vim.fn.stdpath 'data' .. '/mason/bin/'
-  for _, bin in ipairs { 'stylua', 'oxlint', 'prettier', 'ruff' } do
+  for _, bin in ipairs { 'stylua', 'lua-language-server', 'oxlint', 'prettier', 'ruff' } do
     if vim.fn.executable(mason_bin .. bin) == 1 then
       vim.health.ok('mason: ' .. bin .. ' found')
     else
       vim.health.warn('mason: ' .. bin .. ' missing', 'Run :Mason to install')
     end
+  end
+  -- Python LSP is a ladder (AGENTS.md trap 13): ty -> pyrefly ->
+  -- pyright-langserver. Reuse the ladder's own predicate so this row can never
+  -- drift from what lua/plugins/lsp.lua registers.
+  local py_lsp = require('config.python_lsp').installed()
+  if #py_lsp > 0 then
+    vim.health.ok('python LSP: ' .. table.concat(py_lsp, ', ') .. ' on PATH (ladder: ty -> pyrefly -> pyright-langserver)')
+  else
+    vim.health.warn('python LSP: none of ty/pyrefly/pyright-langserver on PATH — python files get no LSP', 'uv tool install pyrefly (or npm i -g pyright)')
   end
   -- nvim-treesitter compiles every grammar with the tree-sitter CLI
   -- (`tree-sitter build`, install.lua:do_compile), which itself needs a C
