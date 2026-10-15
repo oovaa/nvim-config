@@ -16,6 +16,7 @@ describe('qol plugins', function()
   it('registers every qol plugin as a lazy spec', function()
     for _, name in ipairs {
       'blame.nvim',
+      'git-conflict.nvim',
       'refactoring.nvim',
       'neotest',
       'neotest-python',
