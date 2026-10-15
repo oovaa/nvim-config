@@ -5,6 +5,13 @@ return {
   -- Git blame inline + hover
   { 'FabijanZulj/blame.nvim', cmd = 'BlameToggle', keys = { { '<leader>gb', '<cmd>BlameToggle<cr>', desc = 'Git Blame' } }, opts = {} },
 
+  -- Merge conflict resolution: highlights conflicted hunks, maps co/ct/cb/c0 +
+  -- ]x/[x (buffer-local, conflicted files only). BufReadPre is deliberate: the
+  -- plugin fetches conflicts on its own BufRead autocmd, which only exists once
+  -- setup() ran — any later trigger (VeryLazy) would miss the file you opened
+  -- nvim with. version='*' = newest tag (upstream: main can be unstable).
+  { 'akinsho/git-conflict.nvim', version = '*', event = 'BufReadPre', config = true },
+
   -- Refactoring (uses LSP code actions + treesitter; async.nvim provides the async module)
   {
     'ThePrimeagen/refactoring.nvim',

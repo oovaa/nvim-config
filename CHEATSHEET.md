@@ -142,6 +142,8 @@ Press `<leader>e` to toggle the file explorer. Inside it:
 | `<leader>gd` | Diff buffer against index (split) | `gitsigns` |
 | `<leader>gp` | Preview hunk under cursor | `gitsigns` |
 | `<leader>gt` | Toggle showing deleted lines | `gitsigns` |
+| `]x` / `[x` | Next / previous merge conflict (conflicted files only) | `git-conflict` |
+| `co` `ct` `cb` `c0` | Take ours / theirs / both / none (conflicted files only) | `git-conflict` |
 
 ## 🧠 LSP (Language Server Protocol)
 
