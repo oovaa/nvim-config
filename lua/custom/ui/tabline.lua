@@ -8,8 +8,15 @@ function M.setup_bufferline()
     -- ponytail: adaptive dot fg + seamless bg — TabLine* bg may be nil (transparent themes)
     local sel = vim.api.nvim_get_hl(0, { name = 'TabLineSel' })
     local norm = vim.api.nvim_get_hl(0, { name = 'TabLine' })
+    -- accent fallback from the theme's live highlights (statusline uses
+    -- String's fg for green); hex is the last resort when the group is absent.
+    local function live_fg(name)
+      local ok, h = pcall(vim.api.nvim_get_hl, 0, { name = name })
+      if ok and type(h) == 'table' and type(h.fg) == 'number' then return string.format('#%06x', h.fg) end
+      return nil
+    end
     local function fg_for(bg)
-      if not bg then return '#9ece6a' end
+      if not bg then return live_fg 'String' or '#9ece6a' end
       local r = math.floor(bg / 65536) % 256
       local g = math.floor(bg / 256) % 256
       local b = bg % 256
@@ -47,6 +54,8 @@ function M.setup_bufferline()
   -- ponytail: labeled segments ('E2 W1') not bare numbers ('2 1') — E/W/I/H letters
   -- with the standard Diagnostic* hl groups, so the tabline reads at a glance.
   local function diag_seg(n, letter, hl) return n > 0 and ('%#' .. hl .. '#' .. letter .. n .. ' ') or '' end
+  -- %-escape buffer names before they join the tabline (which re-parses % items)
+  local function esc(s) return (s:gsub('%%', '%%%%')) end
   _G._builtin_tabline = function()
     local s, idx = '', 0
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
@@ -54,6 +63,7 @@ function M.setup_bufferline()
         idx = idx + 1
         local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ':t')
         if name == '' then name = '[No Name]' end
+        name = esc(name)
         local is_cur = buf == vim.api.nvim_get_current_buf()
         local hl = is_cur and '%#TabLineSel#' or '%#TabLine#'
         local cnt = statusline._diag_counts[buf] or statusline._count_diags(buf)

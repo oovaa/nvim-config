@@ -41,10 +41,6 @@ function M.setup_starter()
         if ok and type(m) == 'table' then sess_mod = m end
         local find_session_fn = (sess_mod and (sess_mod.find_session_for or sess_mod.find_session)) or _G._builtin_find_session
         local f = find_session_fn and find_session_fn(nil) or nil
-        if not f then
-          local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
-          f = sess_dir .. '/' .. vim.fn.fnamemodify(vim.uv.cwd() or vim.fn.getcwd(), ':p'):gsub('[^%w]+', '%%') .. '.vim'
-        end
         if has_badd(f) then
           close_dashboard()
           vim.cmd('source ' .. vim.fn.fnameescape(f))
@@ -113,7 +109,10 @@ function M.setup_starter()
       local key = vim.fn.fnamemodify(f, ':.')
       if not seen[key] then
         seen[key] = true
-        out[#out + 1] = { path = f, disp = vim.fn.fnamemodify(f, ':~:.') }
+        local disp = vim.fn.fnamemodify(f, ':~:.')
+        -- one long path must not push the block past the window; keep the tail
+        if vim.fn.strdisplaywidth(disp) > 60 then disp = '…' .. vim.fn.strcharpart(disp, vim.fn.strchars(disp) - 59) end
+        out[#out + 1] = { path = f, disp = disp }
       end
       ::continue::
     end
@@ -121,6 +120,7 @@ function M.setup_starter()
   end
 
   vim.api.nvim_create_autocmd('VimEnter', {
+    group = vim.api.nvim_create_augroup('BuiltinDashboard', { clear = true }),
     once = true,
     callback = function()
       if vim.fn.argc() > 0 or vim.api.nvim_buf_get_name(0) ~= '' then return end
@@ -149,7 +149,7 @@ function M.setup_starter()
         raw[#raw + 1] = string.format('  %d  %s', i, r.disp)
       end
       raw[#raw + 1] = ''
-      raw[#raw + 1] = 'neon-ui · ' .. vim.version().major .. '.' .. vim.version().minor .. '.' .. vim.version().patch
+      raw[#raw + 1] = 'nvim-config · ' .. vim.version().major .. '.' .. vim.version().minor .. '.' .. vim.version().patch
 
       -- center as a block (like alpha margin 4) — not per-line, so left edge is straight
       local win = vim.api.nvim_get_current_win()

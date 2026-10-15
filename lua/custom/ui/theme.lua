@@ -80,9 +80,23 @@ function M.setup_mode_line_colors()
   local group = vim.api.nvim_create_augroup('ModeLineNumbers', { clear = true })
 
   local defaults = {}
+  -- tokyonight palette, cached per scheme so ModeChanged never re-runs its
+  -- setup (deep-copy + ~40 blends) more than once per colorscheme.
+  local pal_cache = {} -- [colors_name] = { green = hex, yellow = hex }
   local function snapshot()
+    for k in pairs(pal_cache) do
+      pal_cache[k] = nil
+    end
     defaults.LineNr = vim.api.nvim_get_hl(0, { name = 'LineNr' })
     defaults.CursorLineNr = vim.api.nvim_get_hl(0, { name = 'CursorLineNr' })
+  end
+
+  -- accent from the theme's live highlights (statusline reads String for
+  -- green, DiagnosticWarn for yellow); tokyonight palette only as fallback.
+  local function live_fg(name)
+    local ok, h = pcall(vim.api.nvim_get_hl, 0, { name = name })
+    if ok and type(h) == 'table' and type(h.fg) == 'number' then return string.format('#%06x', h.fg) end
+    return nil
   end
 
   local mode_colors = {
@@ -98,14 +112,23 @@ function M.setup_mode_line_colors()
       -- ponytail: guard tokyonight palette lookup — non-tokyonight themes
       -- like catppuccin-mocha have suffix 'mocha' which is not a valid
       -- tokyonight style (storm/night/moon/day) and crashes util.lua:22.
-      -- Only query tokyonight when active scheme is tokyonight; else use
-      -- hardcoded fallback so <leader>ty preview + mode switches never error.
-      local fg
-      if vim.g.colors_name and vim.g.colors_name:match '^tokyonight' then
-        local style = vim.g.colors_name:match '%-(.+)$' or 'night'
-        if style ~= 'night' and style ~= 'moon' and style ~= 'storm' and style ~= 'day' then style = 'night' end
-        local ok, pal = pcall(require('tokyonight.colors').setup, { style = style })
-        if ok and pal then fg = pal[color_name] end
+      -- Live highlights first; cached tokyonight palette only as fallback.
+      local fg = live_fg(color_name == 'green' and 'String' or 'DiagnosticWarn')
+      if not fg and vim.g.colors_name and vim.g.colors_name:match '^tokyonight' then
+        local scheme = vim.g.colors_name
+        local hit = pal_cache[scheme]
+        if hit and hit[color_name] then
+          fg = hit[color_name]
+        else
+          local style = scheme:match '%-(.+)$' or 'night'
+          if style ~= 'night' and style ~= 'moon' and style ~= 'storm' and style ~= 'day' then style = 'night' end
+          local ok, pal = pcall(require('tokyonight.colors').setup, { style = style })
+          if ok and pal and pal[color_name] then
+            fg = pal[color_name]
+            pal_cache[scheme] = pal_cache[scheme] or {}
+            pal_cache[scheme][color_name] = fg
+          end
+        end
       end
       fg = fg or (color_name == 'green' and '#9ece6a' or '#e0af68')
       vim.api.nvim_set_hl(0, 'LineNr', { fg = fg })

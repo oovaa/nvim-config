@@ -65,6 +65,7 @@ return {
         { '<leader>g', group = '[G]it' },
         { '<leader>u', group = '[U]I' },
         { '<leader>y', group = '[Y]ank' },
+        { '<leader>l', group = '[L]SP' },
         { 'gr', group = 'LSP Actions', mode = { 'n' } },
       },
     },

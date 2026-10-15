@@ -215,9 +215,13 @@ function M.setup_lualine()
       return 'normal'
     end
   end
+  -- %-escape user text before it joins the statusline (which re-parses % items)
+  local function esc(s) return (s:gsub('%%', '%%%%')) end
 
   _G._builtin_statusline = function()
     -- disabled filetypes like lualine: lazy / dashboard
+    -- (kept non-empty: the stress render matrix requires a string here; on an
+    -- unnamed buffer %f is empty so this is just a tinted blank, by design)
     local ft = vim.bo.filetype
     if ft == 'lazy' or ft == 'dashboard' then return '%#SL_c# %f %*' end
     local raw = vim.fn.mode()
@@ -230,7 +234,7 @@ function M.setup_lualine()
     -- branch
     local branch = vim.b.gitsigns_head or vim.g.gitsigns_head or ''
     -- branch glyph as a codepoint, not a literal PUA char (invisible in source)
-    local branch_s = branch ~= '' and ('%#SL_branch#' .. vim.fn.nr2char(0xe0a0) .. ' ' .. branch .. hl_b) or ''
+    local branch_s = branch ~= '' and ('%#SL_branch#' .. vim.fn.nr2char(0xe0a0) .. ' ' .. esc(branch) .. hl_b) or ''
     -- diff (gitsigns_status_dict)
     local diff_s = ''
     local d = vim.b.gitsigns_status_dict
@@ -281,6 +285,7 @@ function M.setup_lualine()
       fname = vim.fn.expand '%:~:.'
       if fname == '' then fname = '[No Name]' end
     end
+    fname = esc(fname)
     if vim.bo.modified then fname = fname .. ' [+]' end
     if vim.bo.readonly then fname = fname .. ' ' .. vim.fn.nr2char(0xf033e) end
     -- spell flag mirrors the <leader>us toggle (visible state, only when on)
@@ -313,8 +318,6 @@ function M.setup_lualine()
     local lsp_s = prog ~= '' and ('%#SL_lsp#' .. prog .. hl_c)
       or (M._lsp_name.name == '' and '' or '%#SL_lsp#' .. vim.fn.nr2char(0xf0136) .. ' ' .. M._lsp_name.name .. hl_c)
 
-    local enc = (vim.bo.fileencoding ~= '' and vim.bo.fileencoding or vim.o.encoding)
-    local ff = vim.bo.fileformat
     local ft_s = vim.bo.filetype
 
     -- filetype icon in its own color (devicons resolves only after something
@@ -347,7 +350,7 @@ function M.setup_lualine()
     -- lualine had no separators; %< truncates the filename side first in narrow splits
     local left = hl_a .. ' ' .. mode .. ' ' .. hl_b .. (macro_s ~= '' and ' ' .. macro_s .. ' ' or '') .. (b_s ~= '' and ' ' .. b_s .. ' ' or ' ')
     local center = hl_c .. ' %<' .. icon_s .. fname .. ' ' .. search_s
-    local right_x = hl_c .. (lsp_s ~= '' and ' ' .. lsp_s .. ' ' or ' ') .. enc .. ' ' .. ff .. (ft_s ~= '' and ' ' .. ft_s or '') .. ' '
+    local right_x = hl_c .. (lsp_s ~= '' and ' ' .. lsp_s .. ' ' or ' ') .. (ft_s ~= '' and ' ' .. ft_s or '') .. ' '
     local right_y = hl_c .. ' %p%% '
     local right_z = hl_a .. ' %l/%L:%c ' .. '%*'
     return left .. center .. '%=' .. right_x .. right_y .. right_z
