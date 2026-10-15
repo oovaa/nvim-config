@@ -3,24 +3,36 @@
 -- Loaded from init.lua before lazy.nvim so <leader> and vim.o apply early.
 
 -- LAUNCH-PATH SELF-HEAL
--- WHAT: GUI launchers/keybinds often start nvim without brew on PATH, so
---        node-based servers (jsonls, vtsls) die with exit 127 (`env: 'node'`).
--- TO CHANGE: Add your prefix if brew lives elsewhere.
--- EFFECT: Prepends the first prefix containing node, once, only when node is
---         otherwise unresolvable. Terminal launches (node already visible) skip it.
-if vim.fn.exepath 'node' == '' then
+-- WHAT: GUI launchers/keybinds often start nvim without the toolchain on PATH,
+--        so node-based servers (jsonls, vtsls) die with exit 127 (`env: 'node'`).
+--        biome has the same problem: its launcher is `#!/usr/bin/env node`, so
+--        it silently exits 127 and conform/lint just skip it.
+-- TO CHANGE: Add your prefix if the toolchain lives elsewhere.
+-- EFFECT: Prepends the first prefix containing node, plus ~/.bun/bin when biome
+--         or vtsls lives there, once, and only when something is unresolvable.
+--         Terminal launches (node already visible) skip the node half.
+if vim.fn.exepath 'node' == '' or vim.fn.exepath 'biome' == '' then
+  local bun = vim.fn.expand '~/.bun/bin'
+  -- NOTE: explicit parens are required. `vim.fn.glob 'x', false, true` parses as
+  -- three statements (the string-call sugar only takes one argument), so it
+  -- returns a newline-joined string instead of a list.
+  local node_dirs = vim.fn.glob('~/.local/share/pi-node/*/bin', false, true)
   local prefixes = {
+    bun,
     vim.env.HOMEBREW_PREFIX and vim.env.HOMEBREW_PREFIX .. '/bin',
     '/home/linuxbrew/.linuxbrew/bin', -- Linuxbrew default
     '/opt/homebrew/bin', -- Apple Silicon
     '/usr/local/bin', -- Intel Mac / manual installs
   }
+  -- biome's launcher needs node, so node wins the race for the PATH head.
+  if node_dirs[1] and vim.fn.executable(node_dirs[1] .. '/node') == 1 then vim.env.PATH = node_dirs[1] .. ':' .. vim.env.PATH end
   for _, dir in ipairs(prefixes) do
     if dir and vim.fn.executable(dir .. '/node') == 1 then
       vim.env.PATH = dir .. ':' .. vim.env.PATH
       break
     end
   end
+  if vim.fn.executable(bun .. '/biome') == 1 or vim.fn.executable(bun .. '/vtsls') == 1 then vim.env.PATH = bun .. ':' .. vim.env.PATH end
 end
 
 -- ============================================================================
