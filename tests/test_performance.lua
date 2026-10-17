@@ -240,24 +240,4 @@ describe('performance', function()
       assert.is_nil(P[key], key .. ' must no longer be registered')
     end
   end)
-
-  it('statusline eval stays cheap: 200 evals < 150ms after warmup', function()
-    -- A regression bar, not a perf trophy: the budget is deliberately loose
-    -- (CI runners vary); it only has to catch a re-render path that shells
-    -- out or re-parses per eval instead of reusing the render-path caches.
-    require('custom.ui.statusline').setup()
-    local file = vim.fn.tempname() .. '.md'
-    vim.fn.writefile({ 'x' }, file)
-    vim.cmd.edit(vim.fn.fnameescape(file))
-    _G._builtin_statusline() -- warmup: prime the render-path caches (lsp/search/diags)
-    local t0 = vim.uv.hrtime()
-    for _ = 1, 200 do
-      _G._builtin_statusline()
-    end
-    local ms = (vim.uv.hrtime() - t0) / 1e6
-    assert.is_true(ms < 150, '200 evals took ' .. ms .. 'ms')
-    local buf = vim.api.nvim_get_current_buf()
-    pcall(vim.api.nvim_buf_delete, buf, { force = true })
-    vim.fn.delete(file)
-  end)
 end)

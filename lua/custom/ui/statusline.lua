@@ -53,10 +53,6 @@ do
 end
 -- builtin statusline (replaces lualine.nvim) — tokyonight-night, same sections as before
 function M.setup_lualine()
-  -- rounded pill cap between the sections; shared by define_hl()'s cap groups
-  -- and the joins below (codepoint E0B8, never a literal PUA char in source)
-  local SEP = vim.fn.nr2char(0xe0b8)
-
   vim.o.laststatus = 3
   vim.o.showmode = false
 
@@ -156,11 +152,7 @@ function M.setup_lualine()
     for key, accent in pairs(modes) do
       hl('SL_a_' .. key, accent, bar_bg, 'bold')
       hl('SL_b_' .. key, mid_bg, bar_fg)
-      -- pill caps: accent→mid for a→b, accent→flat for a→c (whole b run empty)
-      hl('SL_acap_' .. key, accent, mid_bg)
-      hl('SL_acapn_' .. key, accent, bar_bg)
     end
-    hl('SL_bcap', mid_bg, bar_bg) -- b→c cap
     hl('SL_c', bar_bg, bar_fg)
     hl('SL_lsp', bar_bg, c.lsp)
     -- diff colors + search count sit inside the lifted b section / next to
@@ -355,14 +347,8 @@ function M.setup_lualine()
     end
 
     -- sections mirror lualine: a=mode | b=branch/diff/diag | c=filename | x=lsp/enc/ff/ft | y=progress | z=location
-    -- joins: ONE rounded cap per section boundary; %* ends the previous bg,
-    -- the cap group fades it into the next one's. No caps inside b's inner
-    -- parts (they already breathe with spaces) and none inside the x/y/z run.
-    local has_b = macro_s ~= '' or b_s ~= ''
-    local cap_pill = has_b and ('%*%#SL_acap_' .. key .. '#' .. SEP .. '%*') or ('%*%#SL_acapn_' .. key .. '#' .. SEP .. '%*')
-    local cap_c = has_b and ('%*%#SL_bcap#' .. SEP .. '%*') or ''
-    local b_run = hl_b .. (macro_s ~= '' and ' ' .. macro_s .. ' ' or '') .. (b_s ~= '' and ' ' .. b_s .. ' ' or ' ')
-    local left = hl_a .. ' ' .. mode .. ' ' .. cap_pill .. b_run .. cap_c
+    -- lualine had no separators; %< truncates the filename side first in narrow splits
+    local left = hl_a .. ' ' .. mode .. ' ' .. hl_b .. (macro_s ~= '' and ' ' .. macro_s .. ' ' or '') .. (b_s ~= '' and ' ' .. b_s .. ' ' or ' ')
     local center = hl_c .. ' %<' .. icon_s .. fname .. ' ' .. search_s
     local right_x = hl_c .. (lsp_s ~= '' and ' ' .. lsp_s .. ' ' or ' ') .. (ft_s ~= '' and ' ' .. ft_s or '') .. ' '
     local right_y = hl_c .. ' %p%% '
