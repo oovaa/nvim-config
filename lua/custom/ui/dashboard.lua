@@ -1,6 +1,48 @@
 ---@module 'custom.ui.dashboard'
 local M = {}
 
+-- a session without a `badd` line has no buffers to restore — the picker's
+-- historical gate, shared by the conditional Resume row
+local function restorable(path)
+  if vim.fn.filereadable(path) ~= 1 then return false end
+  for _, l in ipairs(vim.fn.readfile(path)) do
+    if l:match '^badd' then return true end
+  end
+  return false
+end
+
+-- the conditional first row: a button when `find()` yields a restorable session
+-- for the current cwd, nil otherwise. `find` returns a session path or nil;
+-- `readable(path)` gates it. The label is the session's own `cd` line,
+-- shortened exactly like the `s` picker items.
+function M.get_resume_for(find, readable)
+  local path = find and find() or nil
+  if not path or not (readable and readable(path)) then return nil end
+  local label
+  for _, l in ipairs(vim.fn.readfile(path)) do
+    local cd = l:match '^cd%s+(.+)$'
+    if cd then
+      label = vim.fn.fnamemodify(vim.fn.expand(cd), ':p'):gsub('/+$', '')
+      break
+    end
+  end
+  if not label then return nil end
+  label = label:gsub('^' .. vim.fn.expand '~', '~')
+  return {
+    key = 'S',
+    icon = vim.fn.nr2char(0xf017),
+    label = 'Resume: ' .. label,
+    action = function()
+      -- same in-place restore as the `s` picker: drop the dashboard, then source
+      if vim.bo.filetype == 'dashboard' then pcall(vim.cmd, 'bwipeout!') end
+      vim.cmd('source ' .. vim.fn.fnameescape(path))
+    end,
+  }
+end
+
+-- sessions dir the dashboard reads (the one config.sessions writes to)
+function M.sessions_dir() return vim.fn.stdpath 'data' .. '/sessions' end
+
 -- builtin dashboard (replaces alpha-nvim) — same header/buttons/recent as before
 function M.setup_starter()
   local header = {
@@ -13,6 +55,12 @@ function M.setup_starter()
   }
   -- nerd glyphs written as codepoints: a literal PUA char is invisible in source and
   -- an unpatched font renders tofu. Codepoints keep the diff readable either way.
+  -- canonical sessions module, resolved at call time; the _G aliases cover
+  -- reload/legacy callers (AGENTS trap 10)
+  local function builtin_sessions()
+    local ok, m = pcall(require, 'config.sessions')
+    if ok and type(m) == 'table' then return m end
+  end
   local buttons = {
     { key = 'e', icon = vim.fn.nr2char(0xf15b), label = 'New File', action = '<cmd>ene<CR>' },
     { key = 'f', icon = vim.fn.nr2char(0xf002), label = 'Find File', action = function() require('snacks').picker.files() end },
@@ -21,62 +69,20 @@ function M.setup_starter()
     {
       key = 's',
       icon = vim.fn.nr2char(0xf017),
-      label = 'Recent Sessions',
+      label = 'Recent Projects',
       action = function()
-        -- ponytail: restore current cwd session; if none, pick from sessions dir (readable `cd` dir, deduped)
-        local function has_badd(path)
-          if vim.fn.filereadable(path) ~= 1 then return false end
-          for _, l in ipairs(vim.fn.readfile(path)) do
-            if l:match '^badd' then return true end
-          end
-          return false
-        end
-        local function close_dashboard()
-          if vim.bo.filetype == 'dashboard' then pcall(vim.cmd, 'bwipeout!') end
-        end
-        -- Prefer require('config.sessions') after the module API migration;
-        -- retain _G fallback for reload/legacy callers.
-        local sess_mod = nil
-        local ok, m = pcall(require, 'config.sessions')
-        if ok and type(m) == 'table' then sess_mod = m end
-        local find_session_fn = (sess_mod and (sess_mod.find_session_for or sess_mod.find_session)) or _G._builtin_find_session
-        local f = find_session_fn and find_session_fn(nil) or nil
-        if has_badd(f) then
-          close_dashboard()
-          vim.cmd('source ' .. vim.fn.fnameescape(f))
-          return
-        end
-        local sess_dir = vim.fn.stdpath 'data' .. '/sessions'
-        local list_fn = (sess_mod and sess_mod.session_files) or _G._builtin_session_files
-        local sess_files = list_fn and list_fn(sess_dir) or {}
-        local mtime, files = {}, {}
-        for _, e in ipairs(sess_files) do
-          mtime[e.path] = e.mtime
-          files[#files + 1] = e.path
-        end
-        -- readable labels via `cd` line, dedup by dir (legacy %2F vs new %), skip empty.
-        -- ponytail: one read per file (badd + cd label in a single scan, newest wins); split again only if session format changes.
-        local seen, items, map = {}, {}, {}
-        for _, path in ipairs(files) do
-          if vim.fn.filereadable(path) == 1 then
-            local has_b, label = false, nil
-            for _, l in ipairs(vim.fn.readfile(path)) do
-              if not has_b and l:match '^badd' then has_b = true end
-              if not label then
-                local cd = l:match '^cd%s+(.+)$'
-                if cd then label = vim.fn.fnamemodify(vim.fn.expand(cd), ':p'):gsub('/+$', '') end
-              end
-              if has_b and label then break end
-            end
-            if has_b and label and (not seen[label] or mtime[path] > mtime[seen[label]]) then seen[label] = path end
-          end
-        end
-        for label, path in pairs(seen) do
-          local disp = label:gsub('^' .. vim.fn.expand '~', '~')
+        -- recency-ordered list owned by config.sessions (one scanner, zero
+        -- duplication); _G fallback for reload/legacy callers. Picking restores
+        -- in place: the session's own `cd` line moves nvim.
+        local sess_mod = builtin_sessions()
+        local list_fn = (sess_mod and sess_mod.list_projects) or _G._builtin_list_projects
+        local projects = list_fn and list_fn(M.sessions_dir()) or {}
+        local items, map = {}, {}
+        for _, e in ipairs(projects) do
+          local disp = e.label:gsub('^' .. vim.fn.expand '~', '~')
           items[#items + 1] = disp
-          map[disp] = path
+          map[disp] = e.path
         end
-        table.sort(items)
         if #items == 0 then
           vim.notify(
             'No session for ' .. (vim.uv.cwd() or vim.fn.getcwd()) .. ' — sessions are saved on quit (suppressed: ~, ~/Downloads, /etc, /tmp)',
@@ -90,10 +96,7 @@ function M.setup_starter()
             vim.cmd('source ' .. vim.fn.fnameescape(map[choice]))
           end
         end
-        local function pick()
-          vim.ui.select(items, { prompt = 'Select session:' }, function(choice) do_pick(choice) end)
-        end
-        pick()
+        vim.ui.select(items, { prompt = 'Select session:' }, function(choice) do_pick(choice) end)
       end,
     },
     { key = 'u', icon = vim.fn.nr2char(0xf021), label = 'Update Plugins', action = '<cmd>Lazy sync<CR>' },
@@ -126,6 +129,12 @@ function M.setup_starter()
       if vim.fn.argc() > 0 or vim.api.nvim_buf_get_name(0) ~= '' then return end
       if vim.bo.filetype ~= '' then return end
       local buf = vim.api.nvim_get_current_buf()
+      -- conditional Resume row: an ordinary first button, inserted before any
+      -- offset math so label_w/highlights/recents all derive from #buttons
+      local sess_mod = builtin_sessions()
+      local find_fn = (sess_mod and (sess_mod.find_session_for or sess_mod.find_session)) or _G._builtin_find_session
+      local resume = M.get_resume_for(function() return find_fn and find_fn(nil) or nil end, restorable)
+      if resume then table.insert(buttons, 1, resume) end
       local recent = collect_recent()
       local raw = {}
       vim.list_extend(raw, { '', '' })
