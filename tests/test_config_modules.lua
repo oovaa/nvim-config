@@ -119,6 +119,78 @@ describe('config.sessions', function()
   end)
 end)
 
+describe('sessions.list_projects', function()
+  local sessions = require 'config.sessions'
+  -- deterministic mtimes via fs_utime; writefile alone can give equal times
+  local function write_session(dir, name, lines, mtime)
+    local p = dir .. '/' .. name
+    vim.fn.writefile(lines, p)
+    vim.uv.fs_utime(p, mtime, mtime)
+    return p
+  end
+
+  it('returns {} on a missing dir and on an empty dir', function()
+    assert.same({}, sessions.list_projects(scratch_dir() .. '/does/not/exist'))
+    assert.same({}, sessions.list_projects(scratch_dir()))
+  end)
+
+  it('lists newest-first, deduped by cwd, newest mtime wins', function()
+    local dir = scratch_dir()
+    local a = write_session(dir, 'a.vim', { 'badd +1 file', 'cd ' .. vim.fn.expand '~' }, 1000000)
+    local b = write_session(dir, 'b.vim', { 'badd +2 other', 'cd ' .. vim.fn.expand '~' }, 2000000)
+    local list = sessions.list_projects(dir)
+    assert.equals(1, #list, 'same cwd dedupes to one project')
+    assert.equals(vim.fn.expand '~', list[1].label)
+    assert.equals(b, list[1].path, 'the newest file wins the dedupe')
+
+    -- a different cwd at an even newer mtime must land above it
+    local c = write_session(dir, 'c.vim', { 'badd +3 third', 'cd /tmp/lp-other' }, 3000000)
+    list = sessions.list_projects(dir)
+    assert.equals(2, #list)
+    assert.equals(c, list[1].path, 'newest mtime first')
+    assert.equals('/tmp/lp-other', list[1].label)
+
+    -- the dashboard's has_badd contract: no badd line, no resume row
+    write_session(dir, 'd.vim', { 'cd /tmp/lp-no-badd' }, 4000000)
+    assert.equals(2, #sessions.list_projects(dir), 'session without badd must be skipped')
+    vim.fn.delete(dir, 'rf')
+  end)
+
+  it('breaks equal-mtime ties by path ascending', function()
+    local dir = scratch_dir()
+    local a = write_session(dir, 'zz.vim', { 'badd +1 f', 'cd /tmp/lp-tsta' }, 5000000)
+    local b = write_session(dir, 'aa.vim', { 'badd +1 f', 'cd /tmp/lp-tstb' }, 5000000)
+    assert.same({
+      { label = '/tmp/lp-tstb', path = b, mtime = 5000000 },
+      { label = '/tmp/lp-tsta', path = a, mtime = 5000000 },
+    }, sessions.list_projects(dir), 'same mtime -> lexicographically smaller path wins')
+    vim.fn.delete(dir, 'rf')
+  end)
+
+  it('breaks dedupe ties on equal mtime by path ascending', function()
+    local dir = scratch_dir()
+    local home = vim.fn.expand '~'
+    write_session(dir, 'zz.vim', { 'badd +1 f', 'cd ' .. home }, 5000000)
+    local b = write_session(dir, 'aa.vim', { 'badd +1 f2', 'cd ' .. home }, 5000000)
+    local list = sessions.list_projects(dir)
+    assert.equals(1, #list)
+    assert.equals(b, list[1].path, 'equal mtime dedupe -> lexicographically smaller path wins')
+    vim.fn.delete(dir, 'rf')
+  end)
+
+  it('%-containing cd paths round-trip to the real cwd label', function()
+    local dir = scratch_dir()
+    local p = write_session(dir, 'c.vim', { 'cd /tmp/a%20test', 'badd +1 x' }, 1000000)
+    local list = sessions.list_projects(dir)
+    local labels = {}
+    for _, e in ipairs(list) do
+      labels[#labels + 1] = e.label
+    end
+    assert.is_truthy(vim.tbl_contains(labels, '/tmp/a%20test'), 'expanded cd text preserved verbatim')
+    vim.fn.delete(dir, 'rf')
+  end)
+end)
+
 describe('config.terminal', function()
   it('binds every terminal key with a callable handler', function()
     for _, lhs in ipairs {

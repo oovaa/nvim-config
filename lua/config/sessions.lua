@@ -82,10 +82,42 @@ local function find_session_for(cwd)
   if best then return best end
   return f
 end
+-- recency-ordered project list for the dashboard resume row: one entry per
+-- distinct cwd label seen in the session files, newest mtime wins (equal mtime
+-- -> lexicographically smaller path wins the slot and sorts first)
+local function list_projects(dir)
+  local seen = {}
+  for _, e in ipairs(session_files(dir)) do
+    if vim.fn.filereadable(e.path) == 1 then
+      local label, has_badd
+      for _, l in ipairs(vim.fn.readfile(e.path)) do
+        if l:match '^badd' then has_badd = true end
+        local cd = l:match '^cd%s+(.+)$'
+        if cd and not label then -- first cd line wins; keep scanning for badd
+          label = vim.fn.fnamemodify(vim.fn.expand(cd), ':p'):gsub('/+$', '')
+          if label == '' then label = '/' end
+        end
+      end
+      if has_badd and label then
+        local cur = seen[label]
+        if not cur or e.mtime > cur.mtime or (e.mtime == cur.mtime and e.path < cur.path) then
+          seen[label] = { label = label, path = e.path, mtime = e.mtime }
+        end
+      end
+    end
+  end
+  local out = {}
+  for _, p in pairs(seen) do
+    out[#out + 1] = p
+  end
+  table.sort(out, function(a, b) return a.mtime > b.mtime or (a.mtime == b.mtime and a.path < b.path) end)
+  return out
+end
 -- module-visible accessors (primary API)
 M.find_session_for = find_session_for
 M.session_files = session_files
 M.session_file_for = session_file_for
+M.list_projects = list_projects
 -- compatible names for callers / brief examples
 M.find_session = find_session_for
 M.session_file = session_file
@@ -94,6 +126,7 @@ M.session_file = session_file
 -- Log any legacy use by grepping _G._builtin_* call sites; tracked centrally.
 _G._builtin_find_session = find_session_for
 _G._builtin_session_files = session_files
+_G._builtin_list_projects = list_projects
 -- expose the path builder too, so the dashboard's `s` cannot drift from the
 -- name VimLeavePre actually writes
 _G._builtin_session_file = session_file_for
