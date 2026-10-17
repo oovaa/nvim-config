@@ -77,7 +77,7 @@ Leader is `<Space>`. Essentials:
 - **Plugins**: edit specs (`lua/plugins/` by section, `lua/custom/plugins/` for personal), then `:Lazy sync`. Check load cost with `:Lazy profile`.
 - **Themes**: `<leader>ty` to pick (snacks colorscheme picker with live preview); choice persists in `stdpath('data')/theme.txt`. To add one, add its plugin spec in `lua/custom/plugins/themes.lua`, then `:Lazy sync`.
 - **LSPs**: Mason auto-installs most servers on demand (`:Mason`). Exceptions installed manually: `vtsls` and the Python ladder (`ty`/`pyrefly`/`pyright-langserver`, see table above).
-- **Formatters**: conform.nvim per filetype in `lua/plugins/formatting.lua`; biome leads the JS/TS/JSON chain, prettier covers the rest. Auto-format skips files >1MB (`large_file_size` in `lua/config/options.lua`), manual `<leader>ff` always works.
+- **Formatters**: conform.nvim per filetype in `lua/plugins/formatting.lua`; biome leads the JS/TS/JSON chain only in a repo with its own `biome.json`, prettier covers the rest. Auto-format skips files >1MB (`large_file_size` in `lua/config/options.lua`), manual `<leader>ff` always works.
 - **Tests**: plenary.busted suites in `tests/` — `nvim --headless -c 'lua require("plenary.busted").run("tests/test_qol.lua")' -c 'qa!'`
 
 ## Troubleshooting

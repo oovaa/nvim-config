@@ -121,17 +121,24 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
     selection shifts its anchors, so the next keystroke deletes code), or `R*`
     (replace), because those writes must stay raw (formatting a half-typed
     line reflows it and jumps the cursor). Don't remove one side without the other.
-12. **biome wins on both sides of the save, and the lint entry pins `cwd`.**
-     Formatting: `lua/plugins/formatting.lua` runs `{ 'biome', 'biome-organize-imports',
-     'prettier' }` for JS/TS/JSX/TSX/JSON/JSONC and plain `prettier` for
-     everything else; biome leads on measured speed (0.04s vs 0.17s median,
-     121-line JS file, ~4x — past the 30% bar), and that does **not** weaken
-     trap 5 — prettier is the fallback backend, only `prettierd` is forbidden. Linting: `biome_or_oxlint` in
-     `lua/plugins/ui.lua` returns `biomejs` with `cwd` pinned to the buffer's own
-     project root. Drop that pin and nothing errors visibly: biome resolves its
-     config from cwd, aborts with "nested root configuration", nvim-lint's
+12. **biome wins on both sides of the save only inside a biome-configured repo, and the lint entry pins `cwd`.**
+     The one rule lives in `M.biome_root` (`lua/config/health.lua`): walk up from
+     the buffer for `biome.json`/`biome.jsonc`, but reject `$HOME`. Without that
+     rejection the upward walk hands `~/biome.json` to **every** repo under
+     `/home/omar`, and repos that never asked for biome get its lineWidth/quote
+     style. Formatting: `lua/plugins/formatting.lua` calls `js_formatters(bufnr)`
+     per buffer (conform supports a function in `formatters_by_ft`), returning
+     `{ 'biome', 'biome-organize-imports', 'prettier' }` under a repo config and
+     `{ 'prettier' }` otherwise; biome leads there on measured speed (0.04s vs
+     0.17s median, 121-line JS file, ~4x — past the 30% bar), and that does
+     **not** weaken trap 5 — prettier is the fallback backend, only `prettierd`
+     is forbidden. Linting: `biome_or_oxlint` in `lua/plugins/ui.lua` returns
+     `biomejs` with `cwd` pinned to the buffer's own project root, else `oxlint`.
+     Drop that pin and nothing errors visibly: biome resolves its config from
+     cwd, aborts with "nested root configuration", nvim-lint's
      `ignore_exitcode` swallows the exit 1, and the buffer just gets zero
-     diagnostics.
+     diagnostics. Both sides read `biome_root`, so a change there moves format
+     and lint together — never edit one side's copy.
 13. **The Python LSP is a ladder, not a fixed server.**
      `lua/config/python_lsp.lua` holds the choice — `M.resolve()` returns
      `{ name, cmd, settings }` for the first hit among `ty` → `pyrefly` →

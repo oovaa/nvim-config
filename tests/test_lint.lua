@@ -94,4 +94,13 @@ describe('lint', function()
     vim.fn.delete(biome_dir, 'rf')
     vim.fn.delete(plain_dir, 'rf')
   end)
+
+  it('ignores a biome.json in $HOME, for a buffer under it', function()
+    local health = require 'config.health'
+    -- ~/biome.json exists here, so the upward root walk would otherwise enable
+    -- biome (with cwd = $HOME) for every repo under home.
+    assert.equals(vim.fs.normalize(vim.env.HOME), vim.fs.normalize(vim.fs.root(vim.env.HOME .. '/x/probe.js', { 'biome.json' })))
+    assert.is_nil(health.biome_root(vim.env.HOME .. '/x/probe.js'))
+    assert.equals('oxlint', health.js_linter(vim.env.HOME .. '/x/probe.js'))
+  end)
 end)

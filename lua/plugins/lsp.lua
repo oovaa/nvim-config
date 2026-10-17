@@ -259,7 +259,8 @@ return {
         'stylua', -- lua formatter (conform needs it; health checks it)
         'ruff', -- python lint+format backend for conform + nvim-lint
         'oxlint', -- fast Rust JS/TS linter used by nvim-lint
-        -- biome: leads the JS/TS format + lint chain (see ~/biome.json).
+        -- biome: leads the JS/TS format + lint chain inside a repo that has its
+        -- own biome.json (config.health.biome_root — ~/biome.json does not count).
         -- Also in mason so a GUI-launched nvim finds it — mason/bin is what
         -- setup prepends to PATH, and a bun/npm global is only on PATH via
         -- .zshrc. Standalone Rust binary, so no python/ensurepip wall.

@@ -28,13 +28,27 @@ local optional = {
   { bin = 'jupytext', why = 'molten notebooks (external binary, see init.lua)' },
 }
 
---- The biome.json root rule nvim-lint's biome_or_oxlint applies
---- (lua/plugins/ui.lua), applied to `anchor` (a file or a directory). The rule
---- is shared; the anchor is not — the linter uses the buffer, checkhealth uses
---- the cwd, so the two answer differently in a two-project session.
+--- The biome.json root rule nvim-lint's biome_or_oxlint and conform's JS/TS
+--- formatter chain both apply (lua/plugins/ui.lua, lua/plugins/formatting.lua),
+--- to `anchor` (a file or a directory). The rule is shared; the anchor is not
+--- — the plugins use the buffer, checkhealth uses the cwd, so the two answer
+--- differently in a two-project session.
+---
+--- A biome.json in $HOME never counts. vim.fs.root walks upward, so that file
+--- is found for every repo under home and its config (lineWidth 100, single
+--- quotes, 2-space) would format and lint repos that never asked for it. Only a
+--- biome.json inside the repo itself enables biome; everywhere else the chain
+--- stays on prettier and the linter stays on oxlint.
+---@param anchor string
+---@return string|nil root dir holding biome.json, or nil when there is none
+function M.biome_root(anchor)
+  local root = vim.fs.root(anchor, { 'biome.json', 'biome.jsonc' })
+  return root and root ~= vim.fs.normalize(vim.env.HOME) and root or nil
+end
+
 ---@param anchor string
 ---@return 'biome'|'oxlint'
-function M.js_linter(anchor) return vim.fs.root(anchor, { 'biome.json', 'biome.jsonc' }) and 'biome' or 'oxlint' end
+function M.js_linter(anchor) return M.biome_root(anchor) and 'biome' or 'oxlint' end
 
 function M.check()
   vim.health.start 'nvim-config'

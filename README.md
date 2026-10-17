@@ -101,8 +101,8 @@ running Neovim for the first time.
   npm install -g @vtsls/language-server
   ```
 - [`@biomejs/biome`](https://biomejs.dev) — JS/TS/JSON formatter (leads the
-  conform chain, prettier is the fallback) and linter in biome-configured
-  projects:
+  conform chain inside a repo that has its own `biome.json`; prettier covers
+  everything else) and linter in biome-configured projects:
   ```sh
   bun add -g @biomejs/biome   # or npm i -g @biomejs/biome
   ```

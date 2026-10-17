@@ -176,12 +176,13 @@ return {
     config = function()
       local lint = require 'lint'
       -- ponytail: biome wins only where the project actually configures it
-      -- (biome.json/c in the buffer's root); everywhere else oxlint stays the
-      -- single JS/TS linter, so diagnostics are never reported twice.
+      -- (biome.json/c in the buffer's repo root, never the one in $HOME —
+      -- config.health.biome_root owns that rule); everywhere else oxlint stays
+      -- the single JS/TS linter, so diagnostics are never reported twice.
       -- A function linter is re-resolved per run (lint.lua: `type(linter) ==
       -- 'function'`), so the choice follows the buffer, not the load order.
       lint.linters.biome_or_oxlint = function()
-        local root = vim.fs.root(vim.api.nvim_buf_get_name(0), { 'biome.json', 'biome.jsonc' })
+        local root = require('config.health').biome_root(vim.api.nvim_buf_get_name(0))
         -- ponytail: cwd pinned to the buffer's own root — biome resolves its
         -- config from cwd, and from a foreign cwd it aborts ("nested root
         -- configuration", exit 1) which ignore_exitcode swallows, so the

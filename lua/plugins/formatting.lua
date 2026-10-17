@@ -10,10 +10,18 @@
 -- ponytail: `prettier` only historically. prettierd is deliberately excluded
 -- because its cold start measured 850-2300ms here.
 local prettier = { 'prettier' }
-local biome = { 'biome', 'biome-organize-imports', 'prettier' }
+-- ponytail: biome leads only where the repo actually configures it
+-- (config.health.biome_root — the biome.json in $HOME never counts, or the
+-- upward root walk hands it to every repo under home). conform calls a
+-- formatters_by_ft function with the bufnr (init.lua: list_formatters_for_buffer),
+-- so the chain follows the buffer, not the load order. Where biome is absent
+-- the list is prettier alone.
+local function js_formatters(bufnr)
+  return require('config.health').biome_root(vim.api.nvim_buf_get_name(bufnr)) and { 'biome', 'biome-organize-imports', 'prettier' } or { 'prettier' }
+end
 -- Filetypes whose conform chain starts with the real formatter: stopping at
--- the first hit makes the list a preference chain (biome when installed,
--- prettier when not). Everywhere else the chain must run to the end, because
+-- the first hit makes the list a preference chain (biome where the repo
+-- configures it, prettier where it does not). Everywhere else the chain must run to the end, because
 -- python's is organize-then-format and stopping after the organize no-op
 -- would silently drop ruff_format (T1.4b caught exactly this).
 local stop_after_first_fts = {
@@ -142,15 +150,14 @@ return {
         -- disables it), so without this row conform fell through to the LSP
         -- fallback, found nothing, and <leader>ff reported "no formatters".
         lua = { 'stylua' },
-        -- Prefer prettier (matches .prettierrc in projects; biome ignores it)
-        -- biome primary + prettier retained (conform picks whichever is
-        -- configured first and usable; see conform formatters_by_ft behavior)
-        javascript = biome,
-        typescript = biome,
-        javascriptreact = biome,
-        typescriptreact = biome,
-        json = biome,
-        jsonc = biome,
+        -- biome where the repo configures it, prettier everywhere else
+        -- (js_formatters decides; see config.health.biome_root)
+        javascript = js_formatters,
+        typescript = js_formatters,
+        javascriptreact = js_formatters,
+        typescriptreact = js_formatters,
+        json = js_formatters,
+        jsonc = js_formatters,
         vue = prettier,
         html = prettier,
         css = prettier,
