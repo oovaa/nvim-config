@@ -145,6 +145,18 @@ Press `<leader>e` to toggle the file explorer. Inside it:
 | `]x` / `[x` | Next / previous merge conflict (conflicted files only) | `git-conflict` |
 | `co` `ct` `cb` `c0` | Take ours / theirs / both / none (conflicted files only) | `git-conflict` |
 
+## 🌐 Live Preview & Emmet (frontend)
+
+| Keybinding | Action |
+| :--- | :--- |
+| `<leader>hs` | Start live preview (serves the project on `http://127.0.0.1:8000`, opens the browser) |
+| `<leader>hx` | Stop live preview |
+| `<leader>ho` | Open the served page in the browser |
+| `<leader>ht` | Toggle live reload (page refreshes on save; CSS hot-swaps) |
+
+- Saving any file in the served project refreshes the page; servers stop when nvim exits. Commands: `:KiteHost start|stop|status|toggle-live|open|reload`.
+- **Emmet** (HTML/CSS/JSX/TSX): type an abbreviation like `div.card>p*3`, then accept the completion with `<Tab>` (or `<C-y>`) to expand it.
+
 ## 🧠 LSP (Language Server Protocol)
 
 | Keybinding | Action |

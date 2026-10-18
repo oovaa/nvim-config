@@ -15,13 +15,14 @@ A starting point for Neovim that is:
 
 ## Features
 
-* **LSP**: vtsls (fast TypeScript), a Python server picked from `ty` / `pyrefly` / `pyright-langserver`, lua_ls, HTML/CSS, oxlint + biome, Dockerfile + docker-compose servers — all with completions via [blink.cmp](https://github.com/Saghen/blink.cmp)
+* **LSP**: vtsls (fast TypeScript), a Python server picked from `ty` / `pyrefly` / `pyright-langserver`, lua_ls, HTML/CSS + Emmet, oxlint + biome, Dockerfile + docker-compose servers — all with completions via [blink.cmp](https://github.com/Saghen/blink.cmp)
 * **Formatting**: [conform.nvim](https://github.com/stevearc/conform.nvim) on save (biome + prettier, stylua, ruff)
 * **Fuzzy finding**: snacks picker — files, grep, symbols (`<leader>ls` document / `<leader>lS` workspace), projects, and `vim.ui.select` (code actions, quickfix, mason)
 * **Explorer**: snacks explorer on `<leader>e`
 * **UI**: tokyonight theme by default, any `<leader>ty` pick persisted across restarts, builtin statusline/tabline/dashboard, mode-colored line numbers
 * **Git**: gitsigns, LazyGit on `<leader>fg`
 * **Debugging**: nvim-dap for Python; molten-nvim + image.nvim for Jupyter-style notebooks
+* **Live preview**: [kitehost.nvim](https://github.com/selimacerbas/kitehost.nvim) — `<leader>hs` serves the current page on 127.0.0.1 and refreshes the browser on save (CSS hot-swaps; `<leader>ht` toggles live reload)
 * **Performance**: ~20-30ms headless startup (`:StartupTime` to profile; first boot after a config change is slower while caches rebuild) — everything lazy-loaded except the colorscheme
 
 See `CHEATSHEET.md` for the full keybinding reference.
