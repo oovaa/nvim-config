@@ -931,7 +931,7 @@ do
     return #missing == 0 or ('no FileType trigger for: ' .. table.concat(missing, ', '))
   end)
   H.t('lsp: every configured server is reachable via vim.lsp.config', function()
-    local names = { 'docker_compose_language_service', 'dockerls', 'jsonls', 'lua_ls', 'nginx_language_server', 'pyrefly' }
+    local names = { 'cssls', 'docker_compose_language_service', 'dockerls', 'html', 'jsonls', 'lua_ls', 'nginx_language_server', 'pyrefly' }
     local missing = {}
     for _, n in ipairs(names) do
       if vim.lsp.config[n] == nil then missing[#missing + 1] = n end

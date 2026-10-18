@@ -166,6 +166,16 @@ return {
           cmd = { 'vscode-json-language-server', '--stdio' },
           filetypes = { 'json', 'jsonc' },
         },
+        -- html/css: markup and stylesheet intelligence via the vscode servers
+        -- (tag/attribute + selector/property completion, validation, colors)
+        html = {
+          cmd = { 'vscode-html-language-server', '--stdio' },
+          filetypes = { 'html' },
+        },
+        cssls = {
+          cmd = { 'vscode-css-language-server', '--stdio' },
+          filetypes = { 'css', 'scss', 'less' },
+        },
         -- nginx: config files get diagnostics/completion; format via nginxfmt
         nginx_language_server = {
           -- stdio is the default transport; 0.9.0 rejects --stdio
@@ -248,6 +258,8 @@ return {
         docker_compose_language_service = 'docker-compose-language-service',
         dockerls = 'dockerfile-language-server',
         jsonls = 'json-lsp',
+        html = 'html-lsp',
+        cssls = 'css-lsp',
         lua_ls = 'lua-language-server',
       }
       local ensure_installed = {}
@@ -293,6 +305,8 @@ return {
       local lsp_filetypes = {
         lua_ls = { 'lua' },
         jsonls = { 'json', 'jsonc' },
+        html = { 'html' },
+        cssls = { 'css', 'scss', 'less' },
         docker_compose_language_service = { 'yaml.docker-compose' },
         dockerls = { 'dockerfile' },
         nginx_language_server = { 'nginx' },

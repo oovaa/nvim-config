@@ -15,7 +15,7 @@ A starting point for Neovim that is:
 
 ## Features
 
-* **LSP**: vtsls (fast TypeScript), a Python server picked from `ty` / `pyrefly` / `pyright-langserver`, lua_ls, oxlint + biome, Dockerfile + docker-compose servers — all with completions via [blink.cmp](https://github.com/Saghen/blink.cmp)
+* **LSP**: vtsls (fast TypeScript), a Python server picked from `ty` / `pyrefly` / `pyright-langserver`, lua_ls, HTML/CSS, oxlint + biome, Dockerfile + docker-compose servers — all with completions via [blink.cmp](https://github.com/Saghen/blink.cmp)
 * **Formatting**: [conform.nvim](https://github.com/stevearc/conform.nvim) on save (biome + prettier, stylua, ruff)
 * **Fuzzy finding**: snacks picker — files, grep, symbols (`<leader>ls` document / `<leader>lS` workspace), projects, and `vim.ui.select` (code actions, quickfix, mason)
 * **Explorer**: snacks explorer on `<leader>e`
