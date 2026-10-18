@@ -176,6 +176,11 @@ return {
           cmd = { 'vscode-css-language-server', '--stdio' },
           filetypes = { 'css', 'scss', 'less' },
         },
+        -- emmet: expand abbreviations (div.card>p*3) via blink completions
+        emmet_language_server = {
+          cmd = { 'emmet-language-server', '--stdio' },
+          filetypes = { 'html', 'css', 'scss', 'less', 'javascriptreact', 'typescriptreact' },
+        },
         -- nginx: config files get diagnostics/completion; format via nginxfmt
         nginx_language_server = {
           -- stdio is the default transport; 0.9.0 rejects --stdio
@@ -260,6 +265,7 @@ return {
         jsonls = 'json-lsp',
         html = 'html-lsp',
         cssls = 'css-lsp',
+        emmet_language_server = 'emmet-language-server',
         lua_ls = 'lua-language-server',
       }
       local ensure_installed = {}
@@ -307,6 +313,7 @@ return {
         jsonls = { 'json', 'jsonc' },
         html = { 'html' },
         cssls = { 'css', 'scss', 'less' },
+        emmet_language_server = { 'html', 'css', 'scss', 'less', 'javascriptreact', 'typescriptreact' },
         docker_compose_language_service = { 'yaml.docker-compose' },
         dockerls = { 'dockerfile' },
         nginx_language_server = { 'nginx' },
