@@ -15,6 +15,12 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 --         prefix there, so as a normal-mode mapping it never deleted anything)
 vim.keymap.set('i', '<C-BS>', '<C-w>', { desc = 'Delete previous word' })
 
+-- `vv` in visual mode selects the current line.
+-- WHAT: maps `vv` to `V` (linewise) — by default the second `v` just leaves
+--       visual mode, so the `vv` idiom selects nothing
+-- TO CHANGE: delete this line to get the default back
+vim.keymap.set('x', 'vv', 'V', { desc = 'Linewise selection' })
+
 -- Open diagnostic quickfix list
 -- WHAT: Opens a list of all diagnostics in the current buffer
 -- TO CHANGE: Map to a different key like <leader>x

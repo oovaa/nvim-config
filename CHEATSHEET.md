@@ -108,6 +108,7 @@ Press `<leader>e` to toggle the file explorer. Inside it:
 | `<C-j>` / `<C-k>` | Next / prev snippet placeholder | `blink.cmp` + `luasnip` |
 | `<C-space>` | Force show completion docs | `blink.cmp` |
 | `<C-BS>` | Delete previous word | built-in |
+| `vv` (visual) | Select the whole current line | built-in |
 | `<leader>q` | Open diagnostic quickfix list | built-in |
 | `gy` | Yank nearest diagnostic under cursor | built-in |
 | `<leader>yd` | Yank all diagnostics on current line | built-in |
