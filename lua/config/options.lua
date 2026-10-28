@@ -100,7 +100,7 @@ vim.g.have_nerd_font = true
 -- EFFECT: true = absolute numbers (1, 2, 3, 4, 5...)
 --         relative = relative numbers (cursor line shows absolute, others show distance)
 vim.o.number = true
-vim.o.relativenumber = true -- relative distances for vim motions
+vim.o.relativenumber = false
 
 -- MOUSE SUPPORT
 -- WHAT: Allows using the mouse in Neovim
@@ -260,8 +260,7 @@ vim.o.scrolloff = 10
 vim.o.foldlevel = 99
 vim.o.foldlevelstart = 99
 vim.o.spelllang = 'en_us'
-vim.o.foldcolumn = 'auto'
-vim.opt.fillchars:append { foldopen = '▾', foldclose = '▸', foldsep = ' ' }
+vim.o.foldcolumn = '0'
 
 -- SMOOTH SCROLL (replaces neoscroll.nvim — builtin line-wise smooth scroll)
 vim.o.smoothscroll = true
