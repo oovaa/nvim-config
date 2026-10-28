@@ -116,6 +116,7 @@ vim.o.mouse = 'a'
 -- EFFECT: false = cleaner command line (mode shown in statusline instead)
 --         true = mode shown in command line bottom-left
 vim.o.showmode = false
+vim.opt.shortmess:append 'Ic'
 
 -- CLIPBOARD
 -- WHAT: Syncs Neovim's clipboard with your system clipboard
@@ -144,6 +145,10 @@ vim.o.undofile = true
 --                  "Foo" matches "Foo" but not "foo" or "FOO"
 vim.o.ignorecase = true
 vim.o.smartcase = true
+vim.o.completeopt = 'menuone,noselect'
+-- GREP: use ripgrep for :grep/:lgrep (faster than GNU grep, respects .gitignore)
+vim.o.grepprg = 'rg --vimgrep --smart-case --hidden'
+vim.o.grepformat = '%f:%l:%c:%m'
 
 -- CMdLINE COMPLETION
 -- WHAT: popup menu for : command/file/option completion, auto-shown as you
@@ -188,12 +193,14 @@ vim.o.signcolumn = 'yes'
 -- TO CHANGE: Lower = more responsive but higher CPU
 -- EFFECT: Affects CursorHold timing, swap file writes, and some plugin behaviors
 vim.o.updatetime = 250
+vim.o.pumheight = 10
 
 -- TIMEOUT LENGTH
 -- WHAT: How long to wait for a key sequence to complete (in milliseconds)
 -- TO CHANGE: Lower = faster timeout for multi-key sequences
 -- EFFECT: Affects which-key display timing and key sequence completion
 vim.o.timeoutlen = 300
+vim.o.ttimeoutlen = 10
 
 -- REDRAW BEHAVIOR
 -- WHAT: Defers intermediate screen redraws while running macros/scripts
@@ -228,6 +235,7 @@ vim.o.splitbelow = true
 -- EFFECT: Shows tabs as », trailing spaces as ·, nbsp as ␣
 vim.o.list = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
+vim.opt.fillchars:append { eob = ' ' }
 
 -- LIVE SUBSTITUTION PREVIEW
 -- WHAT: Shows a split preview when using :substitute (:%s/old/new/g)
@@ -251,6 +259,9 @@ vim.o.scrolloff = 10
 -- in lua/plugins/treesitter.lua when a parser is available.
 vim.o.foldlevel = 99
 vim.o.foldlevelstart = 99
+vim.o.spelllang = 'en_us'
+vim.o.foldcolumn = 'auto'
+vim.opt.fillchars:append { foldopen = '▾', foldclose = '▸', foldsep = ' ' }
 
 -- SMOOTH SCROLL (replaces neoscroll.nvim — builtin line-wise smooth scroll)
 vim.o.smoothscroll = true
@@ -274,7 +285,7 @@ vim.o.confirm = true
 
 -- DIFF ALGORITHM (smarter diffs: indent heuristic on top of the default
 -- linematch). Joins hunks whose gaps are only re-indented/moved lines.
-vim.opt.diffopt:append { 'indent-heuristic' }
+vim.opt.diffopt:append { 'indent-heuristic', 'linematch:60' }
 
 -- SPLIT KEEP (opening/closing a split keeps the topline stable)
 -- Without it the whole window scrolls when a horizontal split opens.
