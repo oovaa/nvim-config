@@ -132,10 +132,11 @@ return {
   -- LOADING: ft = only loads for JavaScript/TypeScript files
   {
     'yioneko/nvim-vtsls',
-    dependencies = { 'nvim-lua/plenary.nvim' },
+    dependencies = { 'nvim-lua/plenary.nvim', 'saghen/blink.cmp' },
     ft = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
     config = function()
-      local capabilities = require('blink.cmp').get_lsp_capabilities()
+      local blink_ok, blink = pcall(require, 'blink.cmp')
+      local capabilities = blink_ok and blink.get_lsp_capabilities() or {}
       -- Registers VtsExec/VtsRename + the move-to-file handler via the
       -- plugin's LspAttach autocmd; without this enableMoveToFileCodeAction is dead.
       require('vtsls').config {}

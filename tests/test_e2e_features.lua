@@ -84,9 +84,10 @@ describe('e2e: shipped features', function()
 
     local env = { XDG_DATA_HOME = data, XDG_STATE_HOME = data .. '/state' }
     local keys = [[
+      local lead = vim.g.mapleader or ' '
       local n = 0
       for _, m in ipairs(vim.api.nvim_get_keymap('n')) do
-        if m.lhs:find('<leader>m', 1, true) then n = n + 1 end
+        if m.lhs:find(lead .. 'm', 1, true) and #m.lhs == #lead + 2 then n = n + 1 end
       end
       io.stdout:write('molten_keys=' .. n .. ' cmd=' .. vim.fn.exists(':MoltenInit'))
     ]]

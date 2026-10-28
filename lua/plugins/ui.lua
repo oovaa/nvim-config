@@ -124,7 +124,8 @@ return {
           -- ponytail: `require('snacks.config')` does not exist in current
           -- snacks; it raised E492/E5108 on every <leader>n press. The config
           -- table hangs off the Snacks module itself.
-          if require('snacks').config.picker.enabled then
+          local cfg = require('snacks').config
+          if cfg and cfg.picker and cfg.picker.enabled then
             require('snacks').picker.notifications()
           else
             require('snacks').notifier.show_history()

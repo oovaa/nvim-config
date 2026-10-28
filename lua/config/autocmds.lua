@@ -60,7 +60,9 @@ vim.api.nvim_create_autocmd('CursorHold', {
     -- render does not. (col is not a valid get() filter — line scope only.)
     -- Skip when a float is already open so idle CursorHolds don't re-render
     -- and flicker ~4x/s on the same error line.
-    local lnum = vim.api.nvim_win_get_cursor(0)[1] - 1
+    local ok_cursor, cursor = pcall(vim.api.nvim_win_get_cursor, 0)
+    if not ok_cursor then return end
+    local lnum = cursor[1] - 1
     if #vim.diagnostic.get(0, { lnum = lnum }) == 0 then return end
     for _, win in ipairs(vim.api.nvim_list_wins()) do
       if vim.api.nvim_win_get_config(win).relative ~= '' then return end
@@ -146,7 +148,7 @@ vim.api.nvim_create_autocmd('BufWritePre', {
   group = vim.api.nvim_create_augroup('auto-mkdir', { clear = true }),
   callback = function(args)
     local dir = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(args.buf), ':p:h')
-    if dir ~= '' and vim.fn.isdirectory(dir) == 0 and not dir:match '^%w+://' then vim.fn.mkdir(dir, 'p') end
+    if dir ~= '' and vim.fn.isdirectory(dir) == 0 and not dir:match '^%w+://' then pcall(vim.fn.mkdir, dir, 'p') end
   end,
 })
 

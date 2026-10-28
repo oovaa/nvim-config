@@ -4,13 +4,17 @@
 -- ponytail: :terminal + TermOpen autocmd (lua/config/autocmds.lua) already handles jk/C-hjkl
 
 -- ponytail: single reusable buf per kind; hide/show = close win, keep buf (no new split each time)
-local horiz = { buf = nil, win = nil }
-local float = { buf = nil, win = nil }
-local last = 'horiz' -- ponytail: C-\ targets last opened kind (like toggleterm)
+-- Survive <leader>ur reloads: keep the state table in _G so open terminals aren't orphaned.
+local _state = _G._builtin_terminal_state
+if type(_state) ~= 'table' then
+  _state = { horiz = { buf = nil, win = nil }, float = { buf = nil, win = nil }, last = 'horiz' }
+  _G._builtin_terminal_state = _state
+end
+local horiz, float = _state.horiz, _state.float
 local function is_win_valid(w) return w and vim.api.nvim_win_is_valid(w) end
 local function is_buf_valid(b) return b and vim.api.nvim_buf_is_valid(b) end
 local function toggle_horiz(cmd)
-  last = 'horiz'
+  _state.last = 'horiz'
   if is_win_valid(horiz.win) then
     if vim.api.nvim_win_get_buf(horiz.win) == horiz.buf then
       -- ponytail: pcall — hiding the last window errors E444; leave it visible
@@ -43,7 +47,7 @@ local function toggle_horiz(cmd)
   end
 end
 local function toggle_float(cmd)
-  last = 'float'
+  _state.last = 'float'
   if is_win_valid(float.win) then
     if vim.api.nvim_win_get_buf(float.win) == float.buf then
       pcall(vim.api.nvim_win_close, float.win, true)
@@ -157,7 +161,7 @@ local function toggle_last()
     end
   end
   if seen then return end -- terminal visible but unclosable (last window) — leave it
-  if last == 'float' then
+  if _state.last == 'float' then
     toggle_float(vim.o.shell)
   else
     toggle_horiz(vim.o.shell)

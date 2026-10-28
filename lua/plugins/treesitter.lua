@@ -38,6 +38,9 @@ return {
       vim.g.treesitter_bootstrap = vim.g.treesitter_bootstrap or {}
       vim.defer_fn(function()
         if #vim.api.nvim_list_uis() == 0 then return end
+        -- Skip the whole bootstrap when the tree-sitter CLI is missing: every
+        -- TSInstall would just spawn-fail and waste startup work.
+        if vim.fn.executable 'tree-sitter' == 0 then return end
         local marks, todo = vim.g.treesitter_bootstrap or {}, {}
         for _, lang in ipairs {
           'lua',
@@ -89,7 +92,7 @@ return {
             -- same once-per-session state as the bootstrap above, so a language
             -- whose build failed is not retried on every buffer of that type
             local marks = vim.g.treesitter_bootstrap or {}
-            if not marks[lang] and vim.uv.fs_stat(parser_path(lang)) == nil then
+            if vim.fn.executable 'tree-sitter' == 1 and not marks[lang] and vim.uv.fs_stat(parser_path(lang)) == nil then
               marks[lang] = true
               vim.g.treesitter_bootstrap = marks -- whole table, see the note above
               pcall(vim.cmd, 'TSInstall ' .. lang)

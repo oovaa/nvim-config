@@ -11,7 +11,7 @@
 -- EFFECT: Prepends the first prefix containing node, plus ~/.bun/bin when biome
 --         or vtsls lives there, once, and only when something is unresolvable.
 --         Terminal launches (node already visible) skip the node half.
-if vim.fn.exepath 'node' == '' or vim.fn.exepath 'biome' == '' then
+if (vim.fn.exepath 'node' == '' or vim.fn.exepath 'biome' == '') and not vim.g._path_self_healed then
   local bun = vim.fn.expand '~/.bun/bin'
   -- NOTE: explicit parens are required. `vim.fn.glob 'x', false, true` parses as
   -- three statements (the string-call sugar only takes one argument), so it
@@ -33,6 +33,7 @@ if vim.fn.exepath 'node' == '' or vim.fn.exepath 'biome' == '' then
     end
   end
   if vim.fn.executable(bun .. '/biome') == 1 or vim.fn.executable(bun .. '/vtsls') == 1 then vim.env.PATH = bun .. ':' .. vim.env.PATH end
+  vim.g._path_self_healed = true
 end
 
 -- ============================================================================

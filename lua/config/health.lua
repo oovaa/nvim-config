@@ -43,7 +43,7 @@ local optional = {
 ---@return string|nil root dir holding biome.json, or nil when there is none
 function M.biome_root(anchor)
   local root = vim.fs.root(anchor, { 'biome.json', 'biome.jsonc' })
-  return root and root ~= vim.fs.normalize(vim.env.HOME) and root or nil
+  return root and root ~= vim.fs.normalize(vim.env.HOME or '') and root or nil
 end
 
 ---@param anchor string
