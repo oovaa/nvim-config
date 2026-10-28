@@ -62,14 +62,14 @@ info "pkg manager: ${PM:-none}"
 # --- 1. system tools -------------------------------------------------------
 step "1/7  System tools"
 need git "git" "required to clone + update plugins"
-need rg "ripgrep" "Telescope grep, grug-far"
-need fd "fd" "Telescope file finder"
-need make "make" "telescope-fzf-native build"
-need cmake "cmake" "telescope-fzf-native build"
-need gcc "C compiler" "telescope-fzf-native build"
+need rg "ripgrep" "snacks grep, grug-far"
+need fd "fd" "snacks picker speed"
+need make "make" "LuaSnip jsregexp build"
+need gcc "C compiler" "tree-sitter CLI builds parsers"
 need curl "curl" "downloads"
 need unzip "unzip" "Mason packages"
-need nvim "neovim >= 0.11" "see README install recipes"
+need nvim "neovim >= 0.12" "see README install recipes"
+need tree-sitter "tree-sitter CLI" "builds every nvim-treesitter parser (brew install tree-sitter)"
 
 if (( ! CHECK_ONLY )) && (( ${#MISSING[@]} > 0 )); then
   # Install ONLY what's missing (binary -> package name mapping).
@@ -77,7 +77,10 @@ if (( ! CHECK_ONLY )) && (( ${#MISSING[@]} > 0 )); then
   for b in "${MISSING[@]}"; do
     case "$b" in
       fd) if [[ "$PM" == apt || "$PM" == dnf ]]; then pkgs+=(fd-find); else pkgs+=(fd); fi ;;
+      rg) if [[ "$PM" == apt || "$PM" == dnf ]]; then pkgs+=(ripgrep); else pkgs+=(ripgrep); fi ;;
+      node) if [[ "$PM" == apt ]]; then pkgs+=(nodejs); elif [[ "$PM" == dnf ]]; then pkgs+=(nodejs); else pkgs+=(node); fi ;;
       nvim) pkgs+=(neovim) ;;
+      tree-sitter) pkgs+=(tree-sitter) ;;
       *) pkgs+=("$b") ;;
     esac
   done
@@ -205,6 +208,9 @@ fi
 step "7/7  Manual reminders"
 warn "Nerd Font required (vim.g.have_nerd_font = true) — https://www.nerdfonts.com"
 warn "kitty terminal for image rendering (image.nvim kitty backend)"
+warn "jupytext needed for molten notebooks: pip install jupytext (or uv pip install --user jupytext)"
+warn "clipboard: install xclip (X11) or wl-clipboard (Wayland) for system clipboard sync"
+warn "vtsls fallback if bun is unavailable: npm i -g @vtsls/language-server"
 
 echo
 if (( ${#MISSING[@]} > 0 )) && (( CHECK_ONLY )); then

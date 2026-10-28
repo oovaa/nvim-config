@@ -100,7 +100,7 @@ vim.g.have_nerd_font = true
 -- EFFECT: true = absolute numbers (1, 2, 3, 4, 5...)
 --         relative = relative numbers (cursor line shows absolute, others show distance)
 vim.o.number = true
--- vim.o.relativenumber = true  -- Uncomment for relative line numbers
+vim.o.relativenumber = true -- relative distances for vim motions
 
 -- MOUSE SUPPORT
 -- WHAT: Allows using the mouse in Neovim
@@ -246,6 +246,11 @@ vim.o.cursorline = true
 -- TO CHANGE: Increase for more context, decrease for less
 -- EFFECT: Higher values = more context visible (cursor stays centered-ish)
 vim.o.scrolloff = 10
+
+-- FOLDING defaults: start fully unfolded; treesitter foldexpr is wired per-buffer
+-- in lua/plugins/treesitter.lua when a parser is available.
+vim.o.foldlevel = 99
+vim.o.foldlevelstart = 99
 
 -- SMOOTH SCROLL (replaces neoscroll.nvim — builtin line-wise smooth scroll)
 vim.o.smoothscroll = true

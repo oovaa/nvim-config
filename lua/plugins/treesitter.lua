@@ -98,7 +98,18 @@ return {
               pcall(vim.cmd, 'TSInstall ' .. lang)
             end
           end
-          pcall(vim.treesitter.start, args.buf)
+          local ok_ts = pcall(vim.treesitter.start, args.buf)
+          -- ponytail: treesitter-backed folding only where a parser actually
+          -- attached; manual folding stays the fallback (and large-file mode).
+          if ok_ts then
+            for _, win in ipairs(vim.api.nvim_list_wins()) do
+              if vim.api.nvim_win_get_buf(win) == args.buf then
+                vim.wo[win].foldmethod = 'expr'
+                vim.wo[win].foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+                vim.wo[win].foldlevel = 99
+              end
+            end
+          end
         end,
       })
     end,

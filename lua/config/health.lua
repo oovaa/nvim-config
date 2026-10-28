@@ -52,6 +52,21 @@ function M.js_linter(anchor) return M.biome_root(anchor) and 'biome' or 'oxlint'
 
 function M.check()
   vim.health.start 'nvim-config'
+  -- Neovim version gate: config relies on 0.12 APIs (winborder, smoothscroll,
+  -- vim.lsp.config, incremental selection). Older majors will silently break.
+  if vim.fn.has 'nvim-0.12' == 1 then
+    vim.health.ok('neovim ' .. tostring(vim.version()) .. ' (>= 0.12)')
+  else
+    vim.health.error('neovim ' .. tostring(vim.version()) .. ' is too old — this config needs >= 0.12', 'Upgrade Neovim')
+  end
+  -- Clipboard provider: unnamedplus needs xclip (X11) or wl-copy (Wayland).
+  if vim.env.SSH_CONNECTION ~= nil then
+    vim.health.ok 'clipboard: skipped over SSH (no forwarding)'
+  elseif vim.fn.executable 'xclip' == 1 or vim.fn.executable 'wl-copy' == 1 or vim.fn.executable 'pbcopy' == 1 or vim.fn.executable 'win32yank' == 1 then
+    vim.health.ok 'clipboard: provider found (unnamedplus works)'
+  else
+    vim.health.warn('clipboard: no provider (xclip/wl-copy/pbcopy/win32yank) — yanks stay in nvim only', 'Install xclip (X11) or wl-clipboard (Wayland)')
+  end
   for _, t in ipairs(required) do
     if vim.fn.executable(t.bin) == 1 then
       vim.health.ok(t.bin .. ' found (' .. t.why .. ')')

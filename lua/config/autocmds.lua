@@ -11,6 +11,14 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   callback = function() vim.hl.on_yank() end,
 })
 
+-- Spell checking for prose filetypes (opt-in elsewhere via <leader>us).
+vim.api.nvim_create_autocmd('FileType', {
+  desc = 'Enable spell checking for prose filetypes',
+  group = vim.api.nvim_create_augroup('spell-prose', { clear = true }),
+  pattern = { 'markdown', 'gitcommit', 'tex', 'text' },
+  callback = function() vim.wo.spell = true end,
+})
+
 -- Restore cursor to last edit position when reopening a file.
 -- Skips gitcommit/diff greps (position marks mislead there) and files
 -- where the mark sits past EOF.
