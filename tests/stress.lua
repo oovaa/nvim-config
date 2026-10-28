@@ -428,7 +428,7 @@ do
       local tb = vim.api.nvim_eval_statusline(vim.o.tabline, { maxwidth = 500 })
       if type(tb.str) ~= 'string' then return 'tabline eval returned ' .. type(tb.str) end
       -- every %N@_builtin_tabclick@ index must be a live buffer
-      for n in raw:gmatch '%%(%d+)@_builtin_tabclick@' do
+      for n in raw:gmatch '%%(%d+)@BuiltinTabclick@' do
         if not vim.api.nvim_buf_is_valid(tonumber(n)) then return 'click index ' .. n .. ' is not a valid buffer' end
       end
       return true
@@ -436,7 +436,7 @@ do
     H.t('tabline: ' .. tag, function()
       local raw = _G._builtin_tabline()
       if type(raw) ~= 'string' then return 'returned ' .. type(raw) end
-      for n in raw:gmatch '%%(%d+)@_builtin_tabclick@' do
+      for n in raw:gmatch '%%(%d+)@BuiltinTabclick@' do
         if not vim.api.nvim_buf_is_valid(tonumber(n)) then return 'click index ' .. n .. ' is not a valid buffer' end
       end
       return true

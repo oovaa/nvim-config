@@ -8,7 +8,7 @@ describe('builtin tabline', function()
   --- Payload of one buffer's entry in a rendered tabline. An entry is
   --- `%<bufnr>@_builtin_tabclick@<hl> <idx> <name>...%X%*`; slicing one buffer
   --- out beats matching the whole escape soup, which is not a contract.
-  local function entry(s, buf) return s:match('%%' .. buf .. '@_builtin_tabclick@(.-)%%X') end
+  local function entry(s, buf) return s:match('%%' .. buf .. '@BuiltinTabclick@(.-)%%X') end
 
   it('marks the current buffer selected and follows a switch or a click', function()
     assert.is_function(_G._builtin_tabline, 'premise: tabline must be wired by custom.ui.init')

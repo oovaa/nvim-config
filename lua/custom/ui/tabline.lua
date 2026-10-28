@@ -51,6 +51,14 @@ function M.setup_bufferline()
   _G._builtin_tabclick = function(bufnr, _, button)
     if button == 'l' and vim.api.nvim_buf_is_valid(bufnr) then vim.api.nvim_set_current_buf(bufnr) end
   end
+  -- Vimscript wrapper (capitalized) so the tabline %@...@ mouse-click actually
+  -- resolves; lowercase Lua globals are not callable from %@ click items.
+  vim.api.nvim_exec(
+    [[function! BuiltinTabclick(minwid, clicks, button, mod)
+      call v:lua._builtin_tabclick(a:minwid, a:clicks, a:button, a:mod)
+    endfunction]],
+    false
+  )
   -- ponytail: labeled segments ('E2 W1') not bare numbers ('2 1') — E/W/I/H letters
   -- with the standard Diagnostic* hl groups, so the tabline reads at a glance.
   local function diag_seg(n, letter, hl) return n > 0 and ('%#' .. hl .. '#' .. letter .. n .. ' ') or '' end
@@ -73,7 +81,7 @@ function M.setup_bufferline()
           .. diag_seg(cnt.h, 'H', 'DiagnosticHint')
         local mod_hl = is_cur and '%#TabLineModSel#' or '%#TabLineMod#'
         local mod = vim.bo[buf].modified and ' ' .. mod_hl .. '●' .. hl or ''
-        s = s .. '%' .. buf .. '@_builtin_tabclick@' .. hl .. ' ' .. idx .. ' ' .. name .. mod .. (diag ~= '' and ' ' .. diag or '') .. ' %X%*'
+        s = s .. '%' .. buf .. '@BuiltinTabclick@' .. hl .. ' ' .. idx .. ' ' .. name .. mod .. (diag ~= '' and ' ' .. diag or '') .. ' %X%*'
       end
     end
     return s .. '%#TabLineFill#%='
