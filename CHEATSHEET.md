@@ -125,7 +125,7 @@ Press `<leader>e` to toggle the file explorer. Inside it:
 | `<leader>fE` | File explorer (reveal current file) | `snacks.nvim` |
 | `:StartupTime` | Profile startup (native timing + lazy.nvim plugin stats) | config |
 
-### ✏️ Spell checking (built-in, auto-on for markdown/gitcommit/tex/text)
+### ✏️ Spell checking (built-in, auto-on for markdown only)
 
 | Key | Action |
 | :--- | :--- |

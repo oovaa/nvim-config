@@ -15,7 +15,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 vim.api.nvim_create_autocmd('FileType', {
   desc = 'Enable spell checking for prose filetypes',
   group = vim.api.nvim_create_augroup('spell-prose', { clear = true }),
-  pattern = { 'markdown', 'gitcommit', 'tex', 'text' },
+  pattern = { 'markdown' },
   callback = function() vim.wo.spell = true end,
 })
 
