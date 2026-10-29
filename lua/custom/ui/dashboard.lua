@@ -65,7 +65,7 @@ function M.setup_starter()
     { key = 'e', icon = vim.fn.nr2char(0xf15b), label = 'New File', action = '<cmd>ene<CR>' },
     { key = 'f', icon = vim.fn.nr2char(0xf002), label = 'Find File', action = function() require('snacks').picker.files() end },
     { key = 'r', icon = vim.fn.nr2char(0xf115), label = 'File Explorer', action = function() require('snacks').explorer() end },
-    { key = 'g', icon = vim.fn.nr2char(0xf126), label = 'Git (LazyGit)', action = function() vim.cmd 'terminal lazygit' end },
+    { key = 'g', icon = vim.fn.nr2char(0xf126), label = 'Git (LazyGit)', action = function() require('config.terminal').toggle_float 'lazygit' end },
     {
       key = 's',
       icon = vim.fn.nr2char(0xf017),
@@ -154,6 +154,9 @@ function M.setup_starter()
         raw[#raw + 1] = string.format('  %s  %s  %s', b.key, b.icon, pad_disp(b.label, label_w))
       end
       raw[#raw + 1] = ''
+      -- track the raw index of the first recent row so <CR> can map without
+      -- recomputing from magic offsets (see U-1)
+      local recent_first_raw = #raw + 1
       for i, r in ipairs(recent) do
         raw[#raw + 1] = string.format('  %d  %s', i, r.disp)
       end
@@ -170,6 +173,7 @@ function M.setup_starter()
       end
       local block_pad = math.max(4, math.floor((win_w - max_w) / 2))
       local pad_top = math.max(0, math.floor((win_h - #raw) / 2) - 2)
+      local recent_start_row = pad_top + recent_first_raw
       local lines = {}
       for _ = 1, pad_top do
         lines[#lines + 1] = ''
@@ -231,7 +235,7 @@ function M.setup_starter()
       -- also allow <CR> on recent line to open
       vim.keymap.set('n', '<CR>', function()
         local row = vim.api.nvim_win_get_cursor(0)[1]
-        local first_recent = pad_top + 2 + 6 + 1 + #buttons + 1 + 1 -- pad_top + raw index of first recent
+        local first_recent = recent_start_row
         local idx = row - first_recent + 1
         if idx >= 1 and idx <= #recent then vim.cmd('edit ' .. vim.fn.fnameescape(recent[idx].path)) end
       end, { buffer = buf })

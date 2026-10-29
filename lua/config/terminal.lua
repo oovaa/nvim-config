@@ -2,7 +2,7 @@
 -- BUILTIN TERMINAL (replaces toggleterm.nvim + lazygit.nvim, zero loss via :terminal)
 -- Split from init.lua. Required after lazy.nvim setup (see init.lua).
 -- ponytail: :terminal + TermOpen autocmd (lua/config/autocmds.lua) already handles jk/C-hjkl
-
+local M = {}
 -- ponytail: single reusable buf per kind; hide/show = close win, keep buf (no new split each time)
 -- Survive <leader>ur reloads: keep the state table in _G so open terminals aren't orphaned.
 local _state = _G._builtin_terminal_state
@@ -168,3 +168,16 @@ local function toggle_last()
   end
 end
 vim.keymap.set({ 'n', 't' }, '<c-\\>', toggle_last, { desc = 'Toggle Terminal' })
+
+-- module exports (see plan U-2/Q-3): allow other modules (dashboard) to reuse
+-- the configured float instead of shelling out to :terminal.
+M.toggle_horiz = toggle_horiz
+M.toggle_float = toggle_float
+M.toggle_last = toggle_last
+M.new_horiz = new_horiz
+M.new_vert = new_vert
+M.new_float = new_float
+M.split_horiz = split_horiz
+M.split_vert = split_vert
+
+return M

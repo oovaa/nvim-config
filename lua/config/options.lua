@@ -90,7 +90,9 @@ vim.g.mapleader = ' '
 -- NERD FONT SUPPORT
 -- WHAT: Enables special icons in the UI (file explorer, statusline, etc.)
 -- TO CHANGE: Set to false if you don't have a Nerd Font installed
--- EFFECT: false = no icons (works with any terminal font)
+-- EFFECT: false = no icons in plugin UI (visual.lua/ui.lua); NOTE: the custom
+--         statusline/tabline/dashboard still emit Nerd Font glyphs today, so
+--         set this only after those modules are gated (plan U-3).
 --         true = icons everywhere (requires a Nerd Font like JetBrainsMono Nerd Font)
 vim.g.have_nerd_font = true
 

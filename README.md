@@ -23,7 +23,7 @@ A starting point for Neovim that is:
 * **Git**: gitsigns, LazyGit on `<leader>fg`
 * **Debugging**: nvim-dap for Python; molten-nvim + image.nvim for Jupyter-style notebooks
 * **Live preview**: [kitehost.nvim](https://github.com/selimacerbas/kitehost.nvim) — `<leader>hs` serves the current page on 127.0.0.1 and refreshes the browser on save (CSS hot-swaps; `<leader>ht` toggles live reload)
-* **Performance**: ~20-30ms headless startup (`:StartupTime` to profile; first boot after a config change is slower while caches rebuild) — everything lazy-loaded except the colorscheme
+* **Performance**: ~126ms median headless startup (measured 2026-10-29; first boot after a config change is slower while caches rebuild) — everything lazy-loaded except the colorscheme
 
 See `CHEATSHEET.md` for the full keybinding reference.
 

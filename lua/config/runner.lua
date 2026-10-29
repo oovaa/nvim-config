@@ -20,11 +20,11 @@ local function run_file()
   if runners[ft] then
     cmd = runners[ft] .. ' ' .. vim.fn.shellescape(file)
   elseif ft == 'cpp' then
-    local out = '/tmp/' .. vim.fn.expand '%:t:r'
-    cmd = string.format('g++ %s -o %s && %s', vim.fn.shellescape(file), vim.fn.shellescape(out), vim.fn.shellescape(out))
+    local out = vim.fn.tempname()
+    cmd = string.format('g++ %s -o %s && %s; rm -f %s', vim.fn.shellescape(file), vim.fn.shellescape(out), vim.fn.shellescape(out), vim.fn.shellescape(out))
   elseif ft == 'c' then
-    local out = '/tmp/' .. vim.fn.expand '%:t:r'
-    cmd = string.format('gcc %s -o %s && %s', vim.fn.shellescape(file), vim.fn.shellescape(out), vim.fn.shellescape(out))
+    local out = vim.fn.tempname()
+    cmd = string.format('gcc %s -o %s && %s; rm -f %s', vim.fn.shellescape(file), vim.fn.shellescape(out), vim.fn.shellescape(out), vim.fn.shellescape(out))
   else
     vim.notify('No runner for filetype: ' .. ft, vim.log.levels.WARN)
     return

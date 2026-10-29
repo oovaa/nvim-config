@@ -814,7 +814,9 @@ do
       vim.fn.writefile(ft == 'c' and { 'int main(){return 0;}' } or { 'int main(){return 0;}' }, f)
       local cmds = run_and_read(ft, { 'int main(){return 0;}' }, f)
       if #cmds == 0 then return 'no terminal buffer was created' end
-      if not table.concat(cmds, ' '):find('/tmp/runme', 1, true) then return 'compiled output path wrong: ' .. vim.inspect(cmds) end
+      local joined = table.concat(cmds, ' ')
+      if not joined:find('-o ', 1, true) then return 'compiled output path missing: ' .. vim.inspect(cmds) end
+      if not joined:find('rm -f ', 1, true) then return 'compiled output not cleaned up: ' .. vim.inspect(cmds) end
       return true
     end)
   end
