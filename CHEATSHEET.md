@@ -125,6 +125,19 @@ Press `<leader>e` to toggle the file explorer. Inside it:
 | `<leader>fE` | File explorer (reveal current file) | `snacks.nvim` |
 | `:StartupTime` | Profile startup (native timing + lazy.nvim plugin stats) | config |
 
+### ✏️ Spell checking (built-in, auto-on for markdown/gitcommit/tex/text)
+
+| Key | Action |
+| :--- | :--- |
+| `]s` / `[s` | Next / previous misspelling |
+| `z=` | Suggestions for word under cursor |
+| `zg` | Add word to personal dictionary |
+| `zw` | Mark word as wrong |
+| `zug` | Undo `zg` / `zw` |
+| `<leader>us` | Toggle spell on/off for the current window |
+
+Statusline shows `SPELL` while it is on. Language: `en_us` (`vim.o.spelllang`).
+
 ### 💬 Messages & Notifications (snacks notifier)
 
 | Keybinding | Action | Plugin |
