@@ -249,7 +249,8 @@ function M.setup_lualine()
     local buf0 = vim.api.nvim_get_current_buf()
     local cnt = M._diag_counts[buf0] or M._count_diags(buf0)
     -- nerd glyphs with per-severity color so severity reads without counting
-    local icons = { vim.fn.nr2char(0xf057), vim.fn.nr2char(0xf071), vim.fn.nr2char(0xf05a), vim.fn.nr2char(0xf0eb) }
+    local icons = vim.g.have_nerd_font and { vim.fn.nr2char(0xf057), vim.fn.nr2char(0xf071), vim.fn.nr2char(0xf05a), vim.fn.nr2char(0xf0eb) }
+      or { 'E', 'W', 'I', 'H' }
     local diag_parts = {}
     if cnt.e > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_e#' .. icons[1] .. cnt.e .. hl_b end
     if cnt.w > 0 then diag_parts[#diag_parts + 1] = '%#SL_diag_w#' .. icons[2] .. cnt.w .. hl_b end
@@ -296,7 +297,7 @@ function M.setup_lualine()
     -- the last segment instead of re-scanning the buffer.
     local pat = vim.v.hlsearch == 1 and vim.fn.getreg '/' or ''
     local cur = vim.api.nvim_win_get_cursor(0)
-    local skey = pat .. '\0' .. buf0 .. '\0' .. vim.b[buf0].changedtick .. '\0' .. cur[1] .. ',' .. cur[2]
+    local skey = pat .. '\0' .. buf0 .. '\0' .. (vim.b[buf0].changedtick or 0) .. '\0' .. cur[1] .. ',' .. cur[2]
     if pat ~= '' and skey ~= M._search.key then
       local s = ''
       local ok, sc = pcall(vim.fn.searchcount, { maxcount = 999, timeout = 100 })

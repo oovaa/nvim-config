@@ -95,7 +95,13 @@ function M.setup_mode_line_colors()
   -- green, DiagnosticWarn for yellow); tokyonight palette only as fallback.
   local function live_fg(name)
     local ok, h = pcall(vim.api.nvim_get_hl, 0, { name = name })
-    if ok and type(h) == 'table' and type(h.fg) == 'number' then return string.format('#%06x', h.fg) end
+    if not (ok and type(h) == 'table') then return nil end
+    if type(h.fg) == 'number' then return string.format('#%06x', h.fg) end
+    if type(h.fg) == 'string' then
+      if h.fg == 'none' or h.fg == 'bg' or h.fg == 'fg' then return nil end
+      local cok, n = pcall(vim.api.nvim_get_color_by_name, h.fg)
+      if cok and type(n) == 'number' and n >= 0 then return string.format('#%06x', n) end
+    end
     return nil
   end
 

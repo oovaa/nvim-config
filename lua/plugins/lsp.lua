@@ -113,8 +113,11 @@ return {
               callback = vim.lsp.buf.clear_references,
             })
 
+            local detach_augroup = vim.api.nvim_create_augroup('kickstart-lsp-detach', { clear = false })
+            vim.api.nvim_clear_autocmds { group = detach_augroup, buffer = event.buf }
             vim.api.nvim_create_autocmd('LspDetach', {
-              group = vim.api.nvim_create_augroup('kickstart-lsp-detach', { clear = true }),
+              buffer = event.buf,
+              group = detach_augroup,
               callback = function(event2)
                 vim.lsp.buf.clear_references()
                 vim.api.nvim_clear_autocmds { group = 'kickstart-lsp-highlight', buffer = event2.buf }

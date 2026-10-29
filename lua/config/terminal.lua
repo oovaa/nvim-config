@@ -50,8 +50,8 @@ local function toggle_float(cmd)
   _state.last = 'float'
   if is_win_valid(float.win) then
     if vim.api.nvim_win_get_buf(float.win) == float.buf then
-      pcall(vim.api.nvim_win_close, float.win, true)
-      float.win = nil
+      -- ponytail: pcall — hiding the last window errors E444; leave state on failure
+      if pcall(vim.api.nvim_win_close, float.win, true) then float.win = nil end
       return
     end
     float.win = nil -- stale window; fall through to re-show

@@ -27,7 +27,7 @@ function M.get_resume_for(find, readable)
     end
   end
   if not label then return nil end
-  label = label:gsub('^' .. vim.fn.expand '~', '~')
+  label = label:gsub('^' .. vim.pesc(vim.fn.expand '~'), '~')
   return {
     key = 'S',
     icon = vim.fn.nr2char(0xf017),
@@ -65,7 +65,7 @@ function M.setup_starter()
     { key = 'e', icon = vim.fn.nr2char(0xf15b), label = 'New File', action = '<cmd>ene<CR>' },
     { key = 'f', icon = vim.fn.nr2char(0xf002), label = 'Find File', action = function() require('snacks').picker.files() end },
     { key = 'r', icon = vim.fn.nr2char(0xf115), label = 'File Explorer', action = function() require('snacks').explorer() end },
-    { key = 'g', icon = vim.fn.nr2char(0xf126), label = 'Git (LazyGit)', action = function() require('config.terminal').toggle_float 'lazygit' end },
+    { key = 'g', icon = vim.fn.nr2char(0xf126), label = 'Git (LazyGit)', action = function() require('config.terminal').new_float 'lazygit' end },
     {
       key = 's',
       icon = vim.fn.nr2char(0xf017),
@@ -79,7 +79,7 @@ function M.setup_starter()
         local projects = list_fn and list_fn(M.sessions_dir()) or {}
         local items, map = {}, {}
         for _, e in ipairs(projects) do
-          local disp = e.label:gsub('^' .. vim.fn.expand '~', '~')
+          local disp = e.label:gsub('^' .. vim.pesc(vim.fn.expand '~'), '~')
           items[#items + 1] = disp
           map[disp] = e.path
         end

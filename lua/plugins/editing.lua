@@ -135,6 +135,7 @@ return {
     dependencies = { 'nvim-lua/plenary.nvim', 'saghen/blink.cmp' },
     ft = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
     config = function()
+      require('lazy').load { plugins = { 'blink.cmp' } }
       local blink_ok, blink = pcall(require, 'blink.cmp')
       local capabilities = blink_ok and blink.get_lsp_capabilities() or {}
       -- Registers VtsExec/VtsRename + the move-to-file handler via the

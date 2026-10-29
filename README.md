@@ -120,13 +120,13 @@ running Neovim for the first time.
 - [bun](https://bun.sh) — `<leader>R` (code_runner) executes JS/TS with `bun`.
 
 > [!NOTE]
-> See [Install Recipes](#Install-Recipes) for copy-paste install snippets for
+> See [Install Recipes](#install-recipes) for copy-paste install snippets for
 > your OS (the Linux Homebrew block below matches the setup used to build this repo).
 
 ### Install Kickstart
 
 > [!NOTE]
-> [Backup](#FAQ) your previous configuration (if any exists)
+> [Backup](#faq) your previous configuration (if any exists)
 
 Neovim's configurations are located under the following paths, depending on your OS:
 

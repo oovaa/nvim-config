@@ -251,6 +251,7 @@ Statusline shows `SPELL` while it is on. Language: `en_us` (`vim.o.spelllang`).
 | `<leader>hr` | Send HTTP request (in `.http` files, buffer-local) | `rest.nvim` |
 | `<leader>o` | Toggle outline sidebar | `aerial.nvim` |
 | `<leader>fr` | Project find & replace | `grug-far.nvim` |
+| `<leader>p` | Paste image from clipboard | `img-clip.nvim` |
 
 `snacks.nvim` (`vim.ui.input` + `vim.ui.select`, so code actions, quickfix and mason pickers all look like the rest of the UI) and `nvim-bqf` (quickfix preview) have no keybindings — they improve existing UI automatically.
 

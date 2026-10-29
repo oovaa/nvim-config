@@ -492,7 +492,7 @@ do
     render('filetype ' .. ft)
     vim.diagnostic.reset(ns, bb)
   end
-  for _, ft in ipairs { 'neo-tree', 'TelescopePrompt', 'lazy', 'dashboard' } do
+  for _, ft in ipairs { 'lazy', 'dashboard' } do
     local bb = fresh(ft)
     render('disabled-filetype ' .. ft)
   end
@@ -889,9 +889,9 @@ do
     if lf then return 'a 12-byte file was treated as large' end
     return true
   end)
-  H.t('write: conform formats on save (prettierd/prettier)', function()
-    local d = vim.fn.exepath 'prettierd' ~= '' and vim.fn.exepath 'prettierd' or vim.fn.exepath 'prettier'
-    if d == '' then return { level = 'WARN', msg = 'neither prettierd nor prettier is installed, skipped' } end
+  H.t('write: conform formats on save (prettier)', function()
+    local d = vim.fn.exepath 'prettier'
+    if d == '' then return { level = 'WARN', msg = 'prettier is not installed, skipped' } end
     local p = TMP .. '/fmt.ts'
     vim.fn.writefile({ 'const   a   =    1', 'export default a' }, p)
     pcall(vim.cmd, 'silent! only')

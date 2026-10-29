@@ -169,7 +169,7 @@ vim.api.nvim_create_user_command('SudoWrite', function(args)
     vim.notify('SudoWrite: unnamed buffer, save normally first', vim.log.levels.ERROR)
     return
   end
-  vim.cmd(('write%s !sudo tee %s >/dev/null'):format(args.bang and '!' or '', vim.fn.fnameescape(name)))
+  vim.cmd(('write%s !sudo tee %s >/dev/null'):format(args.bang and '!' or '', vim.fn.shellescape(name)))
   vim.cmd 'edit!'
 end, { desc = 'Write current buffer via sudo', bang = true })
 

@@ -29,7 +29,7 @@ return {
     -- Maintained drop-in fork of norcalli/nvim-colorizer.lua (the original is
     -- unmaintained and uses vim.tbl_flatten, removed in Nvim 0.13).
     'catgoose/nvim-colorizer.lua',
-    ft = { 'css', 'html', 'javascript', 'typescript', 'lua', 'vim', 'toml' },
+    ft = { 'css', 'html', 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'lua', 'vim', 'toml' },
     cmd = 'ColorizerToggle',
     config = function()
       require('colorizer').setup({ '*' }, {
@@ -45,7 +45,7 @@ return {
           local name = vim.api.nvim_buf_get_name(ev.buf)
           -- getfsize returns -1/-2 on error; fs_stat nil-check is exact.
           local ok, st = pcall(vim.uv.fs_stat, name)
-          if name ~= '' and ok and st and st.size > 200 * 1024 then pcall(vim.cmd, 'ColorizerDetachFromBuffer') end
+          if name ~= '' and ok and st and st.size > 200 * 1024 then pcall(require('colorizer').detach_from_buffer, ev.buf) end
         end,
       })
     end,

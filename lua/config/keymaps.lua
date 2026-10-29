@@ -93,6 +93,40 @@ vim.keymap.set('n', '<leader>us', function()
   vim.notify('Spell ' .. (vim.wo.spell and 'on' or 'off'), vim.log.levels.INFO)
 end, { desc = '[U]I [S]pell toggle' })
 
+-- Spell fix instead of z='s number prompt: the built-in prompt applies a
+-- single digit immediately, so multi-digit choices (10+) were applied as
+-- their first digit. This shows a numbered list and reads the choice with
+-- input(), which accepts multi-digit numbers.
+local function spell_fix()
+  local word = vim.fn.expand '<cword>'
+  if word == '' then
+    vim.notify('No word under cursor', vim.log.levels.WARN)
+    return
+  end
+  local suggestions = vim.fn.spellsuggest(word, 20)
+  if type(suggestions) ~= 'table' or #suggestions == 0 then
+    vim.notify('No spell suggestions for ' .. word, vim.log.levels.INFO)
+    return
+  end
+  -- Show a numbered list, then read the choice with input() (which accepts
+  -- multi-digit numbers) instead of z='s built-in prompt, which applies a
+  -- single digit immediately and makes 10+ unreachable.
+  local lines = { 'Change "' .. word .. '" to:' }
+  for i, s in ipairs(suggestions) do
+    lines[#lines + 1] = string.format('  %d %s', i, s)
+  end
+  vim.notify(table.concat(lines, '\n'), vim.log.levels.INFO)
+  local choice = vim.fn.input 'Spell choice (number, empty cancels): '
+  if choice == '' then return end
+  local n = tonumber(choice)
+  if not n or n < 1 or n > #suggestions then
+    vim.notify('Invalid spell choice: ' .. choice, vim.log.levels.WARN)
+    return
+  end
+  vim.cmd.normal { n .. 'z=', bang = true }
+end
+vim.keymap.set('n', 'z=', spell_fix, { desc = 'Spell suggestions (picker)' })
+
 -- Toggle line wrapping (off by default, so long lines scroll horizontally)
 vim.keymap.set('n', '<leader>uw', function()
   vim.wo.wrap = not vim.wo.wrap
@@ -108,8 +142,12 @@ end, { desc = '[U]I [W]rap toggle' })
 --         cached. Re-registration is safe: every augroup is `clear = true` and
 --         lazy/keymaps are idempotent (AGENTS.md trap 2).
 vim.keymap.set('n', '<leader>ur', function()
+  local mods = {}
   for mod in pairs(package.loaded) do
-    if mod:match '^config%.' or mod:match '^custom%.' then package.loaded[mod] = nil end
+    if mod:match '^config%.' or mod:match '^custom%.' then mods[#mods + 1] = mod end
+  end
+  for _, mod in ipairs(mods) do
+    package.loaded[mod] = nil
   end
   vim.cmd 'source $MYVIMRC'
   vim.notify('Config reloaded', vim.log.levels.INFO)
@@ -122,8 +160,14 @@ vim.keymap.set('n', '<leader>tb', function() vim.o.background = vim.o.background
 vim.keymap.set('n', '<leader>gp', ':Gitsigns preview_hunk<CR>', { desc = '[G]it [P]review hunk' })
 vim.keymap.set('n', '<leader>gd', ':Gitsigns diffthis<CR>', { desc = '[G]it [D]iff split' })
 vim.keymap.set('n', '<leader>gt', ':Gitsigns toggle_deleted<CR>', { desc = '[G]it [T]oggle deleted' })
-vim.keymap.set('n', ']c', function() require('gitsigns').nav_hunk 'next' end, { desc = 'Next git hunk' })
-vim.keymap.set('n', '[c', function() require('gitsigns').nav_hunk 'prev' end, { desc = 'Prev git hunk' })
+vim.keymap.set('n', ']c', function()
+  require('lazy').load { plugins = { 'gitsigns.nvim' } }
+  require('gitsigns').nav_hunk 'next'
+end, { desc = 'Next git hunk' })
+vim.keymap.set('n', '[c', function()
+  require('lazy').load { plugins = { 'gitsigns.nvim' } }
+  require('gitsigns').nav_hunk 'prev'
+end, { desc = 'Prev git hunk' })
 
 -- Terminal mode: exit with double <Esc>
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })

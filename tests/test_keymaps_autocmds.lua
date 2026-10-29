@@ -30,6 +30,7 @@ describe('keymaps/autocmds', function()
     local map = vim.fn.maparg('<leader>ty', 'n')
     assert.is_truthy(map == '' or not map:match 'Themery', 'must not map to Themery')
   end)
+  it('z= spell fix mapping is registered', function() assert.is_truthy(vim.fn.maparg('z=', 'n') ~= '', 'z= must be overridden by spell_fix') end)
   it('mode-line restore does not error before ColorScheme re-snapshot', function()
     -- setup() must snapshot immediately; ModeChanged before the next ColorScheme
     -- used to call nvim_set_hl(0, 'LineNr', nil) and raise "Expected Lua table".
