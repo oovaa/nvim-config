@@ -45,10 +45,14 @@ end
 do
   local grp = vim.api.nvim_create_augroup('BuiltinUICache', { clear = true })
   vim.api.nvim_create_autocmd('DiagnosticChanged', { group = grp, callback = function(ev) M._count_diags(ev.buf) end })
-  vim.api.nvim_create_autocmd(
-    { 'LspAttach', 'LspDetach', 'BufEnter' },
-    { group = grp, callback = function(ev) M._refresh_lsp(ev.buf or vim.api.nvim_get_current_buf()) end }
-  )
+  vim.api.nvim_create_autocmd({ 'LspAttach', 'LspDetach', 'BufEnter' }, {
+    group = grp,
+    callback = function(ev)
+      local b = ev.buf or vim.api.nvim_get_current_buf()
+      M._refresh_lsp(b)
+      M._count_diags(b)
+    end,
+  })
   vim.api.nvim_create_autocmd({ 'BufDelete', 'BufWipeout' }, { group = grp, callback = function(ev) M._diag_counts[ev.buf] = nil end })
 end
 -- builtin statusline (replaces lualine.nvim) — tokyonight-night, same sections as before
