@@ -196,6 +196,7 @@ vim.o.signcolumn = 'yes'
 -- EFFECT: Affects CursorHold timing, swap file writes, and some plugin behaviors
 vim.o.updatetime = 250
 vim.o.pumheight = 10
+vim.o.pummaxwidth = 80 -- keep completion popups from spanning the whole screen
 
 -- TIMEOUT LENGTH
 -- WHAT: How long to wait for a key sequence to complete (in milliseconds)
@@ -277,6 +278,9 @@ vim.o.winborder = 'rounded'
 -- (blink's menu and vim.ui.select are unaffected — blink draws its own float, and
 -- snacks.picker's ui_select = true routes vim.ui.select there, not the pum.)
 vim.o.pumborder = 'rounded'
+-- Keep `:messages` usable during long operations (LSP progress, builds) without
+-- "Press ENTER" interruptions; the default already includes progress:c.
+vim.o.messagesopt = 'hit-enter,history:500,progress:c'
 
 -- CONFIRM DIALOG
 -- WHAT: Shows a confirmation when trying to quit with unsaved changes
@@ -286,7 +290,7 @@ vim.o.confirm = true
 
 -- DIFF ALGORITHM (smarter diffs: indent heuristic on top of the default
 -- linematch). Joins hunks whose gaps are only re-indented/moved lines.
-vim.opt.diffopt:append { 'indent-heuristic', 'linematch:60' }
+vim.opt.diffopt:append { 'indent-heuristic', 'linematch:60', 'inline:word' }
 
 -- SPLIT KEEP (opening/closing a split keeps the topline stable)
 -- Without it the whole window scrolls when a horizontal split opens.
@@ -307,3 +311,7 @@ vim.diagnostic.config {
   virtual_text = { current_line = true }, -- Only show inline error on current line
   jump = { on_jump = true }, -- Auto-open float when jumping to diagnostic
 }
+
+-- EXPERIMENTAL (0.12): new messages/cmdline UI. Avoids "Press ENTER" and
+-- W10 delays; guarded so a failure here never blocks startup.
+pcall(function() require('vim._core.ui2').enable() end)
