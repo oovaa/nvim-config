@@ -113,6 +113,10 @@ function M.setup_mode_line_colors()
   }
 
   local function swap(mode)
+    -- compound modes (ic, vs, nov, ...) keep only their first byte so the
+    -- color survives insert-completion and operator-pending states; visual
+    -- block mode is a single control byte (CTRL-V) and must stay intact.
+    if mode and #mode > 1 and mode:byte(1) ~= 22 then mode = mode:sub(1, 1) end
     local color_name = mode_colors[mode]
     if color_name then
       -- ponytail: guard tokyonight palette lookup — non-tokyonight themes
