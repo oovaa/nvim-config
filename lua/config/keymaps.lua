@@ -127,6 +127,22 @@ local function spell_fix()
 end
 vim.keymap.set('n', 'z=', spell_fix, { desc = 'Spell suggestions (picker)' })
 
+-- Undo tree (builtin 0.12 opt plugin): visual undo history browser.
+-- packadd is required because nvim.undotree ships under pack/dist/opt.
+vim.keymap.set('n', '<leader>uu', function()
+  pcall(vim.cmd, 'packadd nvim.undotree')
+  vim.cmd 'Undotree'
+end, { desc = '[U]ndo [U]ndo tree' })
+
+-- DiffTool (builtin 0.12 opt plugin): side-by-side file/directory diff.
+-- packadd is required because nvim.difftool ships under pack/dist/opt.
+-- DiffTool needs two paths; drop into the command line so the user can
+-- type them (feeding keys avoids hanging on input() in headless/automated use).
+vim.keymap.set('n', '<leader>gD', function()
+  pcall(vim.cmd, 'packadd nvim.difftool')
+  vim.api.nvim_feedkeys(':DiffTool ', 'n', false)
+end, { desc = '[G]it [D]iffTool (two paths)' })
+
 -- Toggle line wrapping (off by default, so long lines scroll horizontally)
 vim.keymap.set('n', '<leader>uw', function()
   vim.wo.wrap = not vim.wo.wrap
