@@ -41,6 +41,7 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `<S-l>` | Next Buffer | built-in |
 | `<leader>bd` | Delete Current Buffer | built-in |
 | `<leader>bp` | Pin Buffer (unlist it; stays open, skipped by `:bnext`, jump back by name) | built-in |
+| `<leader>uu` | Undo tree (visual undo history browser) | built-in (0.12) |
 | `s` | Fast Jump (Flash) | `flash.nvim` |
 | `S` | Fast Jump Treesitter Mode | `flash.nvim` |
 | `<C-h/j/k/l>` | Switch focus between windows (editor, terminal, explorer) | built-in |
@@ -154,6 +155,7 @@ Statusline shows `SPELL` while it is on. Language: `en_us` (`vim.o.spelllang`).
 | `[c` | Previous Hunk | `gitsigns` |
 | `]c` | Next Hunk | `gitsigns` |
 | `<leader>gd` | Diff buffer against index (split) | `gitsigns` |
+| `<leader>gD` | DiffTool: compare two files or directories | built-in (0.12) |
 | `<leader>gp` | Preview hunk under cursor | `gitsigns` |
 | `<leader>gt` | Toggle showing deleted lines | `gitsigns` |
 | `]x` / `[x` | Next / previous merge conflict (conflicted files only) | `git-conflict` |
