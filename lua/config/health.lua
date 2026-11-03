@@ -50,6 +50,19 @@ end
 ---@return 'biome'|'oxlint'
 function M.js_linter(anchor) return M.biome_root(anchor) and 'biome' or 'oxlint' end
 
+--- True when the buffer is in large-file mode (or its file exceeds the
+--- configured threshold). Central predicate for large-file guards.
+---@param bufnr integer|nil
+---@return boolean
+function M.is_large(bufnr)
+  bufnr = bufnr or vim.api.nvim_get_current_buf()
+  if vim.b[bufnr].large_file_mode then return true end
+  local name = vim.api.nvim_buf_get_name(bufnr)
+  if name == '' then return false end
+  local ok, st = pcall(vim.uv.fs_stat, name)
+  return ok and type(st) == 'table' and (st.size or 0) > (tonumber(vim.g.large_file_size) or (1024 * 1024))
+end
+
 function M.check()
   vim.health.start 'nvim-config'
   -- Neovim version gate: config relies on 0.12 APIs (winborder, smoothscroll,

@@ -202,7 +202,11 @@ return {
       }
       vim.api.nvim_create_autocmd({ 'BufWritePost', 'InsertLeave' }, {
         group = vim.api.nvim_create_augroup('lint-on-save', { clear = true }),
-        callback = function() pcall(lint.try_lint) end,
+        callback = function(ev)
+          -- Skip linting on large files (large_file_mode set in autocmds.lua).
+          if vim.b[ev.buf].large_file_mode then return end
+          pcall(lint.try_lint)
+        end,
       })
     end,
   },

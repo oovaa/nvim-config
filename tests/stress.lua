@@ -82,7 +82,7 @@ do
     { 'ignorecase', vim.o.ignorecase, true },
     { 'smartcase', vim.o.smartcase, true },
     { 'signcolumn', vim.o.signcolumn, 'yes' },
-    { 'updatetime', vim.o.updatetime, 250 },
+    { 'updatetime', vim.o.updatetime, 350 },
     { 'timeoutlen', vim.o.timeoutlen, 300 },
     { 'lazyredraw', vim.o.lazyredraw, true }, -- re-enabled after noice was dropped
     { 'synmaxcol', vim.o.synmaxcol, 300 },

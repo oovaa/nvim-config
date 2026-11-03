@@ -33,6 +33,10 @@ return {
         topdelete = { text = '‾' }, ---@diagnostic disable-line: missing-fields
         changedelete = { text = '~' }, ---@diagnostic disable-line: missing-fields
       },
+      -- Skip attaching on large files (large_file_mode set in autocmds.lua).
+      on_attach = function(bufnr)
+        if vim.b[bufnr].large_file_mode then return false end
+      end,
     },
   },
 

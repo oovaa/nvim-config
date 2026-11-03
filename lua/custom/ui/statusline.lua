@@ -9,6 +9,9 @@ M._lsp_name = { buf = -1, name = '' }
 -- Search-count cache: searchcount() scans the buffer, so only recompute when
 -- the pattern, buffer content, or cursor line changed — pure redraws reuse.
 M._search = { key = nil, s = '' }
+-- Progress cache: vim.lsp.status()/vim.ui.progress_status() are cheap but called
+-- on every redraw; recompute at most every 100 ms.
+M._progress = { at = 0, s = '' }
 -- Filetype icons: resolved from nvim-web-devicons once it's loaded (never
 -- proactively required — that would pull it onto the startup path), then
 -- cached with a per-ft highlight in the icon's own color. Cleared on
@@ -319,9 +322,17 @@ function M.setup_lualine()
     if M._lsp_name.buf ~= buf0 then M._refresh_lsp(buf0) end
     -- Prefer LSP progress while a server is busy; fall back to vim.ui's
     -- Progress-event summary (0.12) when LSP is idle, then to the client name.
-    local prog = vim.lsp.status()
-    if prog == '' then prog = vim.ui.progress_status() end
-    prog = prog:gsub('%%', '%%%%')
+    -- Progress is recomputed at most every 100 ms to keep redraws cheap.
+    local now = vim.uv.now()
+    local prog
+    if now - M._progress.at >= 100 then
+      prog = vim.lsp.status()
+      if prog == '' then prog = vim.ui.progress_status() end
+      prog = prog:gsub('%%', '%%%%')
+      M._progress = { at = now, s = prog }
+    else
+      prog = M._progress.s
+    end
     local lsp_s = prog ~= '' and ('%#SL_lsp#' .. prog .. hl_c)
       or (M._lsp_name.name == '' and '' or '%#SL_lsp#' .. vim.fn.nr2char(0xf0136) .. ' ' .. M._lsp_name.name .. hl_c)
 

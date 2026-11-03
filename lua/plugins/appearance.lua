@@ -14,6 +14,13 @@ return {
   {
     'MeanderingProgrammer/render-markdown.nvim',
     ft = 'markdown',
+    -- Skip rendering on large markdown files.
+    cond = function()
+      local name = vim.api.nvim_buf_get_name(0)
+      if name == '' then return true end
+      local ok, st = pcall(vim.uv.fs_stat, name)
+      return not (ok and st and st.size > 200 * 1024)
+    end,
     dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' },
     opts = {},
   },

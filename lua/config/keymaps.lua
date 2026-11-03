@@ -93,6 +93,13 @@ vim.keymap.set('n', '<leader>us', function()
   vim.notify('Spell ' .. (vim.wo.spell and 'on' or 'off'), vim.log.levels.INFO)
 end, { desc = '[U]I [S]pell toggle' })
 
+-- Toggle LSP reference highlighting at rest (documentHighlight). Off by default
+-- to cut idle LSP traffic; on-demand. See lua/plugins/lsp.lua LspAttach.
+vim.keymap.set('n', '<leader>uH', function()
+  vim.g.lsp_document_highlight = not vim.g.lsp_document_highlight
+  vim.notify('LSP document highlight ' .. (vim.g.lsp_document_highlight and 'on' or 'off'), vim.log.levels.INFO)
+end, { desc = '[U]I LSP [H]ighlight toggle' })
+
 -- Spell fix instead of z='s number prompt: the built-in prompt applies a
 -- single digit immediately, so multi-digit choices (10+) were applied as
 -- their first digit. This shows a numbered list and reads the choice with

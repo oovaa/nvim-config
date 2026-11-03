@@ -101,10 +101,15 @@ return {
             -- Clear any stale highlight autocmds for this buffer before re-adding,
             -- so a re-attach (no intervening detach) cannot stack duplicates.
             vim.api.nvim_clear_autocmds { group = 'kickstart-lsp-highlight', buffer = event.buf }
+            -- Opt-in at rest (vim.g.lsp_document_highlight, default off) to avoid
+            -- a documentHighlight request to the server on every CursorHold.
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
               buffer = event.buf,
               group = highlight_augroup,
-              callback = vim.lsp.buf.document_highlight,
+              callback = function()
+                if not vim.g.lsp_document_highlight then return end
+                vim.lsp.buf.document_highlight()
+              end,
             })
 
             vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {

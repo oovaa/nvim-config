@@ -1,6 +1,8 @@
 ---@module 'custom.ui.tabline'
 local M = {}
 local statusline = require 'custom.ui.statusline'
+-- Cache the buflisted buffer list; invalidated on buffer add/remove.
+M._bufs = nil
 
 -- builtin tabline (replaces bufferline.nvim) — buffers as tabs, diagnostics + modified dot
 function M.setup_bufferline()
@@ -65,9 +67,16 @@ function M.setup_bufferline()
   -- %-escape buffer names before they join the tabline (which re-parses % items)
   local function esc(s) return (s:gsub('%%', '%%%%')) end
   _G._builtin_tabline = function()
+    if M._bufs == nil then
+      local out = {}
+      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.bo[buf].buflisted then out[#out + 1] = buf end
+      end
+      M._bufs = out
+    end
     local s, idx = '', 0
-    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-      if vim.bo[buf].buflisted then
+    for _, buf in ipairs(M._bufs) do
+      if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buflisted then
         idx = idx + 1
         local name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ':t')
         if name == '' then name = '[No Name]' end
@@ -86,6 +95,11 @@ function M.setup_bufferline()
     end
     return s .. '%#TabLineFill#%='
   end
+  local grp = vim.api.nvim_create_augroup('BuiltinTablineCache', { clear = true })
+  vim.api.nvim_create_autocmd({ 'BufAdd', 'BufDelete', 'BufWipeout', 'BufFilePost' }, {
+    group = grp,
+    callback = function() M._bufs = nil end,
+  })
   vim.o.showtabline = 2
   vim.o.tabline = '%!v:lua._builtin_tabline()'
 end

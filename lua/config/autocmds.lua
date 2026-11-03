@@ -53,6 +53,7 @@ indent_colors()
 
 -- Idle upkeep (single CursorHold handler): external-change check + diagnostic
 -- float. One autocmd instead of two so idle work stays in one place.
+local last_diag_lnum = nil
 vim.api.nvim_create_autocmd('CursorHold', {
   desc = 'Idle upkeep: checktime + diagnostic float',
   group = vim.api.nvim_create_augroup('idle-upkeep', { clear = true }),
@@ -71,6 +72,8 @@ vim.api.nvim_create_autocmd('CursorHold', {
     local ok_cursor, cursor = pcall(vim.api.nvim_win_get_cursor, 0)
     if not ok_cursor then return end
     local lnum = cursor[1] - 1
+    -- Throttle: if we already opened a float on this line, don't re-scan.
+    if lnum == last_diag_lnum then return end
     if #vim.diagnostic.get(0, { lnum = lnum }) == 0 then return end
     for _, win in ipairs(vim.api.nvim_list_wins()) do
       if vim.api.nvim_win_get_config(win).relative ~= '' then return end
@@ -80,7 +83,15 @@ vim.api.nvim_create_autocmd('CursorHold', {
       scope = 'line',
       close_events = { 'CursorMoved', 'BufLeave', 'InsertEnter' },
     })
+    last_diag_lnum = lnum
   end,
+})
+-- Reset the throttle cache when diagnostics change or the cursor moves so a
+-- float can re-open after it was closed by moving.
+vim.api.nvim_create_autocmd({ 'DiagnosticChanged', 'CursorMoved', 'CursorMovedI' }, {
+  desc = 'Reset idle diagnostic-float throttle',
+  group = vim.api.nvim_create_augroup('idle-upkeep-reset', { clear = true }),
+  callback = function() last_diag_lnum = nil end,
 })
 
 -- Large file mode: protect editing responsiveness for very large files by
@@ -110,6 +121,11 @@ vim.api.nvim_create_autocmd('BufReadPost', {
       vim.wo[win].foldmethod = 'manual'
     end
     pcall(vim.diagnostic.enable, false, { bufnr = args.buf })
+    -- Guard snacks indent/scope/words on large files (buffer-local flags
+    -- honored by snacks' filter predicates).
+    vim.b[args.buf].snacks_indent = false
+    vim.b[args.buf].snacks_scope = false
+    vim.b[args.buf].snacks_words = false
   end,
 })
 

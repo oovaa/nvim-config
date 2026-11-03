@@ -194,7 +194,7 @@ vim.o.signcolumn = 'yes'
 -- WHAT: How often Neovim checks for changes (in milliseconds)
 -- TO CHANGE: Lower = more responsive but higher CPU
 -- EFFECT: Affects CursorHold timing, swap file writes, and some plugin behaviors
-vim.o.updatetime = 250
+vim.o.updatetime = 350
 vim.o.pumheight = 10
 vim.o.pummaxwidth = 80 -- keep completion popups from spanning the whole screen
 
@@ -223,6 +223,9 @@ vim.o.synmaxcol = 300
 -- TO CHANGE: Raise/lower based on your machine and file mix
 -- EFFECT: Files above this size get less expensive runtime features
 vim.g.large_file_size = 1024 * 1024 -- 1 MiB
+-- LSP documentHighlight at rest is opt-in (default off) to cut idle LSP traffic;
+-- toggle at runtime with <leader>uH. See lua/plugins/lsp.lua LspAttach handler.
+vim.g.lsp_document_highlight = false
 
 -- SPLIT BEHAVIOR
 -- WHAT: Controls where new windows open

@@ -43,7 +43,7 @@ return {
           around_next = 'aa',
           inside_next = 'ii',
         },
-        n_lines = 500,
+        n_lines = 250,
       }
 
       -- Add/delete/replace surroundings (brackets, quotes, etc.)
