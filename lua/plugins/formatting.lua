@@ -115,6 +115,12 @@ return {
           yaml = true,
           graphql = true,
           lua = true,
+          go = true,
+          rust = true,
+          java = true,
+          c = true,
+          cpp = true,
+          sql = true,
           -- ponytail: nginx is NOT auto-formatted. conform's nginxfmt backend
           -- is a python package that mason cannot install here (no ensurepip),
           -- so listing it in enabled_filetypes only produced a silent no-op.
@@ -150,6 +156,18 @@ return {
         -- disables it), so without this row conform fell through to the LSP
         -- fallback, found nothing, and <leader>ff reported "no formatters".
         lua = { 'stylua' },
+        -- go: organize imports first, then gofumpt (gofmt + extra rules)
+        go = { 'goimports', 'gofumpt' },
+        -- rustfmt via rustup (rustup component add rustfmt); rust-analyzer doesn't format
+        rust = { 'rustfmt' },
+        -- google-java-format via mason; jdtls built-in formatter disabled to avoid conflicts
+        java = { 'google-java-format' },
+        -- clang-format via mason; respects .clang-format or git root config
+        c = { 'clang-format' },
+        cpp = { 'clang-format' },
+        -- sqruff fix <file>: formats + applies safe lint fixes (Rust, fast).
+        -- Dialect comes from the nearest `.sqruff` file (e.g. dialect = postgres).
+        sql = { 'sqruff' },
         -- biome where the repo configures it, prettier everywhere else
         -- (js_formatters decides; see config.health.biome_root)
         javascript = js_formatters,

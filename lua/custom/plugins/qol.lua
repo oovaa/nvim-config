@@ -23,13 +23,29 @@ return {
   -- Test runner UI (neotest)
   {
     'nvim-neotest/neotest',
-    dependencies = { 'nvim-lua/plenary.nvim', 'nvim-treesitter/nvim-treesitter', 'antoinemadec/FixCursorHold.nvim', 'nvim-neotest/neotest-python' },
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'nvim-treesitter/nvim-treesitter',
+      'antoinemadec/FixCursorHold.nvim',
+      'nvim-neotest/neotest-python',
+      'marilari88/neotest-vitest',
+      'nvim-neotest/neotest-jest',
+    },
     keys = {
       { '<leader>tr', function() require('neotest').run.run() end, desc = 'Test Run' },
       { '<leader>ts', function() require('neotest').summary.toggle() end, desc = 'Test Summary' },
       { '<leader>to', function() require('neotest').output_panel.toggle() end, desc = 'Test Output' },
     },
-    config = function() require('neotest').setup { adapters = { require 'neotest-python' { dap = { justMyCode = false } } } } end,
+    config = function()
+      local adapters = { require 'neotest-python' { dap = { justMyCode = false } } }
+      -- JS/TS adapters are optional; pcall keeps a missing plugin from
+      -- breaking the python side. vitest is the 2026 default, jest for legacy.
+      for _, spec in ipairs { 'neotest-vitest', 'neotest-jest' } do
+        local ok, adapter = pcall(require, spec)
+        if ok then table.insert(adapters, adapter) end
+      end
+      require('neotest').setup { adapters = adapters }
+    end,
   },
 
   -- HTTP client (rest.nvim)

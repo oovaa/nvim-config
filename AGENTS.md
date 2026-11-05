@@ -139,6 +139,31 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
      `ignore_exitcode` swallows the exit 1, and the buffer just gets zero
      diagnostics. Both sides read `biome_root`, so a change there moves format
      and lint together — never edit one side's copy.
+14. **New language tooling (Go/Rust/Java/C/C++/SQL) has its own traps:**
+    - **rust-analyzer is NOT Mason-managed.** `rustaceanvim` registers it from
+      `PATH`; Mason's rust-analyzer would mismatch the project's toolchain.
+      Install via `rustup component add rust-analyzer clippy rustfmt`. The
+      `checkOnSave` setting must be a *boolean* (true), with the runner under
+      `check.command` — the old `checkOnSave.command` map form is rejected by
+      current rust-analyzer as "invalid type: map, expected a boolean".
+    - **jdtls is Java 21+ only** (for the server itself; projects can target
+      older). Eclipse.org frequently 403s Mason's jdtls download — if it fails,
+      install manually from open-vsx (redhat.java vsix) and point the wrapper
+      script at `org.eclipse.equinox.launcher_*.jar` (the core jar has no
+      Main-Class). `setup_dap` must be called explicitly (it's not automatic)
+      to populate `dap.configurations.java`.
+    - **clangd needs `compile_commands.json`** in the project root (cmake with
+      `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`, or `bear -- make`). Without it,
+      clangd only does syntax, not project-wide indexing.
+    - **sqls is a Go binary** — Mason's Go proxy downloads often time out on
+      this host. `go install github.com/sqls-server/sqls@latest` works; copy
+      the binary to `~/.local/share/nvim/mason/bin/sqls`. `sqruff` is
+      Mason-managed (Rust).
+    - **nvim-dap config aborts on E730** if `dap-python` is called with a
+      table argument. It must be `setup()` (defaults to `python3`).
+    - **Treesitter ft→lang mapping** must handle react compound filetypes
+      (`typescriptreact` → `tsx`, `javascriptreact` → `javascript`), or the
+      autocmd tries to install a nonexistent parser and spews a warning.
 13. **The Python LSP is a ladder, not a fixed server.**
      `lua/config/python_lsp.lua` holds the choice — `M.resolve()` returns
      `{ name, cmd, settings }` for the first hit among `ty` → `pyrefly` →

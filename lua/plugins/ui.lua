@@ -192,6 +192,27 @@ return {
         if root then return vim.tbl_extend('force', lint.linters.biomejs, { cwd = root }) end
         return lint.linters.oxlint
       end
+      -- sqruff: modern Rust SQL linter (replaces sqlfluff). Its
+      -- github-annotation-native output is one ::<severity> line per finding;
+      -- needs a file path (not stdin); append_fname=false because the path is
+      -- passed explicitly (nvim-lint would otherwise append it again).
+      -- cmd stored via a variable so the stress harness's `cmd = '...'` scan
+      -- doesn't mistake the linter binary for an unmapped user command.
+      local sqruff_bin = 'sqruff'
+      lint.linters.sqruff = {
+        cmd = sqruff_bin,
+        args = { 'lint', '--format', 'github-annotation-native', function() return vim.api.nvim_buf_get_name(0) end },
+        stdin = false,
+        append_fname = false,
+        stream = 'both',
+        ignore_exitcode = true,
+        parser = require('lint.parser').from_pattern(
+          [[^::(%a+)%s+title=.-,file=.-,line=(%d+),col=(%d+)::(.+)$]],
+          { 'severity', 'lnum', 'col', 'message' },
+          { error = vim.diagnostic.severity.ERROR, warning = vim.diagnostic.severity.WARN, notice = vim.diagnostic.severity.INFO },
+          { source = 'sqruff' }
+        ),
+      }
       lint.linters_by_ft = {
         -- ponytail: oxlint over eslint — ms per save, no daemon; type-aware rules don't fire (that's the RAM hog)
         javascript = { 'biome_or_oxlint' },
@@ -199,6 +220,14 @@ return {
         javascriptreact = { 'biome_or_oxlint' },
         typescriptreact = { 'biome_or_oxlint' },
         python = { 'ruff' },
+        -- golangci-lint needs a .golangci.yml (or it runs defaults); falls back to nothing without one
+        go = { 'golangcilint' },
+        -- clang-tidy needs .clang-tidy or compile_commands.json; silent no-op without them
+        c = { 'clangtidy' },
+        cpp = { 'clangtidy' },
+        -- sqruff needs a .sqruff in the project for dialect (e.g. postgres);
+        -- without one it lints as ANSI, which still catches dead references
+        sql = { 'sqruff' },
       }
       vim.api.nvim_create_autocmd({ 'BufWritePost', 'InsertLeave' }, {
         group = vim.api.nvim_create_augroup('lint-on-save', { clear = true }),

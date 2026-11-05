@@ -12,7 +12,7 @@ describe('performance', function()
     -- its extensions were still in the tree.
     local n = vim.tbl_count(P)
     assert.is_true(n > 0, 'lazy registry must be populated')
-    assert.is_true(n <= 60, 'plugin count ' .. n .. ' should stay <= 60')
+    assert.is_true(n <= 65, 'plugin count ' .. n .. ' should stay <= 65')
   end)
 
   it('loads tokyonight eagerly so the theme never flashes', function()

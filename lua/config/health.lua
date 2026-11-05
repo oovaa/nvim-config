@@ -24,6 +24,21 @@ local optional = {
   { bin = 'biome', why = 'fast JS/TS/JSON formatting + lint (optional)' },
   { bin = 'nginx-language-server', why = 'nginx LSP (optional)' },
   { bin = 'nginxfmt', why = 'nginx format on <leader>ff (pip install nginx-config-formatter)' },
+  { bin = 'gopls', why = 'go LSP (mason installs; staticcheck+gofumpt built in)' },
+  { bin = 'golangci-lint', why = 'go linter (needs .golangci.yml in project)' },
+  { bin = 'delve', why = 'go debugger (works with <leader>dc)' },
+  { bin = 'clangd', why = 'C/C++ LSP (needs compile_commands.json — cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON or bear)' },
+  { bin = 'clang-format', why = 'C/C++ formatter' },
+  { bin = 'clang-tidy', why = 'C/C++ linter' },
+  { bin = 'codelldb', why = 'C/C++/Rust debugger (shared mason package)' },
+  { bin = 'jdtls', why = 'java LSP (mason; needs JDK 21+ for jdtls itself, project may target older)' },
+  { bin = 'google-java-format', why = 'java formatter' },
+  { bin = 'java-debug-adapter', why = 'java debug adapter (auto-detected by nvim-jdtls)' },
+  { bin = 'js-debug-adapter', why = 'React/Node debugger (<leader>dc, pwa-node)' },
+  { bin = 'sqls', why = 'sql LSP (DB-aware features via .sqls.yml)' },
+  { bin = 'sqruff', why = 'sql linter/formatter (Rust; needs .sqruff with dialect for non-ANSI)' },
+  { bin = 'rust-analyzer', why = 'rust LSP (prefer `rustup component add rust-analyzer` over mason)' },
+  { bin = 'rustfmt', why = 'rust formatter (rustup component add rustfmt)' },
   { bin = 'jupyter', why = 'molten notebooks (external binary, see init.lua)' },
   { bin = 'jupytext', why = 'molten notebooks (external binary, see init.lua)' },
 }
@@ -95,7 +110,21 @@ function M.check()
     end
   end
   local mason_bin = vim.fn.stdpath 'data' .. '/mason/bin/'
-  for _, bin in ipairs { 'stylua', 'lua-language-server', 'oxlint', 'prettier', 'ruff' } do
+  for _, bin in ipairs {
+    'stylua',
+    'lua-language-server',
+    'oxlint',
+    'prettier',
+    'ruff',
+    'gopls',
+    'clangd',
+    'jdtls',
+    'codelldb',
+    'js-debug-adapter',
+    'delve',
+    'sqls',
+    'sqruff',
+  } do
     if vim.fn.executable(mason_bin .. bin) == 1 then
       vim.health.ok('mason: ' .. bin .. ' found')
     else

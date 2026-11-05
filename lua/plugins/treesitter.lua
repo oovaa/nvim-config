@@ -59,6 +59,13 @@ return {
           'cpp',
           'rust',
           'go',
+          'gomod',
+          'gosum',
+          'gowork',
+          'java',
+          'toml',
+          'xml',
+          'sql',
         } do
           if not marks[lang] and vim.uv.fs_stat(parser_path(lang)) == nil then
             marks[lang] = true -- at most one attempt per session
@@ -87,8 +94,11 @@ return {
           local ft = vim.bo[args.buf].filetype
           if ft and ft ~= '' then
             -- ponytail: compound fts (yaml.docker-compose) have no own parser;
-            -- TSInstall would error, so install/check the base language.
-            local lang = ft:match '^[^.]+'
+            -- TSInstall would error, so install/check the base language. Same
+            -- for react compound filetypes — `typescriptreact` resolves to the
+            -- `tsx` parser (javascriptreact likewise), never to the literal ft.
+            local ft_map = { typescriptreact = 'tsx', javascriptreact = 'javascript', typescriptjsx = 'tsx' }
+            local lang = ft_map[ft] or ft:match '^[^.]+'
             -- same once-per-session state as the bootstrap above, so a language
             -- whose build failed is not retried on every buffer of that type
             local marks = vim.g.treesitter_bootstrap or {}

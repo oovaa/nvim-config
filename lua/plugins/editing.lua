@@ -125,6 +125,118 @@ return {
     },
   },
 
+  -- RUSTACEANVIM (Rust): successor to archived rust-tools.nvim.
+  -- DO NOT also enable an nvim-lspconfig/vim.lsp rust_analyzer for rust —
+  -- rustaceanvim registers rust-analyzer itself. Install rust-analyzer via
+  -- rustup (`rustup component add rust-analyzer clippy rustfmt`), not Mason:
+  -- a Mason RA build mismatches the project's toolchain and breaks clippy.
+  {
+    'mrcjkb/rustaceanvim',
+    version = '^9', -- v9 needs neovim >= 0.12
+    ft = { 'rust' },
+    init = function()
+      vim.g.rustaceanvim = {
+        server = {
+          default_settings = {
+            ['rust-analyzer'] = {
+              -- rust-analyzer expects checkOnSave as a boolean; the runner lives
+              -- under `check` (the old nested `checkOnSave.command` form is
+              -- rejected as "invalid type: map, expected a boolean").
+              checkOnSave = true,
+              check = { command = 'clippy' },
+              cargo = { allFeatures = true },
+            },
+          },
+        },
+      }
+    end,
+  },
+
+  -- NVIM-JDTLS (Java): Eclipse JDT Language Server with project-aware workspace
+  -- (per-root data dir) and bundled debug/test adapters when mason has them.
+  -- Needs JDK 21+ on PATH for jdtls itself; project can target older releases.
+  {
+    'mfussenegger/nvim-jdtls',
+    ft = { 'java' },
+    config = function()
+      local jdtls = require 'jdtls'
+      local cwd = vim.fn.getcwd()
+      local root_markers = { 'gradlew', 'mvnw', 'pom.xml', 'build.gradle', 'build.gradle.kts', '.git' }
+      local root = vim.fs.root(0, root_markers) or cwd
+      local mason_pkg = vim.fn.stdpath 'data' .. '/mason/packages'
+      local jdtls_pkg = mason_pkg .. '/jdtls'
+      -- jdtls is launched via the Equinox launcher jar, not by -jar-ing the
+      -- core jar (which has no Main-Class). Deps live in plugins/ next to it.
+      local launcher = vim.fn.glob(jdtls_pkg .. '/plugins/org.eclipse.equinox.launcher_*.jar')
+      if launcher == '' then
+        vim.notify('jdtls not installed — run :Mason and install jdtls', vim.log.levels.WARN)
+        return
+      end
+      local config_dir = jdtls_pkg .. (vim.fn.isdirectory(jdtls_pkg .. '/config_mac') == 1 and '/config_mac' or '/config_linux')
+      local data_dir = vim.fn.stdpath 'cache' .. '/jdtls/' .. vim.fn.fnamemodify(root, ':p:h:t') .. '-' .. vim.fn.sha256(root)
+      -- Debug + test adapters: bundle jars if mason installed them (optional).
+      local bundles = {}
+      local jdtls_bundles_glob = mason_pkg .. '/java-test/extension/server/com.microsoft.java.test.plugin-*.jar'
+      local debug_glob = mason_pkg .. '/java-debug-adapter/extension/server/com.microsoft.java.debug.plugin-*.jar'
+      for _, pattern in ipairs { jdtls_bundles_glob, debug_glob } do
+        local matches = vim.fn.glob(pattern, true, true)
+        if matches and #matches > 0 then vim.list_extend(bundles, matches) end
+      end
+      local blink_ok, blink = pcall(require, 'blink.cmp')
+      local function on_attach(_, bufnr)
+        -- Java debug/test: only wire when mason bundles were found (java-debug-adapter
+        -- / java-test). setup_dap registers dap.configurations.java; main-class
+        -- discovery is deferred (can be slow on first open) — trigger via
+        -- :JdtUpdateDebugConfigs or <leader>dc if empty.
+        if #bundles > 0 then
+          local ok_dap, _ = pcall(require, 'dap')
+          if ok_dap then
+            local ok_setup = pcall(jdtls.setup_dap, { hotcodereplace = 'auto' })
+            if ok_setup then pcall(require('jdtls.dap').setup_dap_main_class_configs) end
+          end
+        end
+        -- standard LSP keymaps are applied globally by lsp.lua's LspAttach autocmd
+      end
+      jdtls.start_or_attach {
+        cmd = {
+          'java',
+          '-Declipse.application=org.eclipse.jdt.ls.core.id1',
+          '-Dosgi.bundles.defaultStartLevel=4',
+          '-Declipse.product=org.eclipse.jdt.ls.core.product',
+          '-Dlog.level=INFO',
+          '-Xmx1g',
+          '--add-modules=ALL-SYSTEM',
+          '--add-opens',
+          'java.base/java.util=ALL-UNNAMED',
+          '--add-opens',
+          'java.base/java.lang=ALL-UNNAMED',
+          '-jar',
+          launcher,
+          '-configuration',
+          config_dir,
+          '-data',
+          data_dir,
+        },
+        root_dir = root,
+        capabilities = blink_ok and blink.get_lsp_capabilities() or {},
+        bundles = bundles,
+        on_attach = on_attach,
+        init_options = { bundles = bundles },
+        settings = {
+          java = {
+            eclipse = { downloadSources = true },
+            maven = { downloadSources = true },
+            format = { enabled = true },
+            signatureHelp = { enabled = true },
+            -- Google style via settings; google-java-format (conform) is the
+            -- actual writer. Comment out the conform java row to let jdtls format.
+            checkstyle = { enabled = false },
+          },
+        },
+      }
+    end,
+  },
+
   -- VTSLS (fast TypeScript LSP via @vtsls/language-server)
   -- WHAT: Replaces ts_ls/typescript-tools with direct IPC, optimized memory
   -- TO CHANGE: Remove if you prefer built-in ts_ls

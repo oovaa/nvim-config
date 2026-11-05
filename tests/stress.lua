@@ -952,14 +952,40 @@ do
   end)
   H.t('lsp: every configured server appears in lsp_filetypes', function()
     local src = table.concat(vim.fn.readfile(root .. '/lua/plugins/lsp.lua'), '\n')
-    local block = src:match 'local servers = {(.-)\n        }'
-    -- strip comment lines: `-- clangd = {},` would otherwise match as declared
-    block = block:gsub('%-%-[^\n]*', '')
-    local missing = {}
-    for name in block:gmatch '(%a[%w_]*) = {' do
-      if not src:find(name .. ' = {', src:find('local lsp_filetypes', 1, true) and src:find('local lsp_filetypes', 1, true) or 1) then
-        missing[#missing + 1] = name
+    local start = src:find('local servers = {', 1, true)
+    if not start then return 'servers block not found' end
+    -- balanced-brace scan of the servers table so nested settings sub-tables
+    -- (codelenses/hints/analyses/...) are not mistaken for top-level servers
+    local block_start_at = src:find('{', start, true) + 1
+    local depth, i, block_end = 0, src:find('{', start, true), nil
+    while i <= #src do
+      local ch = src:sub(i, i)
+      if ch == '{' then depth = depth + 1 end
+      if ch == '}' then
+        depth = depth - 1
+        if depth == 0 then
+          block_end = i - 1
+          break
+        end
       end
+      i = i + 1
+    end
+    if not block_end then return 'servers block unterminated' end
+    local block = src:sub(block_start_at, block_end)
+    block = block:gsub('%-%-[^\n]*', '') -- strip comment lines
+    -- top-level keys only: keys at brace depth 0 inside the servers table
+    local names, depth2 = {}, 0
+    for line in (block .. '\n'):gmatch '[^\n]*\n?' do
+      local name = line:match '^%s*([%a_][%w_]*)%s*=%s*{'
+      if name and depth2 == 0 then names[#names + 1] = name end
+      local _, open = line:gsub('{', '')
+      local _, close = line:gsub('}', '')
+      depth2 = depth2 + open - close
+    end
+    local missing = {}
+    local lsp_ft_start = src:find('local lsp_filetypes', 1, true) or 1
+    for _, name in ipairs(names) do
+      if src:find(name .. ' = {', lsp_ft_start, true) == nil then missing[#missing + 1] = name end
     end
     return #missing == 0 or ('missing from lsp_filetypes: ' .. table.concat(missing, ', '))
   end)

@@ -21,7 +21,7 @@ A starting point for Neovim that is:
 * **Explorer**: snacks explorer on `<leader>e`
 * **UI**: tokyonight theme by default, any `<leader>ty` pick persisted across restarts, builtin statusline/tabline/dashboard, mode-colored line numbers
 * **Git**: gitsigns, LazyGit on `<leader>fg`
-* **Debugging**: nvim-dap for Python; molten-nvim + image.nvim for Jupyter-style notebooks
+* **Debugging**: nvim-dap for Python, Go, C/C++, Rust, TypeScript/React and Java; molten-nvim + image.nvim for Jupyter-style notebooks
 * **Live preview**: [kitehost.nvim](https://github.com/selimacerbas/kitehost.nvim) — `<leader>hs` serves the current page on 127.0.0.1 and refreshes the browser on save (CSS hot-swaps; `<leader>ht` toggles live reload)
 * **Performance**: ~126ms median headless startup (measured 2026-10-29; first boot after a config change is slower while caches rebuild) — everything lazy-loaded except the colorscheme
 
@@ -88,11 +88,38 @@ running Neovim for the first time.
 - [Mason](https://github.com/mason-org/mason.nvim) installs most LSP servers,
   linters and formatters for you (lua_ls, ruff, oxlint, prettier, stylua, ...).
   For the languages you use, have the matching toolchain available:
-  - Go: `go`
+  - Go: `go` (gopls, gofumpt, goimports, golangci-lint, delve)
+  - Rust: `rustc`/`cargo` + `rustup` (rust-analyzer is installed via
+    `rustup component add rust-analyzer` — *not* Mason, to keep it in sync with
+    the toolchain; clippy + rustfmt via `rustup component add clippy rustfmt`)
+  - Java: a JDK **>= 21** (jdtls needs Java 21+ to run; your project can target
+    older releases). `javac` optional but recommended.
+  - C/C++: `gcc`/`clang` + `cmake` (clangd needs `compile_commands.json`,
+    produced by `cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON` or `bear -- make`)
+  - SQL: `go` (sqls is a Go binary — installed manually if Mason's network
+    times out), `sqruff` (Rust — Mason-managed)
   - Python: `python3`
-  - C/C++: `gcc`/`clang`
-  - Rust: `rustc`/`cargo`
+  - TypeScript/JS: `node`/`bun` + `vtsls` (see below)
   - etc.
+
+**Per-language details:**
+- **Go** — `gopls` (staticcheck, gofumpt, codelenses, inlay hints) +
+  `golangci-lint` (needs `.golangci.yml` in the project) + `delve` debugger.
+  Large-file mode kicks in above 1 MiB.
+- **Rust** — `rustaceanvim` (auto-detects rust-analyzer + codelldb).
+  Clippy runs on save (`checkOnSave`); rustfmt formats on `<leader>ff`.
+- **Java** — `nvim-jdtls` with a per-root hashed `-data` dir. Bundles
+  `java-debug-adapter` / `java-test` when Mason has them; Java DAP gets wired
+  on `LspAttach`. `google-java-format` is the conform writer.
+- **C/C++** — `clangd` + `clang-format` + `clang-tidy` (never both in clangd
+  and nvim-lint — clang-tidy lives in nvim-lint only). `codelldb` debugger
+  (shared with Rust). Needs `compile_commands.json`.
+- **TypeScript/React** — `vtsls` primary; `biome` where `biome.json` exists
+  (per `config.health.biome_root`), prettier fallback. `oxlint` lint chain.
+  `js-debug-adapter` (pwa-node/pwa-chrome) for debugging.
+- **SQL** — `sqls` (DB-aware completion/hover via `.sqls.yml`) + `sqruff`
+  (Rust linter/formatter). Create a `.sqruff` with `dialect = postgres` (or
+  mysql, ansi, ...) at the project root; without it sqruff lints as ANSI.
 
 **Installed manually (NOT managed by Mason):**
 - [`@vtsls/language-server`](https://github.com/yioneko/vtsls) — the
@@ -115,6 +142,12 @@ running Neovim for the first time.
   ```
 - [`tree-sitter`](https://github.com/tree-sitter/tree-sitter) CLI — builds every
   parser (see above). Mason is skipped so it can't shadow your own binary.
+- **jdtls (Java)** — Mason downloads from eclipse.org which sometimes returns
+  403. If `:Mason` fails on `jdtls`, install manually: download
+  `https://open-vsx.org/api/redhat/java/latest`, extract `extension/server/`
+  into `~/.local/share/nvim/mason/packages/jdtls`, and make sure the wrapper
+  script `packages/jdtls/bin/jdtls` points at
+  `plugins/org.eclipse.equinox.launcher_*.jar` (the core jar has no Main-Class).
 
 **Recommended:**
 - [bun](https://bun.sh) — `<leader>R` (code_runner) executes JS/TS with `bun`.

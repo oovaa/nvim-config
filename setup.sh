@@ -157,6 +157,16 @@ else
     else warn "install via Homebrew: brew install pyrefly"; fi
   fi
 fi
+# Go, Rust, Java, C/C++: mostly mason-managed (gopls, jdtls, clangd, codelldb) —
+# see lazy.nvim deferred ensure_installed. The bits mason cannot/should not do:
+if have rustup; then
+  if rustup component list --installed 2>/dev/null | grep -q 'rust-analyzer'; then ok "rust-analyzer (rustup)"; else warn "rust-analyzer missing — rustup component add rust-analyzer clippy rustfmt"; fi
+else
+  warn "rustup missing — Rust needs it: https://rustup.rs"
+fi
+if have go; then ok "go $(go version 2>/dev/null | awk '{print $3}')"; else warn "go missing — https://go.dev/dl (gopls/delve are mason-managed once go is installed)"; fi
+if have java; then ok "java $(java -version 2>&1 | awk -F'"' 'NR==1{print $2}') (jdtls wants JDK 21+)"; else warn "java missing — jdtls needs JDK 21+"; fi
+if have cmake; then ok "cmake $(cmake --version | awk 'NR==1{print $3}')"; else warn "cmake missing — useful for compile_commands.json (C/C++ clangd)"; fi
 
 # --- 4. config repo --------------------------------------------------------
 step "4/7  Config repo"
@@ -211,6 +221,12 @@ warn "kitty terminal for image rendering (image.nvim kitty backend)"
 warn "jupytext needed for molten notebooks: pip install jupytext (or uv pip install --user jupytext)"
 warn "clipboard: install xclip (X11) or wl-clipboard (Wayland) for system clipboard sync"
 warn "vtsls fallback if bun is unavailable: npm i -g @vtsls/language-server"
+warn "rust: rustup component add rust-analyzer clippy rustfmt (mason RA mismatches your toolchain)"
+warn "java: jdtls wants JDK 21+ (brew install temurin@21 or apt install openjdk-21-jdk)"
+warn "c/cpp: generate compile_commands.json (cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON, or bear -- make) and symlink to project root"
+warn "go: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest if .golangci.yml lint is empty"
+warn "sql: create .sqruff with your dialect (e.g. postgres) at the project root, e.g. '[sqruff] dialect = postgres'; DB-aware completion needs a .sqls.yml (see sqls docs)"
+warn "jdtls: mason downloads often 403 — install manually from https://open-vsx.org/api/redhat/java/latest (extract server/ into mason/packages/jdtls, equinox launcher), see README Language tooling"
 
 echo
 if (( ${#MISSING[@]} > 0 )) && (( CHECK_ONLY )); then

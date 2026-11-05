@@ -160,6 +160,50 @@ return {
       ---@type table<string, vim.lsp.Config>
       local servers = {
         -- clangd = {},
+        -- Go: gopls (fast, staticcheck + gofumpt). Mason installs it; Rust's
+        -- rust-analyzer comes from rustup instead (see editing.lua).
+        gopls = {
+          cmd = { 'gopls' },
+          filetypes = { 'go', 'gomod', 'gowork', 'gotmpl' },
+          root_markers = { 'go.mod', 'go.work', '.git' },
+          settings = {
+            gopls = {
+              gofumpt = true,
+              staticcheck = true,
+              semanticTokens = true,
+              codelenses = {
+                generate = true,
+                tidy = true,
+                upgrade_dependency = true,
+                test = true,
+              },
+              hints = {
+                assignVariableTypes = true,
+                compositeLiteralFields = true,
+                constantValues = true,
+                parameterNames = true,
+                rangeVariableTypes = true,
+              },
+              analyses = {
+                unusedparams = true,
+                shadow = true,
+                nilness = true,
+                unusedwrite = true,
+                useany = true,
+                unusedvariable = true,
+              },
+              directoryFilters = { '-.git', '-.vscode', '-.idea', '-node_modules' },
+            },
+          },
+        },
+        -- clangd: needs compile_commands.json (cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON,
+        -- or `bear -- make`). --background-index keeps completions fast; clang-tidy
+        -- runs via nvim-lint, not twice.
+        clangd = {
+          cmd = { 'clangd', '--background-index', '--completion-style=detailed' },
+          filetypes = { 'c', 'cpp', 'objc', 'objcpp', 'cuda' },
+          root_markers = { 'compile_commands.json', '.clangd', 'compile_flags.txt', '.git' },
+        },
         docker_compose_language_service = {
           cmd = { 'docker-compose-langserver', '--stdio' },
           filetypes = { 'yaml.docker-compose' },
@@ -199,12 +243,17 @@ return {
           filetypes = { 'nginx' },
           root_markers = { 'nginx.conf', '.git' },
         },
-        -- gopls = {},
+        -- C/C++ LSP: clangd. Rust: rust-analyzer (rustup, not here).
+        -- SQL: sqls — DB-aware completion/hover via `.sqls.yml`; without it,
+        -- still provides syntax/diagnostics for .sql files.
+        sqls = {
+          cmd = { 'sqls' },
+          filetypes = { 'sql', 'mysql', 'plsql' },
+          root_markers = { '.sqls.yml', '.sqruff', '.git' },
+        },
         -- Python LSP is selected below according to installed host tools:
         -- ty (fastest, Astral) -> pyrefly -> pyright/pyright-langserver.
         -- None of them are installed by Mason here because pyenv 3.15+ is not supported.
-        -- rust_analyzer = {},
-        --
         -- Some languages (like typescript) have enhanced LSP plugins:
         --    https://github.com/yioneko/nvim-vtsls (faster TS LSP)
         --
@@ -294,6 +343,27 @@ return {
         -- setup prepends to PATH, and a bun/npm global is only on PATH via
         -- .zshrc. Standalone Rust binary, so no python/ensurepip wall.
         'biome',
+        -- Go: LSP + formatters + linter + debugger
+        'gopls',
+        'gofumpt',
+        'goimports',
+        'golangci-lint',
+        'delve',
+        -- C/C++: LSP + formatter + linter + debugger (codelldb shared with Rust)
+        'clangd',
+        'clang-format',
+        'clang-tidy',
+        'codelldb',
+        -- SQL: LSP + fast Rust linter/fixer
+        'sqls',
+        'sqruff',
+        -- Java: LSP launcher + debug adapter + test runner + formatter
+        'jdtls',
+        'java-debug-adapter',
+        'java-test',
+        'google-java-format',
+        -- React/TS: debugger (test runner lives in plugins/qol.lua)
+        'js-debug-adapter',
         -- ponytail: nginxfmt (nginx) is NOT here. It is a python package and
         -- this box's python3 has no ensurepip, so mason fails to build its venv
         -- on every FileType — same wall as debugpy below. `pip install
@@ -321,6 +391,9 @@ return {
       -- Only enable LSP servers when their filetype is opened
       local lsp_filetypes = {
         lua_ls = { 'lua' },
+        gopls = { 'go', 'gomod', 'gowork', 'gotmpl' },
+        clangd = { 'c', 'cpp', 'objc', 'objcpp', 'cuda' },
+        sqls = { 'sql', 'mysql', 'plsql' },
         jsonls = { 'json', 'jsonc' },
         html = { 'html' },
         cssls = { 'css', 'scss', 'less' },
