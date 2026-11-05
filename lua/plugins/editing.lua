@@ -184,20 +184,12 @@ return {
       end
       local blink_ok, blink = pcall(require, 'blink.cmp')
       local function on_attach(_, bufnr)
-        -- Java debug/test: only wire when mason bundles were found (java-debug-adapter
-        -- / java-test). setup_dap registers dap.configurations.java; main-class
-        -- discovery is deferred (can be slow on first open) — trigger via
-        -- :JdtUpdateDebugConfigs or <leader>dc if empty.
-        if #bundles > 0 then
-          local ok_dap, _ = pcall(require, 'dap')
-          if ok_dap then
-            local ok_setup = pcall(jdtls.setup_dap, { hotcodereplace = 'auto' })
-            if ok_setup then pcall(require('jdtls.dap').setup_dap_main_class_configs) end
-          end
-        end
+        -- Java debug/test: setup_dap is called by jdtls internally when
+        -- opts.dap is passed; here we only discover main-class configs.
+        if #bundles > 0 then pcall(require('jdtls.dap').setup_dap_main_class_configs) end
         -- standard LSP keymaps are applied globally by lsp.lua's LspAttach autocmd
       end
-      jdtls.start_or_attach {
+      jdtls.start_or_attach({
         cmd = {
           'java',
           '-Declipse.application=org.eclipse.jdt.ls.core.id1',
@@ -233,7 +225,18 @@ return {
             checkstyle = { enabled = false },
           },
         },
-      }
+      }, { dap = { hotcodereplace = 'auto' } })
+
+      -- Discover main-class debug configs after jdtls is ready (on_attach is
+      -- not reliably fired by vim.lsp.start for jdtls in all contexts).
+      vim.schedule(function()
+        vim.defer_fn(function()
+          if #bundles > 0 then
+            pcall(require('jdtls.dap').setup_dap, { hotcodereplace = 'auto' })
+            pcall(require('jdtls.dap').setup_dap_main_class_configs)
+          end
+        end, 10000)
+      end)
     end,
   },
 
