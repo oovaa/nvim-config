@@ -139,12 +139,12 @@ return {
         server = {
           default_settings = {
             ['rust-analyzer'] = {
-              -- rust-analyzer expects checkOnSave as a boolean; the runner lives
-              -- under `check` (the old nested `checkOnSave.command` form is
-              -- rejected as "invalid type: map, expected a boolean").
-              checkOnSave = true,
-              check = { command = 'clippy' },
-              cargo = { allFeatures = true },
+              -- clippy-on-save + allFeatures is the slowest possible config;
+              -- default to fast `cargo check` and let projects opt into
+              -- clippy/allFeatures via rust-analyzer.toml overrides.
+              checkOnSave = false,
+              check = { command = 'cargo', features = 'minimal' },
+              cargo = { allFeatures = false },
             },
           },
         },
@@ -248,7 +248,7 @@ return {
   {
     'yioneko/nvim-vtsls',
     dependencies = { 'nvim-lua/plenary.nvim', 'saghen/blink.cmp' },
-    ft = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
+    ft = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue' },
     config = function()
       require('lazy').load { plugins = { 'blink.cmp' } }
       local blink_ok, blink = pcall(require, 'blink.cmp')
@@ -261,7 +261,9 @@ return {
       -- updateImportsOnFileMove/enableMoveToFileCodeAction defaults lspconfig merged in).
       vim.lsp.config('vtsls', {
         cmd = { 'vtsls', '--stdio' },
-        filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
+        -- vue: vtsls picks up typescript-vue-plugin when present; prettier
+        -- formats vue (formatting.lua); oxlint skips .vue SFC (prettier-only).
+        filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue' },
         root_markers = { 'tsconfig.json', 'jsconfig.json', 'package.json', '.git' },
         capabilities = capabilities,
         settings = {
@@ -272,7 +274,9 @@ return {
             -- 'auto' only when an import statement needs it (much cheaper).
             preferences = { includePackageJsonAutoImports = 'auto' },
             tsserver = {
-              maxTsServerMemory = 2048,
+              -- 1536 balances monorepo inference vs RSS (was 2048; lower
+              -- to 1024 if RSS spikes, raise if completions lag).
+              maxTsServerMemory = 1536,
               -- inotify-based watching instead of polling node_modules:
               -- keeps tsserver CPU flat in large repos.
               watchOptions = {

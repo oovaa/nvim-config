@@ -42,7 +42,9 @@ return {
 
       -- dap-python takes setup(python_path) — with no argument it defaults to
       -- 'python3' (must be on PATH and have debugpy importable; see :checkhealth).
-      require('dap-python').setup()
+      -- Installed via `uv pip install --system --break-system-packages debugpy`
+      -- (mason cannot install it: no ensurepip on brew python).
+      require('dap-python').setup 'python3'
 
       -- codelldb (C/C++; Rust uses rustaceanvim's own auto-detection): launch
       -- adapter over a port. Program path is asked at launch time.

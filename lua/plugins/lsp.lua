@@ -169,7 +169,7 @@ return {
           settings = {
             gopls = {
               gofumpt = true,
-              staticcheck = true,
+              staticcheck = false,
               semanticTokens = true,
               codelenses = {
                 generate = true,
@@ -187,10 +187,6 @@ return {
               analyses = {
                 unusedparams = true,
                 shadow = true,
-                nilness = true,
-                unusedwrite = true,
-                useany = true,
-                unusedvariable = true,
               },
               directoryFilters = { '-.git', '-.vscode', '-.idea', '-node_modules' },
             },
@@ -220,6 +216,10 @@ return {
         jsonls = {
           cmd = { 'vscode-json-language-server', '--stdio' },
           filetypes = { 'json', 'jsonc' },
+        },
+        yamlls = {
+          cmd = { 'yaml-language-server', '--stdio' },
+          filetypes = { 'yaml' },
         },
         -- html/css: markup and stylesheet intelligence via the vscode servers
         -- (tag/attribute + selector/property completion, validation, colors)
@@ -280,7 +280,18 @@ return {
 
             if client.workspace_folders and client.workspace_folders[1] then
               local path = client.workspace_folders[1].name
-              if path ~= vim.fn.stdpath 'config' and (vim.uv.fs_stat(path .. '/.luarc.json') or vim.uv.fs_stat(path .. '/.luarc.jsonc')) then return end
+              -- Only add the full runtime library inside this config dir or
+              -- when a .luarc is present; outside, keep it minimal to avoid
+              -- a full workspace scan on every lua file.
+              local in_config = path == vim.fn.stdpath 'config'
+              local has_luarc = vim.uv.fs_stat(path .. '/.luarc.json') or vim.uv.fs_stat(path .. '/.luarc.jsonc')
+              if not in_config and not has_luarc then
+                client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
+                  workspace = { checkThirdParty = false, library = {} },
+                })
+                return
+              end
+              if has_luarc then return end
             end
 
             client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
@@ -327,6 +338,7 @@ return {
         cssls = 'css-lsp',
         emmet_language_server = 'emmet-language-server',
         lua_ls = 'lua-language-server',
+        yamlls = 'yaml-language-server',
       }
       local ensure_installed = {}
       for name in pairs(servers) do
@@ -337,6 +349,10 @@ return {
         'stylua', -- lua formatter (conform needs it; health checks it)
         'ruff', -- python lint+format backend for conform + nvim-lint
         'oxlint', -- fast Rust JS/TS linter used by nvim-lint
+        -- vtsls: binary comes from bun/npm (`bun install -g @vtsls/language-server`),
+        -- mason package `vts` provides the same binary; listed here so clean
+        -- machines get TS LSP without manual steps.
+        'vts',
         -- biome: leads the JS/TS format + lint chain inside a repo that has its
         -- own biome.json (config.health.biome_root — ~/biome.json does not count).
         -- Also in mason so a GUI-launched nvim finds it — mason/bin is what
@@ -395,6 +411,7 @@ return {
         clangd = { 'c', 'cpp', 'objc', 'objcpp', 'cuda' },
         sqls = { 'sql', 'mysql', 'plsql' },
         jsonls = { 'json', 'jsonc' },
+        yamlls = { 'yaml' },
         html = { 'html' },
         cssls = { 'css', 'scss', 'less' },
         emmet_language_server = { 'html', 'css', 'scss', 'less', 'javascriptreact', 'typescriptreact' },
@@ -420,7 +437,11 @@ return {
       end
 
       -- Keep pyrefly registered for stress/tool visibility even when the
-      -- host selects another Python LSP or no binary is installed.
+      -- host selects another Python LSP or no binary is installed, but only
+      -- auto-enable it when it is the ladder winner (prevents double-attach
+      -- when ty+pyrefly coexist).
+      local py_winner = require('config.python_lsp').resolve()
+      local py_winner_name = py_winner and py_winner.name or nil
       servers.pyrefly = servers.pyrefly
         or {
           cmd = { 'pyrefly', 'lsp' },
@@ -428,7 +449,7 @@ return {
           root_markers = { 'pyproject.toml', 'setup.cfg', 'requirements.txt', 'setup.py', '.git' },
           settings = { python = { pyrefly = { typeCheckingMode = 'default' } } },
         }
-      lsp_filetypes.pyrefly = lsp_filetypes.pyrefly or { 'python' }
+      if py_winner_name == 'pyrefly' then lsp_filetypes.pyrefly = lsp_filetypes.pyrefly or { 'python' } end
 
       -- Register every server AFTER the resolver above has added the python
       -- winner: vim.lsp.enable() on a name with no config is a silent no-op,
@@ -442,7 +463,11 @@ return {
           group = vim.api.nvim_create_augroup('lsp-on-demand-' .. server, { clear = true }),
           pattern = filetypes,
           once = true,
-          callback = function() vim.lsp.enable(server) end,
+          callback = function(args)
+            -- large-file guard (Phase 2): never attach LSP on >1MiB files
+            if vim.b[args.buf].large_file_mode then return end
+            vim.lsp.enable(server)
+          end,
         })
       end
 
