@@ -64,7 +64,19 @@ return {
       },
 
       completion = {
+        trigger = {
+          -- dynamic refresh as you type (re-query LSP on every keyword change)
+          show_on_trigger_character = true,
+          show_on_keyword = true,
+          show_on_backspace = true,
+          show_on_insert_on_trigger_character = true,
+        },
         ghost_text = { enabled = true },
+        list = {
+          -- preselect=false: highlight stays on typed text (no snap to
+          -- first item); auto_insert=false: typed word untouched until Tab.
+          selection = { preselect = false, auto_insert = false },
+        },
         documentation = {
           auto_show = true,
           auto_show_delay_ms = 300,
@@ -73,12 +85,6 @@ return {
             max_width = 60,
             max_height = 15,
           },
-        },
-        list = {
-          -- auto_insert = false: navigating (<C-n>/<C-p>/<S-Tab>/arrows) only
-          -- moves the highlight — the typed word stays untouched until Tab
-          -- accepts. preselect = true still highlights the first item.
-          selection = { preselect = true, auto_insert = false },
         },
       },
 
