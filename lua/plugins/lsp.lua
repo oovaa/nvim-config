@@ -350,9 +350,9 @@ return {
         'ruff', -- python lint+format backend for conform + nvim-lint
         'oxlint', -- fast Rust JS/TS linter used by nvim-lint
         -- vtsls: binary comes from bun/npm (`bun install -g @vtsls/language-server`),
-        -- mason package `vts` provides the same binary; listed here so clean
+        -- mason package `vtsls` provides the same binary; listed here so clean
         -- machines get TS LSP without manual steps.
-        'vts',
+        'vtsls',
         -- biome: leads the JS/TS format + lint chain inside a repo that has its
         -- own biome.json (config.health.biome_root — ~/biome.json does not count).
         -- Also in mason so a GUI-launched nvim finds it — mason/bin is what

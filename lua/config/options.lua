@@ -156,11 +156,10 @@ vim.o.grepformat = '%f:%l:%c:%m'
 -- WHAT: popup menu for : command/file/option completion, auto-shown as you
 --        type (CmdlineChanged -> wildtrigger in autocmds.lua) instead of the
 --        one-item-at-a-time press-<Tab> loop
--- TO CHANGE: 'noselect:full,full' -> 'full' to always take the first full match
--- EFFECT: noselect = menu shows but nothing is pre-inserted — typed text stays
---         untouched until a match is confirmed (<Tab>/arrows pick, <C-y>
---         accepts, <C-e> aborts); pum = render it as a menu, arrow keys work
-vim.o.wildmode = 'noselect:full,full'
+-- TO CHANGE: add 'noselect:' prefix if auto-selecting the first match is unwanted
+-- EFFECT: first match is auto-selected in the pum so <Tab>/<CR> can confirm
+--         quickly in / search and : commands; arrows/<C-n>/<C-p> move, <C-e> aborts
+vim.o.wildmode = 'full,full'
 vim.o.wildoptions = 'pum'
 
 -- FORMATTING (gq / gwgq)
@@ -315,6 +314,7 @@ vim.diagnostic.config {
   jump = { on_jump = true }, -- Auto-open float when jumping to diagnostic
 }
 
--- EXPERIMENTAL (0.12): new messages/cmdline UI. Avoids "Press ENTER" and
--- W10 delays; guarded so a failure here never blocks startup.
-pcall(function() require('vim._core.ui2').enable() end)
+-- ui2 (experimental 0.12 messages/cmdline UI) disabled: causes "cmdline_show
+-- Invalid window id" errors in cmdline.lua during / and : (reproduced with
+-- snacks.input + CmdlineChanged wildtrigger). Re-enable only when stable.
+-- pcall(function() require('vim._core.ui2').enable() end)

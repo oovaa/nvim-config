@@ -71,7 +71,9 @@ return {
           show_on_backspace = true,
           show_on_insert_on_trigger_character = true,
         },
-        ghost_text = { enabled = true },
+        -- show_with_menu=false: avoid ghost text competing with the completion
+        -- menu (preselect+Tab flow); still show when an item is selected.
+        ghost_text = { enabled = true, show_with_menu = false },
         list = {
           -- preselect=true: first item highlighted so Tab accepts it
           -- immediately (fallback to tab only when menu hidden);
