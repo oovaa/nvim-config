@@ -139,11 +139,10 @@ return {
         server = {
           default_settings = {
             ['rust-analyzer'] = {
-              -- clippy-on-save + allFeatures is the slowest possible config;
-              -- default to fast `cargo check` and let projects opt into
-              -- clippy/allFeatures via rust-analyzer.toml overrides.
-              checkOnSave = false,
-              check = { command = 'cargo', features = 'minimal' },
+              -- clippy-on-save is the community standard; allFeatures stays
+              -- off by default (enable per-project via rust-analyzer.toml).
+              checkOnSave = true,
+              check = { command = 'clippy' },
               cargo = { allFeatures = false },
             },
           },

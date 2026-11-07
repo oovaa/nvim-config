@@ -5,10 +5,10 @@ local M = {}
 -- diagnostic counts + first LSP name are cached and refreshed on events only.
 -- ponytail: global per-buffer cache; per-win only if multi-window counts ever diverge.
 M._diag_counts = {} -- [bufnr] = { e, w, i, h, total }
-M._lsp_name = { buf = -1, name = '' }
+M._lsp_name = {} -- [bufnr] = name string
 -- Search-count cache: searchcount() scans the buffer, so only recompute when
 -- the pattern, buffer content, or cursor line changed — pure redraws reuse.
-M._search = { key = nil, s = '' }
+M._search = {} -- [winid] = { key, s }
 -- Progress cache: vim.lsp.status()/vim.ui.progress_status() are cheap but called
 -- on every redraw; recompute at most every 100 ms.
 M._progress = { at = 0, s = '' }
@@ -42,7 +42,7 @@ function M._refresh_lsp(buf)
   local name = ''
   local ok, clients = pcall(vim.lsp.get_clients, { bufnr = buf })
   if ok and clients and #clients > 0 then name = clients[1].name or '' end
-  M._lsp_name = { buf = buf, name = name }
+  M._lsp_name[buf] = name
 end
 
 do
@@ -56,7 +56,13 @@ do
       M._count_diags(b)
     end,
   })
-  vim.api.nvim_create_autocmd({ 'BufDelete', 'BufWipeout' }, { group = grp, callback = function(ev) M._diag_counts[ev.buf] = nil end })
+  vim.api.nvim_create_autocmd({ 'BufDelete', 'BufWipeout' }, {
+    group = grp,
+    callback = function(ev)
+      M._diag_counts[ev.buf] = nil
+      M._lsp_name[ev.buf] = nil
+    end,
+  })
 end
 -- builtin statusline (replaces lualine.nvim) — tokyonight-night, same sections as before
 function M.setup_lualine()
@@ -305,21 +311,27 @@ function M.setup_lualine()
     local pat = vim.v.hlsearch == 1 and vim.fn.getreg '/' or ''
     local cur = vim.api.nvim_win_get_cursor(0)
     local skey = pat .. '\0' .. buf0 .. '\0' .. (vim.b[buf0].changedtick or 0) .. '\0' .. cur[1] .. ',' .. cur[2]
-    if pat ~= '' and skey ~= M._search.key then
+    local winid = vim.api.nvim_get_current_win()
+    local scache = M._search[winid] or { key = nil, s = '' }
+    if pat ~= '' and skey ~= scache.key then
       local s = ''
       local ok, sc = pcall(vim.fn.searchcount, { maxcount = 999, timeout = 100 })
       if ok and sc and sc.total and sc.total > 0 then
         local cur = sc.incomplete == 1 and '?' or sc.current
         s = '%#SL_search# ' .. cur .. '/' .. sc.total .. ' ' .. hl_c
       end
-      M._search = { key = skey, s = s }
+      M._search[winid] = { key = skey, s = s }
     elseif pat == '' then
-      M._search = { key = skey, s = '' }
+      M._search[winid] = { key = skey, s = '' }
     end
-    local search_s = M._search.s
+    local search_s = (M._search[winid] or {}).s or ''
 
     -- lsp — cached first-client name (refreshed on LspAttach/Detach/BufEnter)
-    if M._lsp_name.buf ~= buf0 then M._refresh_lsp(buf0) end
+    local lsp_name = M._lsp_name[buf0]
+    if lsp_name == nil then
+      M._refresh_lsp(buf0)
+      lsp_name = M._lsp_name[buf0] or ''
+    end
     -- Prefer LSP progress while a server is busy; fall back to vim.ui's
     -- Progress-event summary (0.12) when LSP is idle, then to the client name.
     -- Progress is recomputed at most every 100 ms to keep redraws cheap.
@@ -333,8 +345,7 @@ function M.setup_lualine()
     else
       prog = M._progress.s
     end
-    local lsp_s = prog ~= '' and ('%#SL_lsp#' .. prog .. hl_c)
-      or (M._lsp_name.name == '' and '' or '%#SL_lsp#' .. vim.fn.nr2char(0xf0136) .. ' ' .. M._lsp_name.name .. hl_c)
+    local lsp_s = prog ~= '' and ('%#SL_lsp#' .. prog .. hl_c) or (lsp_name == '' and '' or '%#SL_lsp#' .. vim.fn.nr2char(0xf0136) .. ' ' .. lsp_name .. hl_c)
 
     local ft_s = vim.bo.filetype
 

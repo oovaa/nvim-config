@@ -6,11 +6,11 @@ describe('Phase 1: Critical Bug Fixes', function()
   local H = require 'tests.helpers'
   -- Test 1: vtsls memory setting
   describe('vtsls config', function()
-    it('has conservative maxTsServerMemory (2048) in init.lua', function()
+    it('has conservative maxTsServerMemory (1536) in init.lua', function()
       -- ponytail: path kept for context; assertions read the whole config
       local content = H.all()
       -- vtsls is configured inline in init.lua, not via lspconfig.configs
-      assert.is_truthy(content:match 'maxTsServerMemory%s*=%s*2048', 'Should have maxTsServerMemory = 2048 in init.lua')
+      assert.is_truthy(content:match 'maxTsServerMemory%s*=%s*1536', 'Should have maxTsServerMemory = 1536 in init.lua')
     end)
   end)
 

@@ -55,11 +55,11 @@ function M.setup_bufferline()
   end
   -- Vimscript wrapper (capitalized) so the tabline %@...@ mouse-click actually
   -- resolves; lowercase Lua globals are not callable from %@ click items.
-  vim.api.nvim_exec(
+  vim.api.nvim_exec2(
     [[function! BuiltinTabclick(minwid, clicks, button, mod)
       call v:lua._builtin_tabclick(a:minwid, a:clicks, a:button, a:mod)
     endfunction]],
-    false
+    {}
   )
   -- ponytail: labeled segments ('E2 W1') not bare numbers ('2 1') — E/W/I/H letters
   -- with the standard Diagnostic* hl groups, so the tabline reads at a glance.
@@ -96,9 +96,12 @@ function M.setup_bufferline()
     return s .. '%#TabLineFill#%='
   end
   local grp = vim.api.nvim_create_augroup('BuiltinTablineCache', { clear = true })
-  vim.api.nvim_create_autocmd({ 'BufAdd', 'BufDelete', 'BufWipeout', 'BufFilePost' }, {
+  vim.api.nvim_create_autocmd({ 'BufAdd', 'BufDelete', 'BufWipeout', 'BufFilePost', 'OptionSet' }, {
     group = grp,
-    callback = function() M._bufs = nil end,
+    callback = function(ev)
+      if ev.event == 'OptionSet' and ev.match ~= 'buflisted' then return end
+      M._bufs = nil
+    end,
   })
   vim.o.showtabline = 2
   vim.o.tabline = '%!v:lua._builtin_tabline()'

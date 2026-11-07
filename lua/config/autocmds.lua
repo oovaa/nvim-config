@@ -69,20 +69,24 @@ vim.api.nvim_create_autocmd('CursorHold', {
 -- vim.schedule so the new cursor line is visible. No bail on existing float
 -- (blink docs etc. must not block it). Track our float so we don't close
 -- unrelated relative windows (hover, signature, notifications).
-local diag_float_win ---@type integer|nil
 local diag_float_timer ---@type uv.uv_timer_t|nil
+local diag_float_win ---@type integer|nil
 
 local function close_diag_float()
   if diag_float_win and vim.api.nvim_win_is_valid(diag_float_win) then pcall(vim.api.nvim_win_close, diag_float_win, true) end
   diag_float_win = nil
 end
 
+-- Reuse a single timer instead of allocating one per CursorMoved (avoids
+-- per-move GC pressure; the UI audit flagged new_timer on every cursor move).
+local function get_diag_timer()
+  if diag_float_timer and not diag_float_timer:is_closing() then return diag_float_timer end
+  diag_float_timer = vim.uv.new_timer()
+  return diag_float_timer
+end
+
 local function stop_diag_timer()
-  if diag_float_timer then
-    pcall(function() diag_float_timer:stop() end)
-    if not diag_float_timer:is_closing() then pcall(function() diag_float_timer:close() end) end
-    diag_float_timer = nil
-  end
+  if diag_float_timer then pcall(function() diag_float_timer:stop() end) end
 end
 
 local function open_diag_float()
@@ -112,12 +116,12 @@ vim.api.nvim_create_autocmd('CursorMoved', {
     close_diag_float()
     -- reset throttle so returning to a previously-seen line re-opens
     last_diag_lnum = nil
-    diag_float_timer = vim.uv.new_timer()
-    if not diag_float_timer then
+    local t = get_diag_timer()
+    if not t then
       vim.schedule(open_diag_float)
       return
     end
-    diag_float_timer:start(
+    t:start(
       60,
       0,
       vim.schedule_wrap(function()
@@ -136,12 +140,12 @@ vim.api.nvim_create_autocmd('DiagnosticChanged', {
     if vim.api.nvim_get_mode().mode ~= 'n' then return end
     stop_diag_timer()
     last_diag_lnum = nil
-    diag_float_timer = vim.uv.new_timer()
-    if not diag_float_timer then
+    local t = get_diag_timer()
+    if not t then
       vim.schedule(open_diag_float)
       return
     end
-    diag_float_timer:start(
+    t:start(
       80,
       0,
       vim.schedule_wrap(function()
@@ -306,7 +310,7 @@ vim.api.nvim_create_autocmd('RecordingEnter', {
 
 -- Cmdline autocompletion (:h cmdline-autocompletion): pop the pum automatically
 -- as you type instead of waiting for <Tab>. Wildmode uses full,full so the
--- first match is auto-selected (options.lua); arrows/<C-n>/<C-p> move, <C-e> aborts.
+-- first match is NOT auto-selected (noselect in options.lua); arrows/<C-n>/<C-p> move, <C-e> aborts.
 -- ponytail: '[?]' — bare ? in autocmd patterns means "any char", which would
 -- also fire on input()/expression-register prompts.
 vim.api.nvim_create_autocmd('CmdlineChanged', {

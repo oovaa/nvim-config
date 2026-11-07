@@ -156,10 +156,11 @@ vim.o.grepformat = '%f:%l:%c:%m'
 -- WHAT: popup menu for : command/file/option completion, auto-shown as you
 --        type (CmdlineChanged -> wildtrigger in autocmds.lua) instead of the
 --        one-item-at-a-time press-<Tab> loop
--- TO CHANGE: add 'noselect:' prefix if auto-selecting the first match is unwanted
--- EFFECT: first match is auto-selected in the pum so <Tab>/<CR> can confirm
---         quickly in / search and : commands; arrows/<C-n>/<C-p> move, <C-e> aborts
-vim.o.wildmode = 'full,full'
+-- TO CHANGE: remove 'noselect:' prefix if auto-selecting the first match is wanted
+-- EFFECT: completion menu auto-suggests as you type (wildtrigger in autocmds.lua)
+--         but does NOT auto-select the first match, so typed text stays untouched
+--         until <Tab>/<CR> confirms; arrows/<C-n>/<C-p> move, <C-e> aborts
+vim.o.wildmode = 'noselect:full,full'
 vim.o.wildoptions = 'pum'
 
 -- FORMATTING (gq / gwgq)

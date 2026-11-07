@@ -454,6 +454,16 @@ return {
       -- Register every server AFTER the resolver above has added the python
       -- winner: vim.lsp.enable() on a name with no config is a silent no-op,
       -- so registering first meant a ty-only host got no python LSP at all.
+      -- Merge blink.cmp completion capabilities into every server so snippet
+      -- support, resolve support, and label details propagate uniformly
+      -- (previously only vtsls + jdtls did this; audit flagged the gap).
+      local blink_caps = {}
+      local blink_ok, blink = pcall(require, 'blink.cmp')
+      if blink_ok then blink_caps = blink.get_lsp_capabilities() or {} end
+      for _, server in pairs(servers) do
+        if type(server) == 'table' then server.capabilities = vim.tbl_deep_extend('force', blink_caps, server.capabilities or {}) end
+      end
+
       for name, server in pairs(servers) do
         vim.lsp.config(name, server)
       end
