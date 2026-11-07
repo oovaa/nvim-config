@@ -51,47 +51,53 @@ vim.api.nvim_create_autocmd('ColorScheme', {
 })
 indent_colors()
 
--- Idle upkeep (single CursorHold handler): external-change check + diagnostic
--- float. One autocmd instead of two so idle work stays in one place.
+-- Idle upkeep: external-change check only (diagnostic float is now
+-- immediate on CursorMoved below, option A).
 local last_diag_lnum = nil
 vim.api.nvim_create_autocmd('CursorHold', {
-  desc = 'Idle upkeep: checktime + diagnostic float',
+  desc = 'Idle upkeep: checktime',
   group = vim.api.nvim_create_augroup('idle-upkeep', { clear = true }),
   callback = function()
     -- Classic kickstart pattern: :checktime on idle prompts Vim to reload
     -- buffers changed on disk (vim loses track after external edits).
     pcall(vim.cmd, 'silent! checktime')
-    if vim.b.large_file_mode then return end
-    -- Inline diagnostic text cannot wrap in nvim, so long errors get cut at
-    -- the window edge. Resting the cursor on an error opens a float with the
-    -- full message, which wraps to fit the window. Close it by moving the cursor.
-    -- Skip clean lines: get() with a position costs little, the float
-    -- render does not. (col is not a valid get() filter — line scope only.)
-    -- Skip when a float is already open so idle CursorHolds don't re-render
-    -- and flicker ~4x/s on the same error line.
-    local ok_cursor, cursor = pcall(vim.api.nvim_win_get_cursor, 0)
-    if not ok_cursor then return end
-    local lnum = cursor[1] - 1
-    -- Throttle: if we already opened a float on this line, don't re-scan.
-    if lnum == last_diag_lnum then return end
-    if #vim.diagnostic.get(0, { lnum = lnum }) == 0 then return end
-    for _, win in ipairs(vim.api.nvim_list_wins()) do
-      if vim.api.nvim_win_get_config(win).relative ~= '' then return end
-    end
-    vim.diagnostic.open_float(nil, {
-      focusable = false,
-      scope = 'line',
-      close_events = { 'CursorMoved', 'BufLeave', 'InsertEnter' },
-    })
-    last_diag_lnum = lnum
   end,
 })
--- Reset the throttle cache when diagnostics change or the cursor moves so a
--- float can re-open after it was closed by moving.
-vim.api.nvim_create_autocmd({ 'DiagnosticChanged', 'CursorMoved', 'CursorMovedI' }, {
-  desc = 'Reset idle diagnostic-float throttle',
+-- Option A: show diagnostic float instantly when landing on an error line.
+-- Inline text cannot wrap, so the float gives the full wrapped message.
+-- close_events must NOT include CursorMoved (that is what opens it).
+local function open_diag_float()
+  if vim.b.large_file_mode then return end
+  if vim.api.nvim_get_mode().mode ~= 'n' then return end
+  local ok_cursor, cursor = pcall(vim.api.nvim_win_get_cursor, 0)
+  if not ok_cursor then return end
+  local lnum = cursor[1] - 1
+  if lnum == last_diag_lnum then return end
+  if #vim.diagnostic.get(0, { lnum = lnum }) == 0 then return end
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    if vim.api.nvim_win_get_config(win).relative ~= '' then return end
+  end
+  vim.diagnostic.open_float(nil, {
+    focusable = false,
+    scope = 'line',
+    border = 'rounded',
+    close_events = { 'BufLeave', 'InsertEnter' },
+  })
+  last_diag_lnum = lnum
+end
+vim.api.nvim_create_autocmd('CursorMoved', {
+  desc = 'Diagnostic float on line entry',
+  group = vim.api.nvim_create_augroup('diag-float-on-move', { clear = true }),
+  callback = function() vim.schedule(open_diag_float) end,
+})
+-- DiagnosticChanged also refreshes (new diagnostics on current line).
+vim.api.nvim_create_autocmd('DiagnosticChanged', {
+  desc = 'Reset diag float throttle on change',
   group = vim.api.nvim_create_augroup('idle-upkeep-reset', { clear = true }),
-  callback = function() last_diag_lnum = nil end,
+  callback = function()
+    last_diag_lnum = nil
+    vim.schedule(open_diag_float)
+  end,
 })
 
 -- Large file mode: protect editing responsiveness for very large files by
