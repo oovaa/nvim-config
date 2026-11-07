@@ -73,9 +73,10 @@ return {
         },
         ghost_text = { enabled = true },
         list = {
-          -- preselect=false: highlight stays on typed text (no snap to
-          -- first item); auto_insert=false: typed word untouched until Tab.
-          selection = { preselect = false, auto_insert = false },
+          -- preselect=true: first item highlighted so Tab accepts it
+          -- immediately (fallback to tab only when menu hidden);
+          -- auto_insert=false: typed word untouched until Tab/accept.
+          selection = { preselect = true, auto_insert = false },
         },
         documentation = {
           auto_show = true,
