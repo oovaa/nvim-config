@@ -65,7 +65,8 @@ vim.api.nvim_create_autocmd('CursorHold', {
 })
 -- Option A: show diagnostic float instantly when landing on an error line.
 -- Inline text cannot wrap, so the float gives the full wrapped message.
--- close_events must NOT include CursorMoved (that is what opens it).
+-- close_events includes CursorMoved (old float closes on move); we open via
+-- vim.schedule so the close runs before the open and does not block it.
 local function open_diag_float()
   if vim.b.large_file_mode then return end
   if vim.api.nvim_get_mode().mode ~= 'n' then return end
@@ -81,14 +82,18 @@ local function open_diag_float()
     focusable = false,
     scope = 'line',
     border = 'rounded',
-    close_events = { 'BufLeave', 'InsertEnter' },
+    close_events = { 'CursorMoved', 'BufLeave', 'InsertEnter' },
   })
   last_diag_lnum = lnum
 end
 vim.api.nvim_create_autocmd('CursorMoved', {
   desc = 'Diagnostic float on line entry',
   group = vim.api.nvim_create_augroup('diag-float-on-move', { clear = true }),
-  callback = function() vim.schedule(open_diag_float) end,
+  callback = function()
+    -- reset throttle so returning to a previously-seen line re-opens
+    last_diag_lnum = nil
+    vim.schedule(open_diag_float)
+  end,
 })
 -- DiagnosticChanged also refreshes (new diagnostics on current line).
 vim.api.nvim_create_autocmd('DiagnosticChanged', {
