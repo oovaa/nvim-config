@@ -15,15 +15,16 @@ A starting point for Neovim that is:
 
 ## Features
 
-* **LSP**: vtsls (fast TypeScript), a Python server picked from `ty` / `pyrefly` / `pyright-langserver`, lua_ls, HTML/CSS + Emmet, oxlint + biome, Dockerfile + docker-compose servers — all with completions via [blink.cmp](https://github.com/Saghen/blink.cmp)
-* **Formatting**: [conform.nvim](https://github.com/stevearc/conform.nvim) on save (biome + prettier, stylua, ruff)
+* **LSP**: gopls, clangd, dockerls + docker-compose LS, jsonls, yamlls, html, cssls, emmet, nginx_language_server (optional), sqls, lua_ls, a Python server picked from `ty` / `pyrefly` / `pyright-langserver`, vtsls (TS/JS), rust-analyzer via rustaceanvim, jdtls via nvim-jdtls — completions via [blink.cmp](https://github.com/Saghen/blink.cmp) (sources: LSP, path, snippets, buffer)
+* **Formatting**: [conform.nvim](https://github.com/stevearc/conform.nvim) on save (biome + prettier chain for JS/TS/JSON, stylua, ruff, goimports+gofumpt, rustfmt, google-java-format, clang-format, sqruff; nginxfmt optional) — large files skipped
 * **Fuzzy finding**: snacks picker — files, grep, symbols (`<leader>ls` document / `<leader>lS` workspace), projects, and `vim.ui.select` (code actions, quickfix, mason)
 * **Explorer**: snacks explorer on `<leader>e`
 * **UI**: tokyonight theme by default, any `<leader>ty` pick persisted across restarts, builtin statusline/tabline/dashboard, mode-colored line numbers
+* **Linting**: [nvim-lint](https://github.com/mfussenegger/nvim-lint) on save (oxlint or biome for JS/TS depending on `biome.json`, ruff, golangci-lint, clang-tidy, sqruff); errors surfaced via `vim.notify`
 * **Git**: gitsigns, LazyGit on `<leader>fg`
 * **Debugging**: nvim-dap for Python, Go, C/C++, Rust, TypeScript/React and Java; molten-nvim + image.nvim for Jupyter-style notebooks
 * **Live preview**: [kitehost.nvim](https://github.com/selimacerbas/kitehost.nvim) — `<leader>hs` serves the current page on 127.0.0.1 and refreshes the browser on save (CSS hot-swaps; `<leader>ht` toggles live reload)
-* **Performance**: ~126ms median headless startup (measured 2026-10-29; first boot after a config change is slower while caches rebuild) — everything lazy-loaded except the colorscheme
+* **Performance**: warm headless startup ~150–190 ms on this machine (measured 2026-11-09; first boot after a config change is slower while caches rebuild); 64 plugins registered; large-file mode above 1 MiB disables treesitter/LSP/lint/format and more
 
 See `CHEATSHEET.md` for the full keybinding reference.
 
@@ -142,6 +143,16 @@ running Neovim for the first time.
   ```
 - [`tree-sitter`](https://github.com/tree-sitter/tree-sitter) CLI — builds every
   parser (see above). Mason is skipped so it can't shadow your own binary.
+- `debugpy` — Python debugger backend for `<leader>dc` (Mason cannot build its
+  venv on hosts without `ensurepip`; installed manually into
+  `mason/packages/debugpy/venv`):
+  ```sh
+  uv pip install --system debugpy
+  ```
+- `nginx-language-server` — optional nginx LSP (manual: `uv tool install
+  nginx-language-server`; Mason's package needs Python <3.14).
+- `nginxfmt` — optional nginx formatter (manual: `pip install
+  nginx-config-formatter`).
 - **jdtls (Java)** — Mason downloads from eclipse.org which sometimes returns
   403. If `:Mason` fails on `jdtls`, install manually: download
   `https://open-vsx.org/api/redhat/java/latest`, extract `extension/server/`

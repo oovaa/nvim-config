@@ -1,7 +1,7 @@
 # Neovim Config — Full-Scope Performance Plan (2026-11-03)
 
 **Date:** 2026-11-03 · **Branch:** master · **Measured on:** nvim 0.12.6, stylua 2.5.2
-**Baseline:** `stylua --check .` green · headless boot smoke clean · stress test `0 FAIL · 2 WARN · 916 PASS` in 121824 ms · startup `init.lua` sourcing 261.987 ms (cold, `--startuptime`) · 57 registered plugins.
+**Baseline:** `stylua --check .` green · headless boot smoke clean · stress test `0 FAIL · 2 WARN · 916 PASS` in 121824 ms · startup `init.lua` sourcing 261.987 ms (cold, `--startuptime`) · 64 registered plugins (lazy-lock.json).
 
 This plan is scoped to **performance only** (startup + runtime + large-file + autocmd churn). It does not re-litigate the 2026-10-29 improvement plan's UI/QoL/docs tasks; where those touch perf (CursorHold, large-file guards) they are referenced, not duplicated.
 
@@ -25,6 +25,36 @@ The config is already well-optimized (lazy defaults, bytecode cache, builtin UI,
 No change to: leader key, Python LSP ladder, provider disables, `format_on_save` sync (Trap 11), treesitter main-branch pin, `lazy-lock.json` policy.
 
 ---
+
+## 0.1 Implementation status (verified against code, 2026-11-09)
+
+Legend: ✅ done · ⏳ partial · ❌ not done.
+
+| Item | Status | Evidence |
+|---|---|---|
+| B-1 statusline progress cache (100 ms) | ✅ | `custom/ui/statusline.lua` `M._progress` |
+| B-2 tabline buffer-list cache | ✅ | `custom/ui/tabline.lua` `M._bufs` |
+| B-3 idle diagnostic-float throttle | ✅ | `config/autocmds.lua` `last_diag_lnum` |
+| B-4 updatetime 350 | ✅ | `config/options.lua` `updatetime = 350` |
+| C-1 documentHighlight opt-in + `<leader>uH` | ✅ | `options.lua`/`lsp.lua`/`keymaps.lua` |
+| C-2 snacks.words gating on large files | ✅ | `autocmds.lua` sets `snacks_words=false` |
+| C-3 blink docs delay 300→500 | ❌ | still `auto_show_delay_ms = 300` |
+| D-1 central `is_large` predicate | ✅ | `config/health.lua` `M.is_large` |
+| D-2 render-markdown guard (200 KB) | ✅ | `plugins/appearance.lua` `cond` |
+| D-3 snacks indent guard | ✅ | `autocmds.lua` large-file flags |
+| D-4 gitsigns guard | ✅ | `plugins/visual.lua` `on_attach` |
+| D-5 nvim-lint guard + notify | ✅ | `plugins/ui.lua` |
+| D-6 todo-comments guard | ❌ | no size guard in `plugins/editing.lua` |
+| D-7 aerial guard | ❌ | no size guard in `custom/plugins/qol.lua` |
+| D-8 mini.ai `n_lines` 250 | ✅ | `plugins/editing.lua` |
+| D-9 two-tier threshold documented | ⏳ | 200 KB (TS/colorizer) vs 1 MiB (large_file); documented in code comments only |
+| E-1 vtsls memory 1536 | ✅ | `plugins/editing.lua` `maxTsServerMemory = 1536` |
+| E-2 lua_ls library scope comment | ✅ | `plugins/lsp.lua` on_init |
+| E-3 Mason ensure_installed audit | ⏳ | jdtls/debugpy not auto-installed (manual where needed); Mason ensure_installed audited; `:checkhealth config` still reports mason/java/js debug adapters as expected |
+| F-1 blink rust fuzzy `prefer_rust` | ✅ | `plugins/completion.lua` |
+| G verification stress checks | ⏳ | post-audit suite (52 cases) added; large-file stress checks partially present |
+
+Items marked ❌/⏳ are intentionally left as follow-up work; no code changes were made by this docs pass.
 
 ## 1. Baseline (measured, do not overfit)
 

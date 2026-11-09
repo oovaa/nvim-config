@@ -134,4 +134,61 @@ return {
     ft = { 'html', 'javascriptreact', 'typescriptreact', 'svelte', 'vue', 'xml' },
     config = function() require('nvim-ts-autotag').setup {} end,
   },
+
+  -- Treesitter textobjects (main-branch API; API-sensitive — pin if unstable).
+  -- ponytail: minimal guarded config; legacy `nvim-treesitter.configs` module is gone on main.
+  {
+    'nvim-treesitter/nvim-treesitter-textobjects',
+    branch = 'main',
+    event = { 'BufReadPost', 'BufNewFile' },
+    dependencies = { 'nvim-treesitter/nvim-treesitter' },
+    config = function()
+      local ok, ts_to = pcall(require, 'nvim-treesitter-textobjects')
+      if not ok then return end
+      pcall(ts_to.setup, {
+        select = { lookahead = true },
+        move = { set_jumps = true },
+      })
+
+      local function sel(query)
+        return function()
+          local s = require 'nvim-treesitter-textobjects.select'
+          if s.select_textobject then return s.select_textobject(query, 'textobjects') end
+        end
+      end
+      local function mv(fn, query)
+        return function()
+          local m = require 'nvim-treesitter-textobjects.move'
+          if m[fn] then return m[fn](query, 'textobjects') end
+        end
+      end
+      local function sw(fn, query)
+        return function()
+          local s = require 'nvim-treesitter-textobjects.swap'
+          if s[fn] then return s[fn](query) end
+        end
+      end
+      local xo = { 'x', 'o' }
+      -- aa/ia avoided: mini.ai remaps around_next/inside_next to aa/ii.
+      -- ]c/[c avoided: git hunk navigation in keymaps.lua.
+      for _, m in ipairs {
+        { xo, 'af', sel '@function.outer', 'TS function outer' },
+        { xo, 'if', sel '@function.inner', 'TS function inner' },
+        { xo, 'ac', sel '@class.outer', 'TS class outer' },
+        { xo, 'ic', sel '@class.inner', 'TS class inner' },
+        { xo, 'aP', sel '@parameter.outer', 'TS parameter outer' },
+        { xo, 'iP', sel '@parameter.inner', 'TS parameter inner' },
+        { 'n', ']m', mv('goto_next_start', '@function.outer'), 'Next function start' },
+        { 'n', '[m', mv('goto_previous_start', '@function.outer'), 'Prev function start' },
+        { 'n', ']M', mv('goto_next_end', '@function.outer'), 'Next function end' },
+        { 'n', '[M', mv('goto_previous_end', '@function.outer'), 'Prev function end' },
+        { 'n', ']C', mv('goto_next_start', '@class.outer'), 'Next class start' },
+        { 'n', '[C', mv('goto_previous_start', '@class.outer'), 'Prev class start' },
+        { 'n', ']a', sw('swap_next', '@parameter.inner'), 'Swap next parameter' },
+        { 'n', '[a', sw('swap_previous', '@parameter.inner'), 'Swap prev parameter' },
+      } do
+        pcall(vim.keymap.set, m[1], m[2], m[3], { desc = m[4] })
+      end
+    end,
+  },
 }

@@ -22,6 +22,11 @@ local optional = {
   { bin = 'ty', why = 'fast python LSP fallback (optional)' },
   { bin = 'vtsls', why = 'typescript LSP (not a mason package; resolved from ~/.bun/bin — absence silently disables TS)' },
   { bin = 'biome', why = 'fast JS/TS/JSON formatting + lint (optional)' },
+  { bin = 'bash-language-server', why = 'bash/sh/zsh LSP' },
+  { bin = 'marksman', why = 'markdown LSP (mason)' },
+  { bin = 'taplo', why = 'TOML LSP (mason)' },
+  { bin = 'shfmt', why = 'sh/bash formatter (mason)' },
+  { bin = 'tailwindcss-language-server', why = 'Tailwind CSS LSP (root-gated; mason)' },
   { bin = 'nginx-language-server', why = 'nginx LSP (optional)' },
   { bin = 'nginxfmt', why = 'nginx format on <leader>ff (pip install nginx-config-formatter)' },
   { bin = 'gopls', why = 'go LSP (mason installs; staticcheck+gofumpt built in)' },
@@ -126,6 +131,10 @@ function M.check()
     'delve',
     'sqls',
     'sqruff',
+    'bash-language-server',
+    'marksman',
+    'taplo',
+    'shfmt',
   } do
     if vim.fn.executable(mason_bin .. bin) == 1 then
       vim.health.ok('mason: ' .. bin .. ' found')

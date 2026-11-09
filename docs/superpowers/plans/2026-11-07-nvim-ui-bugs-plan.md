@@ -1,6 +1,8 @@
 # Neovim UI bugs: debug findings + fix plan (2026-11-07)
 
-Config: `~/.config/nvim` (nvim 0.12.6, 57 plugins, kickstart-derived modular). UI stack: custom `lua/custom/ui/{statusline,tabline,dashboard}`, `snacks.nvim` (picker/explorer/notifier/input/indent/scope/words/scratch), `blink.cmp`, `which-key`, `gitsigns`, `flash`, `conform`, `nvim-lint`, `aerial`, treesitter. **No** noice/dressing/lualine/bufferline. `vim._core.ui2` is **disabled** (see below).
+**Status (reconciled 2026-11-09):** items marked fixed below match the current config. Cmdline uses the native wildmenu pum (`completeopt=menu,menuone,noselect,preview`, `wildmode=noselect:full,full`, `wildoptions=pum`, `CmdlineChanged` → `wildtrigger()`); blink cmdline is disabled. Diagnostic float is debounced/tracked and coexists with hover/signature. Remaining items are manual/environment-dependent.
+
+Config: `~/.config/nvim` (nvim 0.12.6, 64 plugins, kickstart-derived modular). UI stack: custom `lua/custom/ui/{statusline,tabline,dashboard}`, `snacks.nvim` (picker/explorer/notifier/input/indent/scope/words/scratch), `blink.cmp`, `which-key`, `gitsigns`, `flash`, `conform`, `nvim-lint`, `aerial`, treesitter. **No** noice/dressing/lualine/bufferline. `vim._core.ui2` is **disabled** (see below).
 
 ## Manual/automated test matrix executed
 
@@ -10,7 +12,7 @@ Config: `~/.config/nvim` (nvim 0.12.6, 57 plugins, kickstart-derived modular). U
 | TS (multi-file) | `/tmp/opencode/e2e2` + `/tmp/opencode/nvim-ui-test` (`tsconfig`, `t.ts/js/tsx/jsx`, `mixed.ts`) | vtsls attach count, treesitter, diagnostics | 1 `vtsls` client, TS parsers OK, diagnostics present (type errors detected) |
 | Python/Lua | headless ft + modules | `a.py`, `b.lua` | filetypes/modules OK |
 | Diagnostic popup (Option A) | headless CursorMoved + tmux | diag line → float opens; clean line → closes; diag→clean→diag; hover coexistence | **fixed**: opens after 60ms debounce, closes on move, tracks own win id |
-| Cmdline `/` and `:` | tmux | `/con` search completion, `:e t` completion, `:messages` | auto-select works (`wildmode=full,full`); no ui2 invalid-window errors |
+| Cmdline `/` and `:` | tmux | `/con` search completion, `:e t` completion, `:messages` | native wildmenu pum auto-shows (`wildmode=noselect:full,full`, `wildtrigger`), first match **not** auto-selected; no ui2 invalid-window errors |
 | Completion (insert) | E2E headless + tmux | blink loads, sources, preselect+Tab, trigger `con` | blink config healthy; menu appeared in prior E2E (`float_wins=1`) |
 | Statusline/tabline | headless eval | render, options set | custom UI renders |
 | Plugins/modules | headless `require` | blink,snacks,which-key,gitsigns,flash,aerial,conform,lint,custom.ui | all load |
@@ -29,7 +31,7 @@ Config: `~/.config/nvim` (nvim 0.12.6, 57 plugins, kickstart-derived modular). U
 ### 2) Cmdline completion not auto-selecting in `/` and `:` (FIXED)
 - **Request:** "make the auto completion auto select in the search as well and : if they are not".
 - **Cause:** `wildmode = 'noselect:full,full'`.
-- **Fix:** `wildmode = 'full,full'` (`lua/config/options.lua`); comments updated in `options.lua` and `lua/config/autocmds.lua`. First match auto-selected; arrows/`<C-n>`/`<C-p>` move, `<C-e>` aborts.
+- **Fix:** `completeopt` changed to `menu,menuone,noselect,preview` (`lua/config/options.lua`). Cmdline completion stays on the native wildmenu pum with `wildmode = 'noselect:full,full'` (first match is NOT auto-selected, so typed text stays untouched until `<Tab>`/`<CR>` confirms; arrows/`<C-n>`/`<C-p>` move, `<C-e>` aborts). The earlier "auto-select first match" claim in this plan was inaccurate and has been corrected to match the code.
 
 ### 3) Mason tool-installer startup error: `Cannot find package "vts"` (FIXED)
 - **Symptom:** `mason-registry` "Cannot find package \"vts\"" from mason-tool-installer (hit-enter noise in tmux).
@@ -73,7 +75,7 @@ cd ~/.config/nvim && stylua --check .
 - Multi-buffer TS project: statusline/tabline stable, no duplicate vtsls clients.
 
 ## Files changed
-- `lua/config/options.lua` — disabled ui2; `wildmode=full,full`.
+- `lua/config/options.lua` — disabled ui2; `completeopt=menu,menuone,noselect,preview`; `wildmode=noselect:full,full` + `wildoptions=pum`.
 - `lua/config/autocmds.lua` — cmdline comment; diagnostic float debounce + tracked win id + targeted close; debounced `DiagnosticChanged`; `CursorMovedI` reset.
 - `lua/plugins/lsp.lua` — mason `vts` → `vtsls`.
 - `lua/plugins/completion.lua` — `ghost_text.show_with_menu=false`.

@@ -30,6 +30,7 @@ return {
       'nvim-neotest/neotest-python',
       'marilari88/neotest-vitest',
       'nvim-neotest/neotest-jest',
+      'fredrikaverpil/neotest-golang',
     },
     keys = {
       { '<leader>tr', function() require('neotest').run.run() end, desc = 'Test Run' },
@@ -38,11 +39,13 @@ return {
     },
     config = function()
       local adapters = { require 'neotest-python' { dap = { justMyCode = false } } }
-      -- JS/TS adapters are optional; pcall keeps a missing plugin from
-      -- breaking the python side. vitest is the 2026 default, jest for legacy.
-      for _, spec in ipairs { 'neotest-vitest', 'neotest-jest' } do
+      -- Optional adapters: missing plugins must not break the others.
+      for _, spec in ipairs { 'neotest-vitest', 'neotest-jest', 'neotest-golang' } do
         local ok, adapter = pcall(require, spec)
-        if ok then table.insert(adapters, adapter) end
+        if ok then
+          if type(adapter) == 'function' then adapter = adapter {} end
+          table.insert(adapters, adapter)
+        end
       end
       require('neotest').setup { adapters = adapters }
     end,

@@ -5,13 +5,13 @@
 
 ## 0. What is true today (measured, read-only)
 
-**Health:** nvim 0.12.6 OK, `large_file_size` OK, core PATH OK (`git/rg/node/bun/python3/make/fd/lazygit/pyrefly/vtsls/biome/nginx-language-server/jupyter/tree-sitter/prettier/stylua/ruff`), clipboard OK, blink Rust fuzzy `.so` present, all 57 plugins on disk OK.
+**Health:** nvim 0.12.6 OK, `large_file_size` OK, core PATH OK (`git/rg/node/bun/python3/make/fd/lazygit/pyrefly/vtsls/biome/nginx-language-server/jupyter/tree-sitter/prettier/stylua/ruff`), clipboard OK, blink Rust fuzzy `.so` present, all 64 plugins on disk OK (lazy-lock.json).
 **FAIL:** Python imports missing — `debugpy`, `jupyter_client`, `ipykernel`; `docker`, `ty` not on PATH.
 **WARN:** `nginxfmt`, `oxlint` mason-only (not on PATH); `jupytext`, `ueberzugpp` missing; `jdtls`/`rust-analyzer`/`clangd` mason packages missing.
 **Root cause:** brew python 3.15 has no `ensurepip` (dormant), so mason cannot install any Python package (`debugpy`, `nginxfmt`, `jupytext`, `ipykernel` deps). Affects formatting (nginx), lint, DAP, and molten — read-only probe confirms the binaries are simply absent.
 
 **Language gaps found:**
-- JS/TS: only `vtsls`; `maxTsServerMemory = 2048` (high); biome only where repo has `biome.json` (correct, `$HOME` excluded); React/HTML/CSS = 2 servers/buffer (`vtsls`+`emmet`/`cssls`+`emmet` — emmet is lightweight, acceptable).
+- JS/TS: only `vtsls`; `maxTsServerMemory = 1536` (lowered in the 2026-11-09 audit; was 2048); biome only where repo has `biome.json` (correct, `$HOME` excluded); React/HTML/CSS = 2 servers/buffer (`vtsls`+`emmet`/`cssls`+`emmet` — emmet is lightweight, acceptable).
 - Vue: **no LSP, no linter, no treesitter parser in bootstrap** — biggest functional gap.
 - Python: ladder `ty→pyrefly→pyright` (`config/python_lsp.lua` correct), but `lsp.lua` can double-attach when both `ty` and `pyrefly` are installed; `ruff` runs twice per save (conform `ruff_organize_imports`+`ruff_format` + lint `ruff`).
 - Lua: `lua_ls` only (correct); `on_init` adds full runtime library outside own config dir → slow, noisy.

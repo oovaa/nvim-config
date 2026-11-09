@@ -72,12 +72,21 @@ return {
             vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
           end
 
-          -- Rename the variable under your cursor.
+          -- Rename the variable under your cursor (live preview via inc-rename when available).
           --  Most Language Servers support renaming across files, etc.
-          map('grn', vim.lsp.buf.rename, '[R]e[n]ame')
+          map('grn', function()
+            pcall(require('lazy').load, { plugins = { 'inc-rename.nvim' } })
+            if vim.fn.exists ':IncRename' == 2 then
+              vim.api.nvim_feedkeys(':IncRename ' .. vim.fn.expand '<cword>', 'n', false)
+            else
+              vim.lsp.buf.rename()
+            end
+          end, '[R]e[n]ame')
 
           -- Hover: show function signature, args, return type, docs
           map('K', vim.lsp.buf.hover, '[H]over')
+          -- Signature help fallback (blink signature is primary).
+          vim.keymap.set({ 'n', 'i' }, '<C-s>', vim.lsp.buf.signature_help, { buffer = event.buf, desc = 'LSP: Signature help' })
 
           -- Execute a code action, usually your cursor needs to be on top of an error
           -- or a suggestion from your LSP for this to activate.
@@ -130,12 +139,30 @@ return {
             })
           end
 
-          -- The following code creates a keymap to toggle inlay hints in your
-          -- code, if the language server you are using supports them
-          --
-          -- This may be unwanted, since they displace some of your code
-          if client and client:supports_method('textDocument/inlayHint', event.buf) then
+          -- Inlay hints: auto-enable when supported (skip large files), keep toggle.
+          if client and client:supports_method('textDocument/inlayHint', event.buf) and vim.lsp.inlay_hint and not vim.b[event.buf].large_file_mode then
+            vim.lsp.inlay_hint.enable(true, { bufnr = event.buf })
             map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
+          elseif client and client:supports_method('textDocument/inlayHint', event.buf) and vim.lsp.inlay_hint then
+            map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
+          end
+
+          -- Codelens: auto-enable/refresh when supported (skip large files).
+          -- refresh() is deprecated in 0.12.6; enable(true, {bufnr}) is the replacement.
+          if client and client:supports_method('textDocument/codeLens', event.buf) and vim.lsp.codelens and not vim.b[event.buf].large_file_mode then
+            local codelens_group = vim.api.nvim_create_augroup('lsp-codelens-' .. event.buf, { clear = true })
+            vim.api.nvim_create_autocmd({ 'BufEnter', 'CursorHold', 'InsertLeave' }, {
+              group = codelens_group,
+              buffer = event.buf,
+              callback = function(ev) pcall(vim.lsp.codelens.enable, true, { bufnr = ev.buf }) end,
+            })
+            local detach_codelens = vim.api.nvim_create_augroup('lsp-codelens-detach-' .. event.buf, { clear = true })
+            vim.api.nvim_create_autocmd('LspDetach', {
+              group = detach_codelens,
+              buffer = event.buf,
+              callback = function(ev) vim.api.nvim_clear_autocmds { group = 'lsp-codelens-' .. ev.buf } end,
+            })
+            pcall(vim.lsp.codelens.enable, true, { bufnr = event.buf })
           end
 
           -- Snacks picker owns LSP nav now. snacks is VeryLazy so loaded by
@@ -243,6 +270,39 @@ return {
           filetypes = { 'nginx' },
           root_markers = { 'nginx.conf', '.git' },
         },
+        -- bashls: shell diagnostics/completion; binary already common on this host.
+        bashls = {
+          cmd = { 'bash-language-server', 'start' },
+          filetypes = { 'sh', 'bash', 'zsh' },
+          root_markers = { '.git' },
+        },
+        -- marksman: markdown navigation/links/diagnostics.
+        marksman = {
+          cmd = { 'marksman', 'server' },
+          filetypes = { 'markdown', 'markdown.mdx' },
+          root_markers = { '.marksman.toml', '.git' },
+        },
+        -- taplo: TOML schema/validation/formatting support.
+        taplo = {
+          cmd = { 'taplo', 'lsp', 'stdio' },
+          filetypes = { 'toml' },
+          root_markers = { 'taplo.toml', '.taplo.toml', 'Cargo.toml', 'pyproject.toml', '.git' },
+        },
+        -- tailwindcss: root-gated to avoid attaching outside Tailwind projects.
+        tailwindcss = {
+          cmd = { 'tailwindcss-language-server', '--stdio' },
+          filetypes = { 'html', 'css', 'scss', 'less', 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue', 'svelte', 'astro' },
+          root_markers = {
+            'tailwind.config.js',
+            'tailwind.config.cjs',
+            'tailwind.config.mjs',
+            'tailwind.config.ts',
+            'postcss.config.js',
+            'postcss.config.cjs',
+            'postcss.config.mjs',
+            'postcss.config.ts',
+          },
+        },
         -- C/C++ LSP: clangd. Rust: rust-analyzer (rustup, not here).
         -- SQL: sqls — DB-aware completion/hover via `.sqls.yml`; without it,
         -- still provides syntax/diagnostics for .sql files.
@@ -251,6 +311,8 @@ return {
           filetypes = { 'sql', 'mysql', 'plsql' },
           root_markers = { '.sqls.yml', '.sqruff', '.git' },
         },
+        -- Deferred (Phase 1.3, uncertain 0.12 config/Mason names in this env): svelte,
+        -- astro, prisma (prismals/prisma-language-server), graphql — add when verified.
         -- Python LSP is selected below according to installed host tools:
         -- ty (fastest, Astral) -> pyrefly -> pyright/pyright-langserver.
         -- None of them are installed by Mason here because pyenv 3.15+ is not supported.
@@ -339,6 +401,8 @@ return {
         emmet_language_server = 'emmet-language-server',
         lua_ls = 'lua-language-server',
         yamlls = 'yaml-language-server',
+        bashls = 'bash-language-server',
+        tailwindcss = 'tailwindcss-language-server',
       }
       local ensure_installed = {}
       for name in pairs(servers) do
@@ -373,6 +437,11 @@ return {
         -- SQL: LSP + fast Rust linter/fixer
         'sqls',
         'sqruff',
+        -- Shell/Markdown/TOML: LSPs (+ shfmt formatter). marksman/taplo may need
+        -- mason install on clean machines; bash-language-server often already present.
+        'marksman',
+        'taplo',
+        'shfmt',
         -- Java: debug adapter + test runner + formatter (auto-installed).
         -- jdtls itself is NOT auto-installed: it needs JDK 21+ on PATH AND
         -- network access to download.eclipse.org, which returns 403 in some
@@ -426,6 +495,10 @@ return {
         docker_compose_language_service = { 'yaml.docker-compose' },
         dockerls = { 'dockerfile' },
         nginx_language_server = { 'nginx' },
+        bashls = { 'sh', 'bash', 'zsh' },
+        marksman = { 'markdown', 'markdown.mdx' },
+        taplo = { 'toml' },
+        tailwindcss = { 'html', 'css', 'scss', 'less', 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue', 'svelte', 'astro' },
       }
 
       -- Add the selected Python LSP without making it a required Mason install.
@@ -498,5 +571,12 @@ return {
         end
       end, { desc = 'Report the selected Python LSP tooling' })
     end,
+  },
+  -- Live rename preview; LspAttach maps grn with fallback when unavailable.
+  {
+    'smjonas/inc-rename.nvim',
+    cmd = 'IncRename',
+    event = 'LspAttach',
+    opts = {},
   },
 }

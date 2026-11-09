@@ -121,6 +121,8 @@ return {
           c = true,
           cpp = true,
           sql = true,
+          sh = true,
+          bash = true,
           -- ponytail: nginx is NOT auto-formatted. conform's nginxfmt backend
           -- is a python package that mason cannot install here (no ensurepip),
           -- so listing it in enabled_filetypes only produced a silent no-op.
@@ -168,6 +170,8 @@ return {
         -- sqruff fix <file>: formats + applies safe lint fixes (Rust, fast).
         -- Dialect comes from the nearest `.sqruff` file (e.g. dialect = postgres).
         sql = { 'sqruff' },
+        sh = { 'shfmt' },
+        bash = { 'shfmt' },
         -- biome where the repo configures it, prettier everywhere else
         -- (js_formatters decides; see config.health.biome_root)
         javascript = js_formatters,

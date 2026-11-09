@@ -84,6 +84,21 @@ return {
       -- a float in lua/config/keymaps.lua. See :help mini.bracketed.
       require('mini.bracketed').setup { diagnostic = { suffix = '' } }
 
+      -- Extra mini modules (Phase 1.5). Collision audit: <M-hjkl> unused;
+      -- mini.align uses `ga`/`gA` (overrides builtin char-info `ga`);
+      -- mini.operators remapped off `gr` (LSP namespace), `gx` (URL open),
+      -- `gs` (surround prefix), `gm` (middle-screen).
+      require('mini.move').setup {}
+      require('mini.splitjoin').setup {}
+      require('mini.align').setup {}
+      require('mini.operators').setup {
+        evaluate = { prefix = 'g=' },
+        exchange = { prefix = 'gX' },
+        multiply = { prefix = 'gM' },
+        replace = { prefix = 'cr' },
+        sort = { prefix = 'gS' },
+      }
+
       -- Statusline is builtin (see lua/custom/ui/spec.lua).
 
       -- ... and there is more!
