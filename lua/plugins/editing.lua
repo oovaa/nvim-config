@@ -164,11 +164,21 @@ return {
       local root = vim.fs.root(0, root_markers) or cwd
       local mason_pkg = vim.fn.stdpath 'data' .. '/mason/packages'
       local jdtls_pkg = mason_pkg .. '/jdtls'
+      if vim.fn.executable 'java' ~= 1 then
+        vim.notify(
+          'jdtls requires JDK 21+ on PATH (java not found). Install a JDK (e.g. brew install openjdk@21) then :MasonInstall jdtls.',
+          vim.log.levels.WARN
+        )
+        return
+      end
       -- jdtls is launched via the Equinox launcher jar, not by -jar-ing the
       -- core jar (which has no Main-Class). Deps live in plugins/ next to it.
       local launcher = vim.fn.glob(jdtls_pkg .. '/plugins/org.eclipse.equinox.launcher_*.jar')
       if launcher == '' then
-        vim.notify('jdtls not installed — run :Mason and install jdtls', vim.log.levels.WARN)
+        vim.notify(
+          'jdtls not installed — run :Mason and install jdtls (needs network to download.eclipse.org; may be blocked in this env)',
+          vim.log.levels.WARN
+        )
         return
       end
       local config_dir = jdtls_pkg .. (vim.fn.isdirectory(jdtls_pkg .. '/config_mac') == 1 and '/config_mac' or '/config_linux')

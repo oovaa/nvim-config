@@ -373,8 +373,10 @@ return {
         -- SQL: LSP + fast Rust linter/fixer
         'sqls',
         'sqruff',
-        -- Java: LSP launcher + debug adapter + test runner + formatter
-        'jdtls',
+        -- Java: debug adapter + test runner + formatter (auto-installed).
+        -- jdtls itself is NOT auto-installed: it needs JDK 21+ on PATH AND
+        -- network access to download.eclipse.org, which returns 403 in some
+        -- environments. Added conditionally below when `java` is on PATH.
         'java-debug-adapter',
         'java-test',
         'google-java-format',
@@ -392,6 +394,12 @@ return {
         -- into mason/packages/debugpy/venv (pip install debugpy); dap-python
         -- picks it up via debugpy_path below. Re-add after apt fix.
       })
+
+      -- jdtls: NOT auto-installed. Needs JDK 21+ on PATH AND network to
+      -- download.eclipse.org, which returns 403 in some environments (incl.
+      -- this sandbox). Auto-installing there spams mason errors. Run
+      -- `:MasonInstall jdtls` manually when network allows; editing.lua
+      -- notifies and skips gracefully if it isn't installed.
 
       -- Defer Mason's ensure_installed so opening a file never blocks on
       -- network/package installs. Runs once, shortly after startup.

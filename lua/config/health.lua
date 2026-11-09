@@ -31,7 +31,10 @@ local optional = {
   { bin = 'clang-format', why = 'C/C++ formatter' },
   { bin = 'clang-tidy', why = 'C/C++ linter' },
   { bin = 'codelldb', why = 'C/C++/Rust debugger (shared mason package)' },
-  { bin = 'jdtls', why = 'java LSP (mason; needs JDK 21+ for jdtls itself, project may target older)' },
+  {
+    bin = 'jdtls',
+    why = 'java LSP (mason; needs JDK 21+ on PATH AND network to download.eclipse.org; returns 403 in some envs — install manually if blocked)',
+  },
   { bin = 'google-java-format', why = 'java formatter' },
   { bin = 'java-debug-adapter', why = 'java debug adapter (auto-detected by nvim-jdtls)' },
   { bin = 'js-debug-adapter', why = 'React/Node debugger (<leader>dc, pwa-node)' },
