@@ -106,6 +106,8 @@ return {
     cmd = 'ASToggle',
     event = { 'InsertLeave', 'TextChanged' },
     opts = {
+      -- Never auto-save large files (>1MB) — they're read-only by design.
+      condition = function(buf) return not vim.b[buf].large_file_mode end,
       -- defer_save is debounced (one timer per buffer, restarted on every
       -- event), so TextChanged costs one write 1s after the last change — per
       -- burst, not per keystroke. TextChanged exists for normal-mode edits

@@ -189,7 +189,7 @@ describe('performance', function()
     -- this box has not built (none of these are in the 16-language bootstrap)
     local site = vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser')
     local lang
-    for _, l in ipairs { 'sh', 'elixir', 'scala', 'haskell' } do
+    for _, l in ipairs { 'elixir', 'scala', 'haskell' } do
       if vim.uv.fs_stat(vim.fs.joinpath(site, l .. '.so')) == nil then
         lang = l
         break

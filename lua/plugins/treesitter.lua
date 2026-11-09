@@ -16,7 +16,7 @@ return {
     branch = 'main',
     event = { 'BufReadPost', 'BufNewFile' },
     config = function()
-      -- main branch setup only takes install_dir; highlighting/indent come from vim.treesitter.start below
+      -- main branch setup only takes install_dir; highlighting comes from vim.treesitter.start below;\n      -- indent comes from runtime ftplugins (vim.treesitter has no indent API).
       require('nvim-treesitter').setup {}
 
       local function parser_path(lang) return vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser', lang .. '.so') end
@@ -101,7 +101,7 @@ return {
             -- TSInstall would error, so install/check the base language. Same
             -- for react compound filetypes — `typescriptreact` resolves to the
             -- `tsx` parser (javascriptreact likewise), never to the literal ft.
-            local ft_map = { typescriptreact = 'tsx', javascriptreact = 'javascript', typescriptjsx = 'tsx' }
+            local ft_map = { typescriptreact = 'tsx', javascriptreact = 'javascript', typescriptjsx = 'tsx', sh = 'bash', jsonc = 'json' }
             local lang = ft_map[ft] or ft:match '^[^.]+'
             -- same once-per-session state as the bootstrap above, so a language
             -- whose build failed is not retried on every buffer of that type

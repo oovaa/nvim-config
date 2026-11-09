@@ -36,7 +36,6 @@ local optional = {
     why = 'java LSP (mason; needs JDK 21+ on PATH AND network to download.eclipse.org; returns 403 in some envs — install manually if blocked)',
   },
   { bin = 'google-java-format', why = 'java formatter' },
-  { bin = 'java-debug-adapter', why = 'java debug adapter (auto-detected by nvim-jdtls)' },
   { bin = 'js-debug-adapter', why = 'React/Node debugger (<leader>dc, pwa-node)' },
   { bin = 'sqls', why = 'sql LSP (DB-aware features via .sqls.yml)' },
   { bin = 'sqruff', why = 'sql linter/formatter (Rust; needs .sqruff with dialect for non-ANSI)' },

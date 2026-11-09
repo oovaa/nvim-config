@@ -199,10 +199,39 @@ vim.api.nvim_create_autocmd('BufReadPost', {
     vim.b[args.buf].snacks_indent = false
     vim.b[args.buf].snacks_scope = false
     vim.b[args.buf].snacks_words = false
+    -- Built-in ftplugins (lua, markdown, help, query) call vim.treesitter.start()
+    -- unconditionally, bypassing the size guard. Disable it for large files.
+    -- Deferred via vim.schedule so it runs after ftplugin treesitter.start().
+    vim.schedule(function()
+      if vim.api.nvim_buf_is_valid(args.buf) and vim.b[args.buf].large_file_mode then pcall(vim.treesitter.stop, args.buf) end
+    end)
+    -- Detach any LSP clients that attached despite large_file_mode (vtsls,
+    -- rustaceanvim, jdtls use their own ft triggers, bypassing lsp.lua guards).
+    vim.schedule(function()
+      if not (vim.api.nvim_buf_is_valid(args.buf) and vim.b[args.buf].large_file_mode) then return end
+      for _, client in ipairs(vim.lsp.get_clients { bufnr = args.buf }) do
+        pcall(vim.lsp.buf_detach_client, args.buf, client.id)
+      end
+    end)
+    -- Reset foldexpr that built-in ftplugins may have set (overrides manual).
+    for _, win in ipairs(vim.fn.win_findbuf(args.buf)) do
+      vim.wo[win].foldexpr = ''
+      vim.wo[win].foldmethod = 'manual'
+    end
   end,
 })
 
--- Terminal buffers: jk exits to normal mode, Ctrl+H/J/K/L switches windows,
+-- Detach LSP clients from large files (vtsls/rustaceanvim/jdtls bypass guards).
+vim.api.nvim_create_autocmd('LspAttach', {
+  group = vim.api.nvim_create_augroup('large-file-lsp-detach', { clear = true }),
+  callback = function(args)
+    if vim.b[args.buf].large_file_mode then
+      for _, client in ipairs(vim.lsp.get_clients { bufnr = args.buf }) do
+        if client.id == args.data.client_id then pcall(vim.lsp.buf_detach_client, args.buf, client.id) end
+      end
+    end
+  end,
+})
 -- Ctrl+W passes through to window commands.
 vim.api.nvim_create_autocmd('TermOpen', {
   group = vim.api.nvim_create_augroup('terminal-keymaps', { clear = true }),

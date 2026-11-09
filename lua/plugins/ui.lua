@@ -234,7 +234,8 @@ return {
         callback = function(ev)
           -- Skip linting on large files (large_file_mode set in autocmds.lua).
           if vim.b[ev.buf].large_file_mode then return end
-          pcall(lint.try_lint)
+          local ok, err = pcall(lint.try_lint)
+          if not ok then vim.notify('Lint error: ' .. tostring(err), vim.log.levels.WARN) end
         end,
       })
     end,

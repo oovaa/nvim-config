@@ -180,9 +180,18 @@ end, { desc = '[U]I [R]eload config' })
 vim.keymap.set('n', '<leader>tb', function() vim.o.background = vim.o.background == 'dark' and 'light' or 'dark' end, { desc = '[T]oggle [B]ackground' })
 
 -- Gitsigns diff preview (gitsigns.nvim already in init.lua, no keys bound by default)
-vim.keymap.set('n', '<leader>gp', ':Gitsigns preview_hunk<CR>', { desc = '[G]it [P]review hunk' })
-vim.keymap.set('n', '<leader>gd', ':Gitsigns diffthis<CR>', { desc = '[G]it [D]iff split' })
-vim.keymap.set('n', '<leader>gt', ':Gitsigns toggle_deleted<CR>', { desc = '[G]it [T]oggle deleted' })
+vim.keymap.set('n', '<leader>gp', function()
+  require('lazy').load { plugins = { 'gitsigns.nvim' } }
+  vim.cmd 'Gitsigns preview_hunk'
+end, { desc = '[G]it [P]review hunk' })
+vim.keymap.set('n', '<leader>gd', function()
+  require('lazy').load { plugins = { 'gitsigns.nvim' } }
+  vim.cmd 'Gitsigns diffthis'
+end, { desc = '[G]it [D]iff split' })
+vim.keymap.set('n', '<leader>gt', function()
+  require('lazy').load { plugins = { 'gitsigns.nvim' } }
+  vim.cmd 'Gitsigns toggle_deleted'
+end, { desc = '[G]it [T]oggle deleted' })
 vim.keymap.set('n', ']c', function()
   require('lazy').load { plugins = { 'gitsigns.nvim' } }
   require('gitsigns').nav_hunk 'next'
@@ -216,7 +225,7 @@ vim.keymap.set('n', '<leader>bd', '<cmd>bdelete<cr>', { desc = '[B]uffer [D]elet
 -- is the current buffer.
 vim.keymap.set('n', '<leader>bp', function()
   vim.bo.buflisted = not vim.bo.buflisted
-  vim.notify('Buffer ' .. (vim.bo.buflisted and 'pinned' or 'unpinned'), vim.log.levels.INFO)
+  vim.notify('Buffer ' .. (vim.bo.buflisted and 'unpinned' or 'pinned'), vim.log.levels.INFO)
 end, { desc = '[B]uffer [P]in toggle' })
 
 -- Cmdline pum: keep <Up>/<Down> as history navigation. With auto-shown

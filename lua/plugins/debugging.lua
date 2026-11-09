@@ -17,9 +17,11 @@ return {
       'rcarriga/nvim-dap-ui', -- Visual UI for the debugger
       'nvim-neotest/nvim-nio', -- Required by dap-ui
       'mfussenegger/nvim-dap-python', -- Python-specific debugging
+      'theHamsta/nvim-dap-virtual-text', -- Inline variable values during debugging
     },
     keys = {
       { '<leader>db', function() require('dap').toggle_breakpoint() end, desc = '[D]ebug [B]reakpoint' },
+      { '<leader>dB', function() require('dap').set_breakpoint(vim.fn.input 'Breakpoint condition: ') end, desc = '[D]ebug [B]reakpoint (conditional)' },
       { '<leader>dc', function() require('dap').continue() end, desc = '[D]ebug [C]ontinue' },
       { '<leader>di', function() require('dap').step_into() end, desc = '[D]ebug Step [I]nto' },
       { '<leader>do', function() require('dap').step_over() end, desc = '[D]ebug Step [O]ver' },
@@ -36,19 +38,29 @@ return {
       local dapui = require 'dapui'
 
       dapui.setup()
+      local ok_vt, vt = pcall(require, 'nvim-dap-virtual-text')
+      if ok_vt then vt.setup() end
       dap.listeners.after.event_initialized['dapui_config'] = function() dapui.open() end
       dap.listeners.before.event_terminated['dapui_config'] = function() dapui.close() end
       dap.listeners.before.event_exited['dapui_config'] = function() dapui.close() end
+      dap.listeners.before.event_disconnect['dapui_config'] = function() dapui.close() end
 
       -- dap-python takes setup(python_path) — with no argument it defaults to
       -- 'python3' (must be on PATH and have debugpy importable; see :checkhealth).
       -- Installed via `uv pip install --system --break-system-packages debugpy`
       -- (mason cannot install it: no ensurepip on brew python).
+      -- Clear any stale configs first so repeated reloads don't duplicate entries.
+      dap.configurations.python = {}
       require('dap-python').setup 'python3'
+
+      -- Helper: check if a binary is available on PATH or in Mason's bin dir.
+      -- Mason's bin is not always on PATH in headless/early startup, so we
+      -- also check the data dir directly to avoid silently skipping adapters.
+      local function have_bin(name) return vim.fn.executable(name) == 1 or vim.fn.filereadable(vim.fn.stdpath 'data' .. '/mason/bin/' .. name) == 1 end
 
       -- codelldb (C/C++; Rust uses rustaceanvim's own auto-detection): launch
       -- adapter over a port. Program path is asked at launch time.
-      if vim.fn.executable 'codelldb' == 1 then
+      if have_bin 'codelldb' then
         dap.adapters.codelldb = {
           type = 'server',
           port = '${port}',
@@ -70,7 +82,7 @@ return {
 
       -- js-debug-adapter (React/Node): register pwa-node + pwa-chrome once.
       -- Mason's js-debug-adapter serves DAP over a port it picks itself.
-      if vim.fn.executable 'js-debug-adapter' == 1 then
+      if have_bin 'js-debug-adapter' then
         local adapter = {
           type = 'server',
           host = '127.0.0.1',

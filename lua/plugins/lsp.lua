@@ -169,7 +169,7 @@ return {
           settings = {
             gopls = {
               gofumpt = true,
-              staticcheck = false,
+              staticcheck = true,
               semanticTokens = true,
               codelenses = {
                 generate = true,

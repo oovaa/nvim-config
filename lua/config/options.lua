@@ -147,7 +147,7 @@ vim.o.undofile = true
 --                  "Foo" matches "Foo" but not "foo" or "FOO"
 vim.o.ignorecase = true
 vim.o.smartcase = true
-vim.o.completeopt = 'menuone,noselect'
+vim.o.completeopt = 'menu,menuone,noselect,preview'
 -- GREP: use ripgrep for :grep/:lgrep (faster than GNU grep, respects .gitignore)
 vim.o.grepprg = 'rg --vimgrep --smart-case --hidden'
 vim.o.grepformat = '%f:%l:%c:%m'

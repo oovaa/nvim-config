@@ -39,12 +39,15 @@ return {
     ft = { 'css', 'html', 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'lua', 'vim', 'toml' },
     cmd = 'ColorizerToggle',
     config = function()
-      require('colorizer').setup({ '*' }, {
-        RGB = true,
-        RRGGBB = true,
-        names = true,
-        css = true,
-      })
+      require('colorizer').setup {
+        filetypes = { '*' },
+        user_default_options = {
+          RGB = true,
+          RRGGBB = true,
+          names = true,
+          css = true,
+        },
+      }
       -- ponytail: 200KB guard mirrors treesitter; detach only, toggle still works per buffer.
       vim.api.nvim_create_autocmd('BufWinEnter', {
         group = vim.api.nvim_create_augroup('colorizer-size-guard', { clear = true }),
