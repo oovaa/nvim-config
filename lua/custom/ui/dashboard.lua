@@ -134,7 +134,8 @@ function M.setup_starter()
       local sess_mod = builtin_sessions()
       local find_fn = (sess_mod and (sess_mod.find_session_for or sess_mod.find_session)) or _G._builtin_find_session
       local resume = M.get_resume_for(function() return find_fn and find_fn(nil) or nil end, restorable)
-      if resume then table.insert(buttons, 1, resume) end
+      local btns = vim.list_extend({}, buttons)
+      if resume then table.insert(btns, 1, resume) end
       local recent = collect_recent()
       local raw = {}
       vim.list_extend(raw, { '', '' })
@@ -147,10 +148,10 @@ function M.setup_starter()
         return s .. string.rep(' ', w - d)
       end
       local label_w = 0
-      for _, b in ipairs(buttons) do
+      for _, b in ipairs(btns) do
         label_w = math.max(label_w, vim.fn.strdisplaywidth(b.label))
       end
-      for _, b in ipairs(buttons) do
+      for _, b in ipairs(btns) do
         raw[#raw + 1] = string.format('  %s  %s  %s', b.key, b.icon, pad_disp(b.label, label_w))
       end
       raw[#raw + 1] = ''
@@ -211,7 +212,7 @@ function M.setup_starter()
       -- every recent highlight one line down (measured: the first recent got
       -- nothing and the blank above the footer got Directory).
       for i, r in ipairs(recent) do
-        local row = btn_start + #buttons + i
+        local row = btn_start + #btns + i
         pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Number', row, block_pad + 2, block_pad + 3)
         pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Directory', row, block_pad + 5, -1)
       end
@@ -221,7 +222,7 @@ function M.setup_starter()
       vim.wo.wrap = false
       vim.wo.cursorline = false
 
-      for _, b in ipairs(buttons) do
+      for _, b in ipairs(btns) do
         if type(b.action) == 'string' then
           vim.keymap.set('n', b.key, b.action, { buffer = buf, silent = true, desc = b.label })
         else

@@ -348,3 +348,12 @@ vim.api.nvim_create_autocmd('CmdlineChanged', {
   pattern = { ':', '/', '[?]' },
   callback = function() vim.fn.wildtrigger() end,
 })
+
+-- Clean up statusline search cache on window close to prevent stale/unbounded growth.
+vim.api.nvim_create_autocmd('WinClosed', {
+  group = vim.api.nvim_create_augroup('statusline-search-cleanup', { clear = true }),
+  callback = function(args)
+    local ok, sl = pcall(require, 'custom.ui.statusline')
+    if ok and type(sl) == 'table' and type(sl._search) == 'table' then sl._search[tonumber(args.match)] = nil end
+  end,
+})

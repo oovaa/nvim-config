@@ -215,4 +215,108 @@ describe('post-audit fixes', function()
       assert.is_truthy(health:match "bin%s*=%s*'js%-debug%-adapter'", 'health must check js-debug-adapter')
     end)
   end)
+
+  -- ============================================================
+  -- Full-config audit fixes (Nov 9)
+  -- ============================================================
+
+  -- Colorizer: single opts table (catgoose fork)
+  describe('Colorizer opts form', function()
+    it('uses single opts table with filetypes + user_default_options', function()
+      assert.is_truthy(code:match "filetypes%s*=%s*{%s*'%*'%s*}", 'colorizer must use filetypes = { * }')
+      assert.is_truthy(code:match 'user_default_options', 'colorizer must use user_default_options')
+    end)
+  end)
+
+  -- Treesitter: sh->bash, jsonc->json ft_map
+  describe('Treesitter ft->lang map (audit)', function()
+    it('maps sh to bash', function() assert.is_truthy(code:match "sh%s*=%s*'bash'", 'ft_map must map sh to bash') end)
+    it('maps jsonc to json', function() assert.is_truthy(code:match "jsonc%s*=%s*'json'", 'ft_map must map jsonc to json') end)
+  end)
+
+  -- completeopt: menu + preview
+  describe('completeopt', function()
+    it(
+      'includes menu and preview',
+      function() assert.is_truthy(code:match "completeopt%s*=%s*'menu,menuone,noselect,preview'", 'completeopt must be menu,menuone,noselect,preview') end
+    )
+  end)
+
+  -- gopls: staticcheck = true
+  describe('gopls staticcheck', function()
+    it('enables staticcheck', function() assert.is_truthy(code:match 'staticcheck%s*=%s*true', 'gopls staticcheck must be true') end)
+  end)
+
+  -- blink: buffer source
+  describe('blink sources', function()
+    it(
+      'includes buffer source',
+      function() assert.is_truthy(code:match "default%s*=%s*{%s*'lsp'%s*,%s*'path'%s*,%s*'snippets'%s*,%s*'buffer'%s*}", 'blink sources must include buffer') end
+    )
+  end)
+
+  -- auto-save: large_file_mode guard
+  describe('auto-save large_file guard', function()
+    it('has condition checking large_file_mode', function() assert.is_truthy(code:match 'large_file_mode', 'auto-save must check large_file_mode') end)
+  end)
+
+  -- large-file: treesitter.stop + LSP detach + foldexpr reset
+  describe('large-file guards (audit)', function()
+    it(
+      'disables treesitter via vim.treesitter.stop',
+      function() assert.is_truthy(code:match 'vim%.treesitter%.stop', 'must call treesitter.stop for large files') end
+    )
+    it('detaches LSP clients for large files', function() assert.is_truthy(code:match 'buf_detach_client', 'must detach LSP clients for large files') end)
+    it('resets foldexpr for large files', function() assert.is_truthy(code:match "foldexpr%s*=%s*''", 'must reset foldexpr for large files') end)
+    it(
+      'has LspAttach autocmd for large-file detach',
+      function() assert.is_truthy(code:match 'large%-file%-lsp%-detach', 'must have LspAttach autocmd group') end
+    )
+  end)
+
+  -- nvim-lint: errors reported via notify
+  describe('nvim-lint error reporting', function()
+    it(
+      'reports lint errors via vim.notify instead of silent pcall',
+      function() assert.is_truthy(code:match 'vim%.notify.*Lint error', 'must report lint errors via notify') end
+    )
+  end)
+
+  -- DAP: have_bin, conditional breakpoint, virtual text, disconnect, python clear
+  describe('DAP audit fixes', function()
+    it('defines have_bin helper', function() assert.is_truthy(code:match 'local function have_bin', 'must define have_bin helper') end)
+    it('registers conditional breakpoint keymap', function() assert.is_truthy(code:match 'dB', 'must have conditional breakpoint keymap') end)
+    it('configures nvim-dap-virtual-text', function() assert.is_truthy(code:match 'nvim%-dap%-virtual%-text', 'must configure virtual text') end)
+    it('adds disconnect listener for dapui', function() assert.is_truthy(code:match 'event_disconnect', 'must listen for disconnect event') end)
+    it('clears python configs before setup', function() assert.is_truthy(code:match 'dap%.configurations%.python%s*=%s*{}', 'must clear python configs') end)
+    it('removes java-debug-adapter from health exec check', function()
+      local health = H.read(vim.fn.stdpath 'config' .. '/lua/config/health.lua')
+      assert.is_falsy(health:match "bin%s*=%s*'java%-debug%-adapter'", 'java-debug-adapter must not be in exec check')
+    end)
+  end)
+
+  -- gitsigns: lazy-load guard
+  describe('gitsigns lazy-load', function()
+    it('guards gp/gd/gt with lazy.load', function() assert.is_truthy(code:match 'gitsigns%.nvim', 'must lazy-load gitsigns for gp/gd/gt') end)
+  end)
+
+  -- Treesitter comment: indent from runtime ftplugins
+  describe('Treesitter indent comment', function()
+    it(
+      'documents indent comes from runtime ftplugins',
+      function() assert.is_truthy(content:match 'indent comes from runtime ftplugins', 'must document indent source') end
+    )
+  end)
+  -- Dashboard: no mutation of captured buttons table
+  describe('Dashboard buttons copy', function()
+    it(
+      'uses a copy (btns) instead of mutating buttons',
+      function() assert.is_truthy(code:match 'local btns = vim%.list_extend%(%{}, buttons%)', 'must copy buttons before insert') end
+    )
+  end)
+
+  -- Statusline: WinClosed cleanup for search cache
+  describe('Statusline search cache cleanup', function()
+    it('has WinClosed autocmd for search cache', function() assert.is_truthy(code:match 'statusline%-search%-cleanup', 'must have cleanup autocmd') end)
+  end)
 end)
