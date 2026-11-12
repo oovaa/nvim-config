@@ -20,9 +20,9 @@ return {
   -- We keep it minimal here; expand opts as you adopt features.
   {
     'folke/snacks.nvim',
-    -- ponytail: keys-only meant notifier/input stayed dead until first keypress
-    -- (only loaded on demand); VeryLazy makes it self-sufficient.
-    event = 'VeryLazy',
+    -- snacks must load early: notifier/input/ui.select depend on it at startup.
+    lazy = false,
+    priority = 1000,
     -- ponytail: devicons loaded late, so the explorer showed fallback
     -- circles at first; pin it here (already installed — no new dep)
     -- so icons resolve on the snacks path too.

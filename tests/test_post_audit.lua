@@ -110,12 +110,12 @@ describe('post-audit fixes', function()
 
   describe('UI autocmds', function()
     it('diag_float_win is declared local', function()
-      local autocmds = H.read(vim.fn.stdpath 'config' .. '/lua/config/autocmds.lua')
+      local autocmds = H.read(vim.fn.stdpath 'config' .. '/lua/config/diag_float.lua')
       assert.is_truthy(autocmds:match 'local%s+diag_float_win', 'diag_float_win must be local')
     end)
 
     it('reuses single timer for diagnostic float', function()
-      local autocmds = H.read(vim.fn.stdpath 'config' .. '/lua/config/autocmds.lua')
+      local autocmds = H.read(vim.fn.stdpath 'config' .. '/lua/config/diag_float.lua')
       assert.is_truthy(autocmds:match 'local%s+diag_float_timer', 'diag_float_timer must be declared')
       -- Count occurrences of new_timer: should be exactly 1 (the declaration)
       local count = 0

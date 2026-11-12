@@ -1,5 +1,6 @@
 ---@module 'custom.ui.dashboard'
 local M = {}
+local function nf(code) return vim.g.have_nerd_font and vim.fn.nr2char(code) or '*' end
 
 -- a session without a `badd` line has no buffers to restore — the picker's
 -- historical gate, shared by the conditional Resume row
@@ -30,7 +31,7 @@ function M.get_resume_for(find, readable)
   label = label:gsub('^' .. vim.pesc(vim.fn.expand '~'), '~')
   return {
     key = 'S',
-    icon = vim.fn.nr2char(0xf017),
+    icon = nf(0xf017),
     label = 'Resume: ' .. label,
     action = function()
       -- same in-place restore as the `s` picker: drop the dashboard, then source
@@ -62,13 +63,13 @@ function M.setup_starter()
     if ok and type(m) == 'table' then return m end
   end
   local buttons = {
-    { key = 'e', icon = vim.fn.nr2char(0xf15b), label = 'New File', action = '<cmd>ene<CR>' },
-    { key = 'f', icon = vim.fn.nr2char(0xf002), label = 'Find File', action = function() require('snacks').picker.files() end },
-    { key = 'r', icon = vim.fn.nr2char(0xf115), label = 'File Explorer', action = function() require('snacks').explorer() end },
-    { key = 'g', icon = vim.fn.nr2char(0xf126), label = 'Git (LazyGit)', action = function() require('config.terminal').new_float 'lazygit' end },
+    { key = 'e', icon = nf(0xf15b), label = 'New File', action = '<cmd>ene<CR>' },
+    { key = 'f', icon = nf(0xf002), label = 'Find File', action = function() require('snacks').picker.files() end },
+    { key = 'r', icon = nf(0xf115), label = 'File Explorer', action = function() require('snacks').explorer() end },
+    { key = 'g', icon = nf(0xf126), label = 'Git (LazyGit)', action = function() require('config.terminal').new_float 'lazygit' end },
     {
       key = 's',
-      icon = vim.fn.nr2char(0xf017),
+      icon = nf(0xf017),
       label = 'Recent Projects',
       action = function()
         -- recency-ordered list owned by config.sessions (one scanner, zero
@@ -99,8 +100,8 @@ function M.setup_starter()
         vim.ui.select(items, { prompt = 'Select session:' }, function(choice) do_pick(choice) end)
       end,
     },
-    { key = 'u', icon = vim.fn.nr2char(0xf021), label = 'Update Plugins', action = '<cmd>Lazy sync<CR>' },
-    { key = 'q', icon = vim.fn.nr2char(0xf011), label = 'Quit', action = '<cmd>qa<CR>' },
+    { key = 'u', icon = nf(0xf021), label = 'Update Plugins', action = '<cmd>Lazy sync<CR>' },
+    { key = 'q', icon = nf(0xf011), label = 'Quit', action = '<cmd>qa<CR>' },
   }
   local config_dir = vim.fn.stdpath 'config'
   local function collect_recent()

@@ -247,7 +247,8 @@ function M.setup_lualine()
     -- branch
     local branch = vim.b.gitsigns_head or vim.g.gitsigns_head or ''
     -- branch glyph as a codepoint, not a literal PUA char (invisible in source)
-    local branch_s = branch ~= '' and ('%#SL_branch#' .. vim.fn.nr2char(0xe0a0) .. ' ' .. esc(branch) .. hl_b) or ''
+    local branch_glyph = vim.g.have_nerd_font and (vim.fn.nr2char(0xe0a0) .. ' ') or ''
+    local branch_s = branch ~= '' and ('%#SL_branch#' .. branch_glyph .. esc(branch) .. hl_b) or ''
     -- diff (gitsigns_status_dict)
     local diff_s = ''
     local d = vim.b.gitsigns_status_dict
@@ -301,7 +302,7 @@ function M.setup_lualine()
     end
     fname = esc(fname)
     if vim.bo.modified then fname = fname .. ' [+]' end
-    if vim.bo.readonly then fname = fname .. ' ' .. vim.fn.nr2char(0xf033e) end
+    if vim.bo.readonly then fname = fname .. (vim.g.have_nerd_font and (' ' .. vim.fn.nr2char(0xf033e)) or ' [RO]') end
     -- spell flag mirrors the <leader>us toggle (visible state, only when on)
     if vim.wo.spell then fname = fname .. ' %#SL_search#SPELL' .. hl_c end
 
@@ -345,7 +346,8 @@ function M.setup_lualine()
     else
       prog = M._progress.s
     end
-    local lsp_s = prog ~= '' and ('%#SL_lsp#' .. prog .. hl_c) or (lsp_name == '' and '' or '%#SL_lsp#' .. vim.fn.nr2char(0xf0136) .. ' ' .. lsp_name .. hl_c)
+    local lsp_glyph = vim.g.have_nerd_font and (vim.fn.nr2char(0xf0136) .. ' ') or ''
+    local lsp_s = prog ~= '' and ('%#SL_lsp#' .. prog .. hl_c) or (lsp_name == '' and '' or '%#SL_lsp#' .. lsp_glyph .. lsp_name .. hl_c)
 
     local ft_s = vim.bo.filetype
 
@@ -372,7 +374,7 @@ function M.setup_lualine()
           M._icons[ft_s] = false
         end
       end
-      if M._icons[ft_s] then icon_s = M._icons[ft_s] end
+      if M._icons[ft_s] and vim.g.have_nerd_font then icon_s = M._icons[ft_s] end
     end
 
     -- sections mirror lualine: a=mode | b=branch/diff/diag | c=filename | x=lsp/enc/ff/ft | y=progress | z=location
