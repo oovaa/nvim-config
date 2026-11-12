@@ -32,6 +32,7 @@ Checked by `:checkhealth config`. Install what's missing:
 | `make`, C compiler | tree-sitter grammar builds (the CLI compiles) | OS package manager |
 | `tree-sitter` | builds every nvim-treesitter parser (see below) | `brew install tree-sitter` |
 | `biome` | JS/TS format + lint (not via Mason) | `bun add -g @biomejs/biome` |
+| `xmlformat` | XML formatter (`xmlformatter` pkg, conform) | `uv tool install xmlformatter` |
 | `@vtsls/language-server` | TypeScript LSP (not via Mason) | `bun add -g @vtsls/language-server` |
 | `ty` / `pyrefly` / `pyright-langserver` | Python LSP, first on `PATH` wins (not via Mason) | `brew install pyrefly` |
 
@@ -77,7 +78,7 @@ Leader is `<Space>`. Essentials:
 - **Plugins**: edit specs (`lua/plugins/` by section, `lua/custom/plugins/` for personal), then `:Lazy sync`. Check load cost with `:Lazy profile`.
 - **Themes**: `<leader>ty` to pick (snacks colorscheme picker with live preview); choice persists in `stdpath('data')/theme.txt`. To add one, add its plugin spec in `lua/custom/plugins/themes.lua`, then `:Lazy sync`.
 - **LSPs**: Mason auto-installs most servers on demand (`:Mason`). Exceptions installed manually: `vtsls` and the Python ladder (`ty`/`pyrefly`/`pyright-langserver`, see table above).
-- **Formatters**: conform.nvim per filetype in `lua/plugins/formatting.lua`; biome leads the JS/TS/JSON chain only in a repo with its own `biome.json`, prettier covers the rest. Auto-format skips files >1MB (`large_file_size` in `lua/config/options.lua`), manual `<leader>ff` always works.
+- **Formatters**: conform.nvim per filetype in `lua/plugins/formatting.lua`; biome leads the JS/TS/JSON chain only in a repo with its own `biome.json`, prettier covers the rest; XML uses `xmlformatter` (`uv tool install xmlformatter`, binary in `~/.local/bin`). Auto-format skips files >1MB (`large_file_size` in `lua/config/options.lua`), manual `<leader>ff` always works.
 - **Tests**: plenary.busted suites in `tests/` — `nvim --headless -c 'lua require("plenary.busted").run("tests/test_qol.lua")' -c 'qa!'`
 
 ## Troubleshooting

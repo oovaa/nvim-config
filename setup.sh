@@ -168,6 +168,20 @@ if have go; then ok "go $(go version 2>/dev/null | awk '{print $3}')"; else warn
 if have java; then ok "java $(java -version 2>&1 | awk -F'"' 'NR==1{print $2}') (jdtls wants JDK 21+)"; else warn "java missing — jdtls needs JDK 21+"; fi
 if have cmake; then ok "cmake $(cmake --version | awk 'NR==1{print $3}')"; else warn "cmake missing — useful for compile_commands.json (C/C++ clangd)"; fi
 
+# XML formatter (used by conform for .xml files)
+if have xmlformat; then ok "xmlformat (XML formatter)"
+else
+  fail "xmlformat — XML formatter for conform (xmlformatter)"
+  if (( ! CHECK_ONLY )); then
+    if have uv; then
+      uv tool install xmlformatter && ok "xmlformat installed" || warn "xmlformatter install failed"
+      export PATH="$HOME/.local/bin:$PATH"
+    else
+      warn "install uv, then: uv tool install xmlformatter"
+    fi
+  fi
+fi
+
 # --- 4. config repo --------------------------------------------------------
 step "4/7  Config repo"
 if [[ -f "$NVIM_CONFIG_DIR/init.lua" && "$NVIM_CONFIG_DIR" -ef "$(pwd)" ]]; then

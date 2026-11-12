@@ -36,6 +36,12 @@ if (vim.fn.exepath 'node' == '' or vim.fn.exepath 'biome' == '') and not vim.g._
   vim.g._path_self_healed = true
 end
 
+-- uv tool / pip --user binaries (xmlformat, etc.)
+do
+  local local_bin = vim.fn.expand '~/.local/bin'
+  if not (vim.env.PATH or ''):find(local_bin, 1, true) then vim.env.PATH = local_bin .. ':' .. (vim.env.PATH or '') end
+end
+
 -- ============================================================================
 -- PROVIDER DISABLES
 -- ============================================================================
