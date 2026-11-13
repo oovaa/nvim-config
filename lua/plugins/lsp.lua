@@ -189,8 +189,19 @@ return {
       local lsp_to_mason = lsp_servers.lsp_to_mason
 
       local ensure_installed = {}
+      -- Go-based tools (gopls, sqls, gofumpt, goimports, delve) are installed by
+      -- Mason via `go install`/`go build`, so they can never succeed without a
+      -- Go toolchain on PATH. Skip them instead of retrying every session
+      -- (mason-tool-installer has no failure memory and re-runs run_on_start).
+      local go_available = vim.fn.executable 'go' == 1
       for name in pairs(servers) do
-        if name ~= 'pyrefly' and name ~= 'nginx_language_server' then table.insert(ensure_installed, lsp_to_mason[name] or name) end
+        if name ~= 'pyrefly' and name ~= 'nginx_language_server' then
+          if (name == 'gopls' or name == 'sqls') and not go_available then
+            -- skip: needs `go` on PATH (see AGENTS.md trap 14)
+          else
+            table.insert(ensure_installed, lsp_to_mason[name] or name)
+          end
+        end
       end
       vim.list_extend(ensure_installed, {
         'prettier', -- unified JS/TS/JSON/HTML/CSS formatter used by conform
@@ -208,11 +219,9 @@ return {
         -- .zshrc. Standalone Rust binary, so no python/ensurepip wall.
         'biome',
         -- Go: LSP + formatters + linter + debugger
-        'gopls',
-        'gofumpt',
-        'goimports',
+        -- golangci-lint is a prebuilt binary (no Go needed); gofumpt/goimports/
+        -- delve are added conditionally below only when `go` is on PATH.
         'golangci-lint',
-        'delve',
         -- C/C++: LSP + formatter + linter + debugger (codelldb shared with Rust)
         'clangd',
         'clang-format',
@@ -247,6 +256,10 @@ return {
         -- into mason/packages/debugpy/venv (pip install debugpy); dap-python
         -- picks it up via debugpy_path below. Re-add after apt fix.
       })
+      -- Go toolchain-gated installs: mason builds these with `go install`, so
+      -- they only succeed when `go` is on PATH. Adding them unconditionally
+      -- made mason-tool-installer retry (and fail) them on every startup.
+      if go_available then vim.list_extend(ensure_installed, { 'gofumpt', 'goimports', 'delve' }) end
 
       -- jdtls: NOT auto-installed. Needs JDK 21+ on PATH AND network to
       -- download.eclipse.org, which returns 403 in some environments (incl.
@@ -284,6 +297,13 @@ return {
         taplo = { 'toml' },
         tailwindcss = { 'html', 'css', 'scss', 'less', 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue', 'svelte', 'astro' },
       }
+
+      if not go_available then
+        servers.gopls = nil
+        servers.sqls = nil
+        lsp_filetypes.gopls = nil
+        lsp_filetypes.sqls = nil
+      end
 
       -- Add the selected Python LSP without making it a required Mason install.
       -- The ladder itself (which binary wins) lives in config/python_lsp.lua so
