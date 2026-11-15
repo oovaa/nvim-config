@@ -10,7 +10,37 @@ return {
   -- plugin fetches conflicts on its own BufRead autocmd, which only exists once
   -- setup() ran — any later trigger (VeryLazy) would miss the file you opened
   -- nvim with. version='*' = newest tag (upstream: main can be unstable).
-  { 'akinsho/git-conflict.nvim', version = '*', event = 'BufReadPre', config = true },
+  {
+    'akinsho/git-conflict.nvim',
+    version = '*',
+    event = 'BufReadPre',
+    config = true,
+    -- Upstream (last release 2024-11) still calls the deprecated
+    -- vim.highlight / vim.validate{table} forms, which trip
+    -- `:checkhealth vim.deprecated`. Re-apply the minimal modernization on
+    -- every install/update so a clean machine stays deprecation-clean.
+    build = function()
+      local root = vim.fn.stdpath 'data' .. '/lazy/git-conflict.nvim'
+      local edits = {
+        { root .. '/lua/git-conflict/git-conflict.lua', { { 'vim%.highlight%.priorities%.user', 'vim.hl.priorities.user' } } },
+        {
+          root .. '/lua/git-conflict/colors.lua',
+          { { "vim%.validate%({ rgb_24bit = { rgb_24bit, 'n', true } }%)", "vim.validate('rgb_24bit', rgb_24bit, 'number', true)" } },
+        },
+      }
+      for _, item in ipairs(edits) do
+        if vim.fn.filereadable(item[1]) == 1 then
+          local lines = vim.fn.readfile(item[1])
+          for i, line in ipairs(lines) do
+            for _, r in ipairs(item[2]) do
+              lines[i] = (lines[i] or line):gsub(r[1], r[2])
+            end
+          end
+          vim.fn.writefile(lines, item[1])
+        end
+      end
+    end,
+  },
 
   -- Refactoring (uses LSP code actions + treesitter; async.nvim provides the async module)
   {
@@ -26,7 +56,6 @@ return {
     dependencies = {
       'nvim-lua/plenary.nvim',
       'nvim-treesitter/nvim-treesitter',
-      'antoinemadec/FixCursorHold.nvim',
       'nvim-neotest/neotest-python',
       'marilari88/neotest-vitest',
       'nvim-neotest/neotest-jest',
