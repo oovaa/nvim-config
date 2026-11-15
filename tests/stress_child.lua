@@ -10,7 +10,7 @@ local section = vim.env.NVIM_STRESS_SECTION or '?'
 -- Watchdog: whatever happens, this nvim exits on its own. Generous on purpose —
 -- the keymaps section lazy-loads most of the plugin tree and waits on each
 -- mapping, which takes well over 25s. The parent enforces its own timeout.
-local watchdog = (vim.uv or vim.loop).new_timer()
+local watchdog = vim.uv.new_timer()
 watchdog:start(150000, 0, function()
   vim.schedule(function() vim.cmd 'cq!' end)
 end)

@@ -114,7 +114,7 @@ return {
           markdown = true,
           yaml = true,
           graphql = true,
-          xml = true,
+          xml = false, -- disabled by default: xmlformatter not installed; mapping stays for manual <leader>ff
           lua = true,
           go = true,
           rust = true,

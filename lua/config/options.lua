@@ -208,7 +208,7 @@ vim.o.pummaxwidth = 80 -- keep completion popups from spanning the whole screen
 -- WHAT: How long to wait for a key sequence to complete (in milliseconds)
 -- TO CHANGE: Lower = faster timeout for multi-key sequences
 -- EFFECT: Affects which-key display timing and key sequence completion
-vim.o.timeoutlen = 300
+vim.o.timeoutlen = 400
 vim.o.ttimeoutlen = 10
 
 -- REDRAW BEHAVIOR

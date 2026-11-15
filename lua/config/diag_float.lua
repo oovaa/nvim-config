@@ -108,6 +108,17 @@ function M.setup()
       last_diag_lnum = nil
     end,
   })
+
+  -- Release the reused timer on exit so it can't keep the loop alive.
+  vim.api.nvim_create_autocmd('VimLeavePre', {
+    desc = 'Stop diagnostic float timer on exit',
+    group = vim.api.nvim_create_augroup('diag-float-cleanup', { clear = true }),
+    callback = function()
+      stop_diag_timer()
+      close_diag_float()
+      if diag_float_timer and not diag_float_timer:is_closing() then pcall(function() diag_float_timer:close() end) end
+    end,
+  })
 end
 
 return M

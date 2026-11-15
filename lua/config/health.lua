@@ -109,8 +109,12 @@ function M.check()
       vim.health.error(t.bin .. ' missing — ' .. t.why, 'Install ' .. t.bin)
     end
   end
+  local mason_bin = vim.fn.stdpath 'data' .. '/mason/bin/'
   for _, t in ipairs(optional) do
-    if vim.fn.executable(t.bin) == 1 then
+    -- Mason-managed tools live in mason/bin, which is not always on PATH
+    -- when :checkhealth runs (mason setup is FileType/VimEnter-gated).
+    -- Probe both so installed tools don't show as missing.
+    if vim.fn.executable(t.bin) == 1 or vim.fn.filereadable(mason_bin .. t.bin) == 1 then
       vim.health.ok(t.bin .. ' found (' .. t.why .. ')')
     else
       vim.health.warn(t.bin .. ' missing — ' .. t.why, 'Install ' .. t.bin)

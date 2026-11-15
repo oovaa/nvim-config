@@ -197,7 +197,7 @@ function M.setup_starter()
       pcall(vim.api.nvim_buf_add_highlight, buf, -1, 'Comment', #lines - 1, block_pad, -1)
       -- button rows: key char Special, icon Title, label Function
       local btn_start = pad_top + 1 + 1 + #header + 1 -- pad_top + 2 blanks + header lines + 1 blank
-      for i, b in ipairs(buttons) do
+      for i, b in ipairs(btns) do
         local row = btn_start + i - 1
         -- ponytail: extmark columns are BYTE offsets, so the icon advance must be
         -- #icon, not strdisplaywidth(icon) — a nerd glyph is 3 utf-8 bytes but 1
