@@ -47,10 +47,19 @@ describe('formatting', function()
 
   it('never picks up a biome.json in $HOME', function()
     local health = require 'config.health'
+    -- Ensure the precondition (a biome.json in $HOME) exists on every machine,
+    -- including CI, so the rejection logic is actually exercised.
+    local home_config = vim.env.HOME .. '/biome.json'
+    local created = false
+    if vim.fn.filereadable(home_config) == 0 then
+      vim.fn.writefile({ '{}' }, home_config)
+      created = true
+    end
     -- the home config exists on this machine; it must not enable biome anywhere
     assert.equals(vim.fs.normalize(vim.env.HOME), vim.fs.normalize(vim.fs.root(vim.env.HOME .. '/probe.js', { 'biome.json' })))
     assert.is_nil(health.biome_root(vim.env.HOME .. '/probe.js'))
     assert.equals('oxlint', health.js_linter(vim.env.HOME .. '/probe.js'))
+    if created then vim.fn.delete(home_config) end
   end)
 
   it('keeps prettier for html and css', function()
