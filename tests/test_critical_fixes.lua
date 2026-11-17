@@ -93,6 +93,12 @@ describe('Phase 1: Critical Bug Fixes', function()
       -- =1 is a mistake vim.provider healthcheck errors on; unset = auto-detect
       assert.is_falsy(content:match 'loaded_python3_provider%s*=%s*1', 'Must NOT have vim.g.loaded_python3_provider = 1')
     end)
+
+    describe('editor timing', function()
+      it('keeps timeoutlen aligned with the stress harness baseline', function()
+        assert.equal(300, vim.o.timeoutlen)
+      end)
+    end)
   end)
 
   -- Test 7: Colorizer TTY check improved

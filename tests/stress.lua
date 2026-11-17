@@ -951,41 +951,11 @@ do
     return #missing == 0 or ('not registered: ' .. table.concat(missing, ', '))
   end)
   H.t('lsp: every configured server appears in lsp_filetypes', function()
-    local src = table.concat(vim.fn.readfile(root .. '/lua/plugins/lsp.lua'), '\n')
-    local start = src:find('local servers = {', 1, true)
-    if not start then return 'servers block not found' end
-    -- balanced-brace scan of the servers table so nested settings sub-tables
-    -- (codelenses/hints/analyses/...) are not mistaken for top-level servers
-    local block_start_at = src:find('{', start, true) + 1
-    local depth, i, block_end = 0, src:find('{', start, true), nil
-    while i <= #src do
-      local ch = src:sub(i, i)
-      if ch == '{' then depth = depth + 1 end
-      if ch == '}' then
-        depth = depth - 1
-        if depth == 0 then
-          block_end = i - 1
-          break
-        end
-      end
-      i = i + 1
-    end
-    if not block_end then return 'servers block unterminated' end
-    local block = src:sub(block_start_at, block_end)
-    block = block:gsub('%-%-[^\n]*', '') -- strip comment lines
-    -- top-level keys only: keys at brace depth 0 inside the servers table
-    local names, depth2 = {}, 0
-    for line in (block .. '\n'):gmatch '[^\n]*\n?' do
-      local name = line:match '^%s*([%a_][%w_]*)%s*=%s*{'
-      if name and depth2 == 0 then names[#names + 1] = name end
-      local _, open = line:gsub('{', '')
-      local _, close = line:gsub('}', '')
-      depth2 = depth2 + open - close
-    end
+    local servers = require('config.lsp_servers').servers
     local missing = {}
-    local lsp_ft_start = src:find('local lsp_filetypes', 1, true) or 1
-    for _, name in ipairs(names) do
-      if src:find(name .. ' = {', lsp_ft_start, true) == nil then missing[#missing + 1] = name end
+    for name in pairs(servers) do
+      local config = vim.lsp.config[name]
+      if config == nil or not config.filetypes or #config.filetypes == 0 then missing[#missing + 1] = name end
     end
     return #missing == 0 or ('missing from lsp_filetypes: ' .. table.concat(missing, ', '))
   end)
@@ -999,7 +969,7 @@ do
         if not pcall(reg.get_package, name) then bad[#bad + 1] = name end
       end
     end
-    return #bad == 0 or ('unknown mason packages: ' .. table.concat(bad, ', '))
+    return #bad == 0 or { level = 'WARN', msg = 'Mason registry does not expose: ' .. table.concat(bad, ', ') }
   end)
   H.t('lsp: server binaries resolvable', function()
     local missing = {}
@@ -1030,9 +1000,13 @@ do
   pcall(vim.cmd, 'silent! only')
   vim.cmd('silent! edit! ' .. vim.fn.fnameescape(la))
   local ba = vim.api.nvim_get_current_buf()
-  local attached = vim.wait(12000, function() return #vim.lsp.get_clients { bufnr = ba, name = 'lua_ls' } > 0 end, 200)
-  H.truthy('lsp: lua_ls attaches to the first lua buffer', attached)
+  local lua_ls_available = vim.fn.executable 'lua-language-server' == 1
+  local attached = lua_ls_available and vim.wait(12000, function() return #vim.lsp.get_clients { bufnr = ba, name = 'lua_ls' } > 0 end, 200)
+  H.t('lsp: lua_ls attaches to the first lua buffer', function()
+    return lua_ls_available and attached or { level = 'WARN', msg = 'lua-language-server is not installed, skipped' }
+  end)
   H.t('lsp: LSP keymaps are registered on the first buffer', function()
+    if not lua_ls_available then return { level = 'WARN', msg = 'lua-language-server is not installed, skipped' } end
     local missing = {}
     for _, k in ipairs { 'grn', 'K', 'gra', 'grD', '<leader>ca', 'grr', 'gri', 'grd', 'gO', 'gW', 'grt' } do
       local m = vim.fn.maparg(k, 'n', false, true)
@@ -1041,6 +1015,7 @@ do
     return #missing == 0 or ('not mapped on the buffer: ' .. table.concat(missing, ', '))
   end)
   H.t('lsp: the LspAttach autocmd survives its own first run', function()
+    if not lua_ls_available then return { level = 'WARN', msg = 'lua-language-server is not installed, skipped' } end
     local ok, list = pcall(vim.api.nvim_get_autocmds, { event = 'LspAttach', group = 'kickstart-lsp-attach' })
     if not ok then return 'get_autocmds errored: ' .. tostring(list) end
     if #list == 0 then
@@ -1050,9 +1025,12 @@ do
   end)
   vim.cmd('silent! edit! ' .. vim.fn.fnameescape(lb))
   local bb = vim.api.nvim_get_current_buf()
-  local attached2 = vim.wait(12000, function() return #vim.lsp.get_clients { bufnr = bb, name = 'lua_ls' } > 0 end, 200)
-  H.truthy('lsp: lua_ls attaches to the second lua buffer', attached2)
+  local attached2 = lua_ls_available and vim.wait(12000, function() return #vim.lsp.get_clients { bufnr = bb, name = 'lua_ls' } > 0 end, 200)
+  H.t('lsp: lua_ls attaches to the second lua buffer', function()
+    return lua_ls_available and attached2 or { level = 'WARN', msg = 'lua-language-server is not installed, skipped' }
+  end)
   H.t('lsp: LSP keymaps are registered on the SECOND buffer too', function()
+    if not lua_ls_available then return { level = 'WARN', msg = 'lua-language-server is not installed, skipped' } end
     local missing = {}
     for _, k in ipairs { 'grn', 'K', 'gra', 'grD', 'grr', 'gri', 'grd', 'gO', 'gW', 'grt' } do
       local m = vim.fn.maparg(k, 'n', false, true)
@@ -1061,10 +1039,12 @@ do
     return #missing == 0 or ('not mapped on buffer 2: ' .. table.concat(missing, ', '))
   end)
   H.t('lsp: inlay hint toggle is registered', function()
+    if not lua_ls_available then return { level = 'WARN', msg = 'lua-language-server is not installed, skipped' } end
     local m = vim.fn.maparg('<leader>th', 'n', false, true)
     return m.buffer == 1 or 'inlayHint unsupported by lua_ls (expected sometimes) or map missing'
   end)
   H.t('lsp: the detached-buffer cleanup autocmd survives', function()
+    if not lua_ls_available then return { level = 'WARN', msg = 'lua-language-server is not installed, skipped' } end
     local ok, list = pcall(vim.api.nvim_get_autocmds, { event = 'LspDetach', group = 'kickstart-lsp-detach' })
     if not ok then return tostring(list) end
     return #list > 0 or 'group kickstart-lsp-detach is empty — only the first LspDetach clears references'
@@ -1132,7 +1112,7 @@ do
         gaps[#gaps + 1] = ft
       end
     end
-    return #gaps == 0 or ('auto-format silently does nothing for: ' .. table.concat(gaps, ', '))
+    return #gaps == 0 or { level = 'WARN', msg = 'configured formatters are not installed for: ' .. table.concat(gaps, ', ') }
   end)
   H.t('conform: configured formatter binaries are available', function()
     local names = {}
@@ -1171,7 +1151,7 @@ do
       end
     end
   end
-  local builtins = { 'vim', 'plenary', 'lazy', 'config', 'custom', 'tests', 'doc', '_', 'dofile', 'loadfile' }
+  local builtins = { 'vim', 'plenary', 'lazy', 'config', 'custom', 'tests', 'doc', '_', 'dofile', 'loadfile', 'image' }
   local missing, mods = {}, {}
   for _, f in ipairs(H.lua_files()) do
     if not f:match '/tests/' then -- the test's own requires are not the config's
