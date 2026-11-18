@@ -82,4 +82,12 @@ return {
   -- you do for a plugin at the top level, you can do for a dependency.
   --
   -- Use the `dependencies` key to specify the dependencies of a particular plugin
+  -- NEOGIT (#report): magit-like git UI.
+  {
+    'NeogitOrg/neogit',
+    cmd = 'Neogit',
+    keys = { { '<leader>gn', '<cmd>Neogit<cr>', desc = '[G]it [N]eogit' } },
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    opts = {},
+  },
 }

@@ -99,6 +99,11 @@ return {
         sort = { prefix = 'gS' },
       }
 
+      -- ponytail: mini.visits tracks recently edited files (zero new dep).
+      require('mini.visits').setup {}
+      vim.keymap.set('n', '<leader>va', function() require('mini.visits').add_path() end, { desc = '[V]isit [A]dd' })
+      vim.keymap.set('n', '<leader>vv', function() require('mini.visits').select_path() end, { desc = '[V]isit [V]iew' })
+
       -- Statusline is builtin (see lua/custom/ui/spec.lua).
 
       -- ... and there is more!
@@ -329,4 +334,27 @@ return {
   },
 
   -- CODE RUNNER (builtin — replaces code_runner.nvim, zero loss via :terminal)
+
+  -- DIAL.NVIM (#report): smart increment/decrement.
+  {
+    'monaqa/dial.nvim',
+    keys = {
+      { '<C-a>', function() require('dial.map').manipulate('increment', 'normal') end, desc = 'Increment' },
+      { '<C-x>', function() require('dial.map').manipulate('decrement', 'normal') end, desc = 'Decrement' },
+    },
+    config = function()
+      local augend = require('dial.augend')
+      require('dial.config').augends:register_group {
+        default = { augend.integer.alias.decimal, augend.integer.alias.hex, augend.date.alias['%Y-%m-%d'] },
+      }
+    end,
+  },
+
+  -- TREESJ (#report): split/join code blocks.
+  {
+    'Wansmer/treesj',
+    keys = { { '<leader>j', '<cmd>TSJToggle<cr>', desc = 'Split/Join (treesj)' } },
+    dependencies = { 'nvim-treesitter/nvim-treesitter' },
+    opts = { use_default_keymaps = false },
+  },
 }

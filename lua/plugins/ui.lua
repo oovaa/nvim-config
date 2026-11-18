@@ -95,6 +95,8 @@ return {
         },
       },
       explorer = { enabled = true },
+      terminal = { enabled = true },
+      zen = { enabled = true },
       scope = { enabled = true },
       -- ponytail: scroll/statuscolumn/toggle are opt-in (off by default) and stay
       -- that way — vim.o.smoothscroll owns scrolling and the custom statusline owns
@@ -163,6 +165,8 @@ return {
       { '<leader>e', function() require('snacks').explorer() end, desc = 'Toggle File [E]xplorer' },
       { '<leader>fe', function() require('snacks').explorer() end, desc = '[F]ile [E]xplorer' },
       { '<leader>fE', function() require('snacks').explorer.reveal() end, desc = '[F]ile [E]xplorer (reveal)' },
+      { '<leader>z', function() require('snacks').zen() end, desc = 'Zen Mode' },
+      { '<leader>Z', function() require('snacks').zen.zoom() end, desc = 'Zen Zoom' },
       -- Theme picker (snacks.picker.colorschemes, LazyVim default — live
       -- preview included); choice persists via custom/ui/theme.lua.
       -- ponytail: keys entry (not keymaps.lua) so snacks lazy-loads on first press.
@@ -248,4 +252,26 @@ return {
   -- SECTION 6.10: SESSIONS (builtin — replaces auto-session, zero loss)
   -- ============================================================================
   -- (builtin session handling lives in lua/config/sessions.lua)
+
+  -- OIL.NVIM (#report): edit the filesystem like a buffer.
+  {
+    'stevearc/oil.nvim',
+    event = 'VeryLazy',
+    dependencies = { { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font } },
+    opts = { view_options = { show_hidden = true } },
+    keys = { { '-', function() require('oil').open() end, desc = 'Open parent dir (oil)' } },
+  },
+
+  -- TROUBLE.NVIM (#report): diagnostics/symbols/qf list.
+  {
+    'folke/trouble.nvim',
+    cmd = { 'Trouble' },
+    keys = {
+      { '<leader>xx', '<cmd>Trouble diagnostics toggle<cr>', desc = 'Diagnostics (Trouble)' },
+      { '<leader>xX', '<cmd>Trouble diagnostics toggle filter.buf=0<cr>', desc = 'Buffer Diagnostics (Trouble)' },
+      { '<leader>xs', '<cmd>Trouble symbols toggle focus=false<cr>', desc = 'Symbols (Trouble)' },
+      { '<leader>xq', '<cmd>Trouble qflist toggle<cr>', desc = 'Quickfix (Trouble)' },
+    },
+    opts = {},
+  },
 }
