@@ -97,10 +97,19 @@ describe('lint', function()
 
   it('ignores a biome.json in $HOME, for a buffer under it', function()
     local health = require 'config.health'
+    -- Ensure the precondition (a biome.json in $HOME) exists on every machine,
+    -- including CI, so the rejection logic is actually exercised.
+    local home_config = vim.env.HOME .. '/biome.json'
+    local created = false
+    if vim.fn.filereadable(home_config) == 0 then
+      vim.fn.writefile({ '{}' }, home_config)
+      created = true
+    end
     -- ~/biome.json exists here, so the upward root walk would otherwise enable
     -- biome (with cwd = $HOME) for every repo under home.
     assert.equals(vim.fs.normalize(vim.env.HOME), vim.fs.normalize(vim.fs.root(vim.env.HOME .. '/x/probe.js', { 'biome.json' })))
     assert.is_nil(health.biome_root(vim.env.HOME .. '/x/probe.js'))
     assert.equals('oxlint', health.js_linter(vim.env.HOME .. '/x/probe.js'))
+    if created then vim.fn.delete(home_config) end
   end)
 end)

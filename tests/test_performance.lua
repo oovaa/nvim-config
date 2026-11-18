@@ -185,6 +185,7 @@ describe('performance', function()
   end)
 
   it('attempts a parser install at most once per language per session', function()
+    if vim.fn.executable('tree-sitter') == 0 then pending('tree-sitter CLI missing on this machine') return end
     require('lazy').load { plugins = { 'nvim-treesitter' } }
     -- :TSInstall only runs for a language with no parser built, so drive one
     -- this box has not built (none of these are in the 16-language bootstrap)
