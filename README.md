@@ -8,7 +8,7 @@
 A starting point for Neovim that is:
 
 * Small
-* Single-file
+* Modular (`lua/config/`, `lua/plugins/`, `lua/custom/`)
 * Completely Documented
 
 **NOT** a Neovim distribution, but instead a starting point for your configuration.

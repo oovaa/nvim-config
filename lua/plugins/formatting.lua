@@ -63,7 +63,7 @@ return {
           local ft = vim.bo.filetype
           require('conform').format { async = true, stop_after_first = stop_after_first_fts[ft] or false }
         end,
-        mode = '',
+        mode = 'n',
         desc = '[F]ormat buffer',
       },
     },

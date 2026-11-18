@@ -5,6 +5,14 @@
 
 local M = {}
 
+-- vim.system throws ENOENT when the binary is missing — exactly the case this
+-- check reports. Wrap it so a missing python3 degrades to a warning instead of
+-- aborting :checkhealth before the remaining checks run.
+local function probe_import(mod)
+  local ok, res = pcall(function() return vim.system({ 'python3', '-c', 'import ' .. mod }, { text = true }):wait() end)
+  return ok and res and res.code == 0
+end
+
 local required = {
   { bin = 'git', why = 'gitsigns, blame.nvim, lazy.nvim updates' },
   { bin = 'rg', why = 'snacks grep, grug-far' },
@@ -187,8 +195,7 @@ function M.check()
   -- debugpy cannot come from mason on a host whose python3 lacks ensurepip
   -- (Trap 4), so probe the import the adapter actually runs and give advice
   -- that works.
-  local debugpy = vim.system({ 'python3', '-c', 'import debugpy' }, { text = true }):wait()
-  if debugpy and debugpy.code == 0 then
+  if probe_import 'debugpy' then
     vim.health.ok 'python import: debugpy found (<leader>dc runs)'
   else
     vim.health.warn(
@@ -210,8 +217,7 @@ function M.check()
   -- NOT unregister Molten (registration follows the rplugin manifest) — they
   -- only mean :MoltenEvaluate* cannot run until the import succeeds.
   for _, mod in ipairs { 'jupyter_client', 'ipykernel' } do
-    local ok = vim.system({ 'python3', '-c', 'import ' .. mod }, { text = true }):wait()
-    if ok and ok.code == 0 then
+    if probe_import(mod) then
       vim.health.ok('python import: ' .. mod .. ' found')
     else
       vim.health.warn(

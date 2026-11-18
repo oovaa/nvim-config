@@ -228,7 +228,7 @@ return {
         'clang-tidy',
         'codelldb',
         -- SQL: LSP + fast Rust linter/fixer
-        'sqls',
+        -- sqls is added by the Go-gated loop above (needs `go` on PATH).
         'sqruff',
         -- Shell/Markdown/TOML: LSPs (+ shfmt formatter). marksman/taplo may need
         -- mason install on clean machines; bash-language-server often already present.
@@ -358,9 +358,12 @@ return {
           group = vim.api.nvim_create_augroup('lsp-on-demand-' .. server, { clear = true }),
           pattern = filetypes,
           once = true,
-          callback = function(args)
-            -- large-file guard (Phase 2): never attach LSP on >1MiB files
-            if vim.b[args.buf].large_file_mode then return end
+          callback = function()
+            -- Enable once on the first FileType event. Doing this before the
+            -- large-file early return matters: with `once = true`, returning
+            -- early would consume the autocmd and leave every later buffer of
+            -- this filetype without LSP. The large-file detach autocmds in
+            -- config/autocmds.lua unwind any attach on oversized buffers.
             vim.lsp.enable(server)
           end,
         })

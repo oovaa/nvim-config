@@ -7,7 +7,7 @@ local M = {}
 -- Survive <leader>ur reloads: keep the state table in _G so open terminals aren't orphaned.
 local _state = _G._builtin_terminal_state
 if type(_state) ~= 'table' then
-  _state = { horiz = { buf = nil, win = nil }, float = { buf = nil, win = nil }, last = 'horiz' }
+  _state = { horiz = { buf = nil, win = nil }, float = { buf = nil, win = nil, cmd = nil, job = nil }, last = 'horiz' }
   _G._builtin_terminal_state = _state
 end
 local horiz, float = _state.horiz, _state.float
@@ -48,6 +48,16 @@ local function toggle_horiz(cmd)
 end
 local function toggle_float(cmd)
   _state.last = 'float'
+  -- One float slot serves shell / lazygit / tmux. If a different command is
+  -- requested, the old buffer's job is still running in it — stop it and drop
+  -- the buffer so the new command gets a fresh terminal instead of silently
+  -- reopening the old one (e.g. <leader>tf then <leader>fg gave a shell).
+  if is_buf_valid(float.buf) and float.cmd ~= cmd then
+    if is_win_valid(float.win) and vim.api.nvim_win_get_buf(float.win) == float.buf then pcall(vim.api.nvim_win_close, float.win, true) end
+    if float.job then pcall(vim.fn.jobstop, float.job) end
+    pcall(vim.api.nvim_buf_delete, float.buf, { force = true })
+    float.buf, float.win, float.job, float.cmd = nil, nil, nil, nil
+  end
   if is_win_valid(float.win) then
     if vim.api.nvim_win_get_buf(float.win) == float.buf then
       -- ponytail: pcall — hiding the last window errors E444; leave state on failure
@@ -74,7 +84,8 @@ local function toggle_float(cmd)
       true,
       { relative = 'editor', width = width, height = height, row = row, col = col, style = 'minimal', border = 'rounded' }
     )
-    vim.fn.jobstart(cmd, { term = true })
+    float.job = vim.fn.jobstart(cmd, { term = true })
+    float.cmd = cmd
     vim.cmd.startinsert()
   end
 end

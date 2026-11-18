@@ -93,7 +93,7 @@ copy/paste, `.` toggle hidden, `t` open in tab.
 | `<C-BS>` | Delete previous word (insert) | built-in |
 | `<Esc>` | Clear search highlighting | built-in |
 | `vv` (visual) | Select whole line | built-in |
-| `<leader>q` | Open diagnostic quickfix list | built-in |
+| `<leader>q` | Open diagnostic location list | built-in |
 | `gy` / `<leader>yd` | Yank nearest / all diagnostics on line | built-in |
 | `[d` / `]d` | Prev / next diagnostic (with float) | built-in |
 | `<leader>ff` | Format buffer | `conform.nvim` |
@@ -122,7 +122,7 @@ highlights `TODO`/`FIXME`/`NOTE`/`WARN`.
 | Key | Action |
 | :--- | :--- |
 | `]s` / `[s` | Next / prev misspelling |
-| `z=` | Suggestions (picker, multi-digit safe) |
+| `z=` | Suggestions (numbered list, multi-digit safe) |
 | `zg` / `zw` / `zug` | Add word / mark wrong / undo |
 | `<leader>us` | Toggle spell for current window |
 

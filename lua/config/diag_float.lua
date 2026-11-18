@@ -10,25 +10,37 @@
 local M = {}
 
 function M.setup()
-  local last_diag_lnum = nil
-  local diag_float_timer ---@type uv.uv_timer_t|nil
-  local diag_float_win ---@type integer|nil
+  -- Reload-safe (<leader>ur evicts this module and re-runs setup): keep state
+  -- in _G and tear down the previous timer/float first, otherwise a queued
+  -- callback from the old timer opens a float the new state can't close.
+  local state = _G._diag_float_state
+  if state then
+    if state.timer and not state.timer:is_closing() then
+      pcall(function() state.timer:stop() end)
+      pcall(function() state.timer:close() end)
+    end
+    if state.win and vim.api.nvim_win_is_valid(state.win) then pcall(vim.api.nvim_win_close, state.win, true) end
+    state.timer, state.win, state.last_lnum = nil, nil, nil
+  else
+    _G._diag_float_state = {}
+    state = _G._diag_float_state
+  end
 
   local function close_diag_float()
-    if diag_float_win and vim.api.nvim_win_is_valid(diag_float_win) then pcall(vim.api.nvim_win_close, diag_float_win, true) end
-    diag_float_win = nil
+    if state.win and vim.api.nvim_win_is_valid(state.win) then pcall(vim.api.nvim_win_close, state.win, true) end
+    state.win = nil
   end
 
   -- Reuse a single timer instead of allocating one per CursorMoved (avoids
   -- per-move GC pressure; the UI audit flagged new_timer on every cursor move).
   local function get_diag_timer()
-    if diag_float_timer and not diag_float_timer:is_closing() then return diag_float_timer end
-    diag_float_timer = vim.uv.new_timer()
-    return diag_float_timer
+    if state.timer and not state.timer:is_closing() then return state.timer end
+    state.timer = vim.uv.new_timer()
+    return state.timer
   end
 
   local function stop_diag_timer()
-    if diag_float_timer then pcall(function() diag_float_timer:stop() end) end
+    if state.timer then pcall(function() state.timer:stop() end) end
   end
 
   local function open_diag_float()
@@ -37,7 +49,7 @@ function M.setup()
     local ok_cursor, cursor = pcall(vim.api.nvim_win_get_cursor, 0)
     if not ok_cursor then return end
     local lnum = cursor[1] - 1
-    if lnum == last_diag_lnum then return end
+    if lnum == state.last_lnum then return end
     if #vim.diagnostic.get(0, { lnum = lnum }) == 0 then return end
     close_diag_float()
     local ok, _, win = pcall(vim.diagnostic.open_float, nil, {
@@ -46,8 +58,8 @@ function M.setup()
       border = 'rounded',
       close_events = { 'CursorMoved', 'BufLeave', 'InsertEnter', 'WinClosed' },
     })
-    if ok and type(win) == 'number' then diag_float_win = win end
-    last_diag_lnum = lnum
+    if ok and type(win) == 'number' then state.win = win end
+    state.last_lnum = lnum
   end
 
   vim.api.nvim_create_autocmd('CursorMoved', {
@@ -57,7 +69,7 @@ function M.setup()
       stop_diag_timer()
       close_diag_float()
       -- reset throttle so returning to a previously-seen line re-opens
-      last_diag_lnum = nil
+      state.last_lnum = nil
       local t = get_diag_timer()
       if not t then
         vim.schedule(open_diag_float)
@@ -81,7 +93,7 @@ function M.setup()
     callback = function()
       if vim.api.nvim_get_mode().mode ~= 'n' then return end
       stop_diag_timer()
-      last_diag_lnum = nil
+      state.last_lnum = nil
       local t = get_diag_timer()
       if not t then
         vim.schedule(open_diag_float)
@@ -105,7 +117,7 @@ function M.setup()
     callback = function()
       stop_diag_timer()
       close_diag_float()
-      last_diag_lnum = nil
+      state.last_lnum = nil
     end,
   })
 
@@ -116,7 +128,7 @@ function M.setup()
     callback = function()
       stop_diag_timer()
       close_diag_float()
-      if diag_float_timer and not diag_float_timer:is_closing() then pcall(function() diag_float_timer:close() end) end
+      if state.timer and not state.timer:is_closing() then pcall(function() state.timer:close() end) end
     end,
   })
 end

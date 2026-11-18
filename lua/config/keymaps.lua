@@ -21,10 +21,10 @@ vim.keymap.set('i', '<C-BS>', '<C-w>', { desc = 'Delete previous word' })
 -- TO CHANGE: delete this line to get the default back
 vim.keymap.set('x', 'vv', 'V', { desc = 'Linewise selection' })
 
--- Open diagnostic quickfix list
+-- Open diagnostic location list (window-local, not the global quickfix list)
 -- WHAT: Opens a list of all diagnostics in the current buffer
--- TO CHANGE: Map to a different key like <leader>x
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+-- TO CHANGE: Map to a different key like <leader>xx (Trouble)
+vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [L]ocation list' })
 
 -- Jump between errors/warnings (e.g. jsonls flags in a json file)
 vim.keymap.set('n', '[d', function() vim.diagnostic.jump { count = -1, float = true } end, { desc = 'Previous [D]iagnostic' })
@@ -62,10 +62,10 @@ local function yank_diagnostics(all)
   vim.notify(string.format('Yanked %d diagnostic%s: %s', #diag, #diag == 1 and '' or 's', msg:gsub('\n', ' '):sub(1, 60)), vim.log.levels.INFO)
 end
 
--- Copy the full diagnostic message under the cursor to the system clipboard
+-- Copy the full diagnostic message under the cursor to the clipboard
 -- WHAT: Yanks the LSP/linter message at the cursor so you can paste it elsewhere
--- TO CHANGE: Use 'y' instead of '+' to copy into the default register
-vim.keymap.set('n', 'gy', function() yank_diagnostics(false) end, { desc = '[G]ank diagnostic [Y]ank to clipboard' })
+-- TO CHANGE: swap yank_reg() for '"' to always use the default register
+vim.keymap.set('n', 'gy', function() yank_diagnostics(false) end, { desc = '[G]et diagnostic [Y]ank to clipboard' })
 
 -- Yank ALL diagnostic messages on the current line (e.g. ruff + pyrefly
 -- complaining about the same line) to the system clipboard.
@@ -132,7 +132,7 @@ local function spell_fix()
   end
   vim.cmd.normal { n .. 'z=', bang = true }
 end
-vim.keymap.set('n', 'z=', spell_fix, { desc = 'Spell suggestions (picker)' })
+vim.keymap.set('n', 'z=', spell_fix, { desc = 'Spell suggestions (numbered list)' })
 
 -- Undo tree (builtin 0.12 opt plugin): visual undo history browser.
 -- packadd is required because nvim.undotree ships under pack/dist/opt.
