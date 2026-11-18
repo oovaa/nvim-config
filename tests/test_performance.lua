@@ -56,6 +56,7 @@ describe('performance', function()
   end)
 
   it('attaches the native LSP and defines servers via vim.lsp.config', function()
+    if vim.fn.executable('lua-language-server') == 0 then pending('lua-language-server not installed on this machine') return end
     local file = vim.fn.tempname() .. '.lua'
     local fh = assert(io.open(file, 'w'))
     fh:write 'local x = 1\nreturn x\n'
