@@ -1,145 +1,132 @@
 # Neovim Configuration Cheat Sheet
 
-This repository is based on `kickstart.nvim`, customized with several plugins to provide a familiar, VS Code-like experience.
+This repository is based on `kickstart.nvim`, customized with many plugins for a
+VS Code-like experience. **Leader key:** `<Space>`.
 
-**Leader Key:** `<Space>`
+> Generated from the config. For the live, authoritative list use `:map` or
+> `<leader>sk` (search keymaps).
+
+---
 
 ## 🐍 Python Development
 
 | Tool | Purpose |
 | :--- | :--- |
-| `pyrefly` | LSP (autocomplete, type checking, goto definition, etc.) — first of `ty` / `pyrefly` / `pyright-langserver` found on `PATH`; `:NvimCheckPythonLsp` |
-| `ruff` | Linting + formatting (replaces flake8, isort, black) |
-| Treesitter | Syntax highlighting for Python |
+| `pyrefly` / `ty` / `pyright` | LSP (first found on `PATH`; `:NvimCheckPythonLsp`) |
+| `ruff` | Linting + formatting |
+| Treesitter | Syntax highlighting |
 
-- **Autoformat on save** is enabled for Python (ruff).
-- `ruff` is installed via Mason; the Python LSP is not (`:NvimCheckPythonLsp` reports what this machine has).
-- Works with virtualenvs automatically.
+- Autoformat on save (ruff). Works with virtualenvs automatically.
+- LSP servers installed via Mason except the Python LSP (checked, not installed).
 
 ## 🚀 Session Management
 
-- Sessions are saved on quit and restored from the dashboard (`s`) via builtin `:mksession` (suppressed in `~/`, `~/Downloads`, `/etc`, `/tmp`).
-- Switch projects with `<leader>sp`.
+- Sessions saved on quit, restored from dashboard (`s`) via builtin `:mksession`
+  (suppressed in `~/`, `~/Downloads`, `/etc`, `/tmp`).
+- Switch projects: `<leader>sp`. Restore last session: `<leader>sr`.
 
 ## 🗂️ UI & File Navigation
 
-| Keybinding | Action | Plugin |
+| Keybinding | Action | Plugin/Feature |
 | :--- | :--- | :--- |
-| `<leader>e` | Toggle File Explorer | `snacks.nvim` |
-| `<leader>ty` | Switch Theme (snacks colorscheme picker, choice persisted across restarts) | config |
-| `t` | Open file in new tab (in explorer) | `snacks.nvim` |
-| `<C-t>` | Open file in new tab (in picker) | `snacks.nvim` |
-| `<leader>tt` | Toggle bottom terminal | built-in |
-| `<leader>tf` | Toggle floating terminal | built-in |
-| `<leader>tm` | Toggle floating terminal with tmux (multi-tab) | built-in |
-| `<C-\>` | Toggle Terminal (Any mode) | built-in |
-| `<leader>tn` | New terminal window (bottom) | built-in |
-| `<leader>t1/2/3`| New terminal: bottom / vertical / floating | built-in |
-| `<leader>t-` | Split current window, new shell below (VSCode split) | built-in |
-| `<leader>tv` | Split current window, new shell beside (VSCode split) | built-in |
-| `<S-h>` | Previous Buffer | built-in |
-| `<S-l>` | Next Buffer | built-in |
-| `<leader>bd` | Delete Current Buffer | built-in |
-| `<leader>bp` | Pin Buffer (unlist it; stays open, skipped by `:bnext`, jump back by name) | built-in |
-| `<leader>uu` | Undo tree (visual undo history browser) | built-in (0.12) |
-| `s` | Fast Jump (Flash) | `flash.nvim` |
-| `S` | Fast Jump Treesitter Mode | `flash.nvim` |
-| `<C-h/j/k/l>` | Switch focus between windows (editor, terminal, explorer) | built-in |
+| `<leader>e` / `<leader>fe` | Toggle file explorer | `snacks.nvim` |
+| `<leader>fE` | File explorer (reveal current file) | `snacks.nvim` |
+| `t` (explorer) / `<C-t>` (picker) | Open file in new tab | `snacks.nvim` |
+| `<leader>ty` | Switch theme (persisted) | `snacks.nvim` |
+| `<leader>tb` | Toggle dark/light background | built-in |
+| `<leader>tt` / `<leader>tf` / `<leader>tm` | Toggle terminal (bottom / float / tmux) | built-in |
+| `<leader>tn` / `<leader>t1` / `<leader>t2` / `<leader>t3` | New terminal (bottom / vertical / float) | built-in |
+| `<leader>t-` / `<leader>tv` | Split window, new shell below / beside | built-in |
+| `<C-\>` | Toggle terminal (any mode) | built-in |
+| `<S-h>` / `<S-l>` | Prev / next buffer | built-in |
+| `<leader>bd` / `<leader>bp` | Delete / pin buffer | built-in |
+| `<leader>uu` | Undo tree (visual history) | built-in (0.12) |
+| `<leader>gD` | DiffTool (two paths) | built-in (0.12) |
+| `s` / `S` | Flash jump / treesitter mode | `flash.nvim` |
+| `<C-h/j/k/l>` | Switch focus between windows | built-in |
+| `<leader>o` | Toggle outline sidebar | `aerial.nvim` |
+| `<leader>uc` | Toggle colorizer (inline colors) | `nvim-colorizer` |
+| `<leader>us` / `<leader>uH` | Toggle spell / LSP document highlight | built-in |
+| `<leader>uw` | Toggle line wrap | built-in |
+| `<leader>ur` | Reload config | built-in |
+| `<leader>fy` | Yank file path (count = absolute) | built-in |
+| `<leader>.` / `<leader>S` | Toggle scratch buffer / select scratch | `snacks.nvim` |
 
-Notes: hybrid relative line numbers are on (`relativenumber`); visual-block selections extend past end-of-line (`virtualedit=block`); cmdline file completion is case-insensitive (`wildignorecase`).
+Notes: hybrid relative line numbers on; `virtualedit=block` (visual-block past
+EOL); case-insensitive cmdline file completion (`wildignorecase`);
+`clipboard=unnamedplus` (unless over SSH).
 
 ### 🗂️ Explorer Tricks
 
-Press `<leader>e` to toggle the file explorer. Inside it:
-
-| Key | Action |
-| :--- | :--- |
-| `?` | Show explorer help |
-| `<CR>` / `o` | Open file (or expand/collapse folder) |
-| `h` / `l` | Collapse / expand folder |
-| `<C-v>` | Open file in vertical split |
-| `s` | Open file in horizontal split |
-| `t` | Open file in new tab |
-| `a` | Create file/folder |
-| `d` | Delete file/folder |
-| `r` | Rename |
-| `R` | Refresh tree |
-| `x` / `y` / `p` | Cut / copy / paste |
-| `q` | Close the explorer |
+Press `<leader>e` to toggle. Inside it: `a` add, `d` delete, `r` rename, `y/p`
+copy/paste, `.` toggle hidden, `t` open in tab.
 
 ## 🔍 Searching (snacks picker)
 
 | Keybinding | Action |
 | :--- | :--- |
-| `<leader>sf` | Search Files (also `<leader><leader>`) |
-| `<leader>sp` | Search Projects (Switch project) |
-| `<leader>sg` | Search by Grep (Search across entire codebase) |
-| `<leader>sw` | Grep word under cursor |
-| `<leader>s/` | Grep in currently open files |
-| `<leader>sh` | Search Help tags |
-| `<leader>sk` | Search Keymaps |
-| `<leader>sd` | Search Diagnostics |
-| `<leader>sr` | Search Resume (resume last search) |
-| `<leader>s.` | Search Recent Files |
-| `<leader>sc` | Search Commands |
-| `<leader>ls` | List functions/symbols in current file (picker, needs LSP) |
-| `<leader>lS` | List symbols in workspace (picker, needs LSP) |
+| `<leader>sf` / `<leader><leader>` | Search files |
+| `<leader>sg` | Search by grep |
+| `<leader>sw` | Search current word (n/x) |
+| `<leader>s.` | Search recent files |
+| `<leader>sr` | Resume last search |
+| `<leader>ss` | Select picker |
+| `<leader>sc` | Search commands |
+| `<leader>sh` | Search help |
+| `<leader>sk` | Search keymaps |
 | `<leader>sn` | Search Neovim config files |
-| `<leader>st` | Search todo comments |
+| `<leader>sd` | Search diagnostics |
+| `<leader>s/` | Search in open files |
 | `<leader>/` | Fuzzily search in current buffer |
-
-**Picker shortcuts (inside the picker):**
-
-| Key | Action |
-| :--- | :--- |
-| `<CR>` | Open in current window |
-| `<C-x>` | Open in horizontal split |
-| `<C-v>` | Open in vertical split |
-| `<C-t>` | Open in new tab |
+| `<leader>sp` | Search projects |
+| `<leader>st` | Search TODO comments |
+| `<leader>ls` / `<leader>lS` | LSP symbols (file / workspace) |
+| `<leader>n` / `<leader>un` | Notification history / dismiss all |
 
 ## 💻 Code & Editing
 
-| Keybinding / Command | Action | Plugin/Feature |
+| Keybinding | Action | Plugin/Feature |
 | :--- | :--- | :--- |
-| `:e <file>` | Open / create a file | built-in |
-| `:wa` | Save all files | built-in |
-| `:%s/old/new/g` | Find & replace all in file | built-in |
-| `:%s/old/new/gc` | Find & replace with confirmation | built-in |
-| `:%s/old/new/gi` | Find & replace (case-insensitive) | built-in |
-| `<Tab>` | Accept Autocompletion Suggestion | `blink.cmp` |
-| `<S-Tab>` | Previous Autocompletion Suggestion | `blink.cmp` |
+| `<Tab>` / `<S-Tab>` | Accept / prev completion | `blink.cmp` |
 | `<C-j>` / `<C-k>` | Next / prev snippet placeholder | `blink.cmp` + `luasnip` |
-| `<C-space>` | Force show completion docs | `blink.cmp` |
-| `<C-BS>` | Delete previous word | built-in |
-| `vv` (visual) | Select the whole current line | built-in |
+| `<C-space>` | Force completion docs | `blink.cmp` |
+| `<C-BS>` | Delete previous word (insert) | built-in |
+| `<Esc>` | Clear search highlighting | built-in |
+| `vv` (visual) | Select whole line | built-in |
 | `<leader>q` | Open diagnostic quickfix list | built-in |
-| `gy` | Yank nearest diagnostic under cursor | built-in |
-| `<leader>yd` | Yank all diagnostics on current line | built-in |
-| `<leader>uc` | Toggle colorizer (inline color previews) | `colorizer` |
-| `<leader>us` | Toggle spell checking | built-in |
-| `<leader>uw` | Toggle line wrap | built-in |
-| `<leader>tb` | Toggle dark/light background | built-in |
-| `<leader>ur` | Reload config | built-in |
-| `<leader>fy` | Yank file path (count = absolute) | built-in |
-| `<leader>R` / `<leader>rf` | Run current file (bun / python3 / gcc) | built-in |
-| `:DiffOrig` | Diff buffer against saved file | built-in |
+| `gy` / `<leader>yd` | Yank nearest / all diagnostics on line | built-in |
+| `[d` / `]d` | Prev / next diagnostic (with float) | built-in |
 | `<leader>ff` | Format buffer | `conform.nvim` |
-| `<leader>fe` | File explorer | `snacks.nvim` |
-| `<leader>fE` | File explorer (reveal current file) | `snacks.nvim` |
-| `:StartupTime` | Profile startup (native timing + lazy.nvim plugin stats) | config |
+| `<leader>ca` / `gra` | Code action (preview) | `actions-preview.nvim` |
+| `grn` | Rename symbol (live preview) | `inc-rename.nvim` |
+| `K` | Hover | LSP |
+| `<C-s>` (n/i) | Signature help | LSP |
+| `grr` / `grd` / `gri` / `grt` / `grD` | References / def / impl / type-def / decl | LSP |
+| `gO` / `gW` | Document / workspace symbols | LSP |
+| `<leader>th` | Toggle inlay hints | LSP |
+| `<leader>lr` | Restart LSP servers | built-in (0.12) |
+| `<leader>fr` | Project find & replace | `grug-far.nvim` |
+| `<leader>rr` | Refactoring menu | `refactoring.nvim` |
+| `<leader>p` | Paste image from clipboard | `img-clip.nvim` |
+| `<leader>hr` | Send HTTP request (`.http` files) | `rest.nvim` |
+| `<leader>R` / `<leader>rf` | Run current file | built-in |
+| `:DiffOrig` | Diff buffer vs saved file | built-in |
+
+`auto-save.nvim` writes on `InsertLeave`/`TextChanged` (debounced); `ASToggle`
+toggles it. `guess-indent.nvim` detects indent on `BufReadPost`.
+`ts-comments.nvim` gives treesitter-aware comment strings. `todo-comments.nvim`
+highlights `TODO`/`FIXME`/`NOTE`/`WARN`.
 
 ### ✏️ Spell checking (built-in, auto-on for markdown only)
 
 | Key | Action |
 | :--- | :--- |
-| `]s` / `[s` | Next / previous misspelling |
-| `z=` | Suggestions for word under cursor |
-| `zg` | Add word to personal dictionary |
-| `zw` | Mark word as wrong |
-| `zug` | Undo `zg` / `zw` |
-| `<leader>us` | Toggle spell on/off for the current window |
+| `]s` / `[s` | Next / prev misspelling |
+| `z=` | Suggestions (picker, multi-digit safe) |
+| `zg` / `zw` / `zug` | Add word / mark wrong / undo |
+| `<leader>us` | Toggle spell for current window |
 
-Statusline shows `SPELL` while it is on. Language: `en_us` (`vim.o.spelllang`).
+Statusline shows `SPELL` while on. Language: `en_us`.
 
 ### 💬 Messages & Notifications (snacks notifier)
 
@@ -153,128 +140,131 @@ Statusline shows `SPELL` while it is on. Language: `en_us` (`vim.o.spelllang`).
 
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
-| `-` | Edit current directory as a buffer (rename/delete/move files) | `oil.nvim` |
-| `<leader>xx` | Diagnostics panel (all) | `trouble.nvim` |
-| `<leader>xX` | Diagnostics panel (current buffer) | `trouble.nvim` |
+| `-` | Edit directory as a buffer | `oil.nvim` |
+| `<leader>xx` / `<leader>xX` | Diagnostics (all / buffer) | `trouble.nvim` |
 | `<leader>xs` | Symbols panel | `trouble.nvim` |
 | `<leader>xq` | Quickfix panel | `trouble.nvim` |
-| `<C-a>` / `<C-x>` | Increment / decrement (decimal, hex, date) | `dial.nvim` |
-| `<leader>j` | Split/join code block | `treesj` |
-| `<leader>gn` | Open neogit (magit-like git UI) | `neogit` |
-| `<leader>va` | Add current file to visited list | `mini.visits` |
-| `<leader>vv` | Select a visited file | `mini.visits` |
-| `<leader>z` | Toggle zen mode | `snacks.nvim` |
-| `<leader>Z` | Toggle zoom (zen) | `snacks.nvim` |
+| `<C-a>` / `<C-x>` | Increment / decrement (dec/hex/date) | `dial.nvim` |
+| `<leader>j` | Split / join code block | `treesj` |
+| `<leader>gn` | Neogit (magit-like git UI) | `neogit` |
+| `<leader>va` / `<leader>vv` | Visit add / select | `mini.visits` |
+| `<leader>z` / `<leader>Z` | Zen mode / zoom | `snacks.nvim` |
 
 ## 🌿 Git Integration
 
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
-| `<leader>fg` | Open LazyGit (floating window) | built-in |
-| `[c` | Previous Hunk | `gitsigns` |
-| `]c` | Next Hunk | `gitsigns` |
-| `<leader>gd` | Diff buffer against index (split) | `gitsigns` |
-| `<leader>gD` | DiffTool: compare two files or directories | built-in (0.12) |
-| `<leader>gp` | Preview hunk under cursor | `gitsigns` |
+| `<leader>fg` | Open LazyGit | built-in |
+| `[c` / `]c` | Prev / next hunk | `gitsigns` |
+| `<leader>gd` / `<leader>gp` | Diff split / preview hunk | `gitsigns` |
 | `<leader>gt` | Toggle showing deleted lines | `gitsigns` |
-| `]x` / `[x` | Next / previous merge conflict (conflicted files only) | `git-conflict` |
-| `co` `ct` `cb` `c0` | Take ours / theirs / both / none (conflicted files only) | `git-conflict` |
+| `<leader>gb` | Toggle inline git blame | `blame.nvim` |
+| `]x` / `[x` | Next / prev merge conflict | `git-conflict` |
+| `co` / `ct` / `cb` / `c0` | Take ours / theirs / both / none | `git-conflict` |
 
 ## 🌐 Live Preview & Emmet (frontend)
 
 | Keybinding | Action |
 | :--- | :--- |
-| `<leader>hs` | Start live preview (serves the project on `http://127.0.0.1:8000`, opens the browser) |
+| `<leader>hs` | Start live preview (serves on 127.0.0.1:8000) |
 | `<leader>hx` | Stop live preview |
-| `<leader>ho` | Open the served page in the browser |
-| `<leader>ht` | Toggle live reload (page refreshes on save; CSS hot-swaps) |
+| `<leader>ho` | Open served page in browser |
+| `<leader>ht` | Toggle live reload (CSS hot-swaps) |
 
-- Saving any file in the served project refreshes the page; servers stop when nvim exits. Commands: `:KiteHost start|stop|status|toggle-live|open|reload`.
-- **Emmet** (HTML/CSS/JSX/TSX): type an abbreviation like `div.card>p*3`, then accept the completion with `<Tab>` (or `<C-y>`) to expand it.
+- Saving any file in the served project refreshes the page; servers stop on exit.
+- Commands: `:KiteHost start|stop|status|toggle-live|open|reload`.
+- Emmet: type an abbreviation, accept with `<Tab>` (or `<C-y>`) to expand.
 
 ## 🧠 LSP (Language Server Protocol)
 
 | Keybinding | Action |
 | :--- | :--- |
-| `K` | Hover (show function signature, args, return type, docs) |
-| `grd` | Go to Definition |
-| `grr` | Go to References |
-| `gri` | Go to Implementation |
-| `grt` | Go to Type Definition |
-| `grD` | Go to Declaration |
-| `gra` | Goto Code Action |
-| `grn` | Rename symbol |
-| `gO` | Open Document Symbols |
-| `gW` | Open Workspace Symbols |
-| `<leader>th` | Toggle Inlay Hints |
-| `<leader>lr` | Restart LSP servers on this buffer |
+| `K` | Hover (signature, args, return type, docs) |
+| `grd` / `grr` / `gri` / `grt` / `grD` | Definition / references / impl / type-def / decl |
+| `grn` | Rename symbol (live preview) |
+| `gra` / `<leader>ca` | Code action |
+| `gO` / `gW` | Document / workspace symbols |
+| `<leader>th` | Toggle inlay hints |
+| `<leader>lr` | Restart LSP servers |
+| `<C-s>` | Signature help |
 
 ## ✂️ Text Objects & Surround (`mini.nvim`)
 
-* **`mini.ai`**: Enhanced text objects (e.g., `va)` to visually select around parens, `ci'` to change inside quotes).
-* **`mini.surround`**:
-    * `gsaiw)` - **S**urround **A**dd **I**nner **W**ord **)** Paren
-    * `gsd'` - **S**urround **D**elete **'** quotes
-    * `gsr)'` - **S**urround **R**eplace **)** with **'**
-    * Visual mode: select text, then `gsa` + character to surround
+- `mini.ai`: enhanced text objects (`va)`, `ci'`, `yiiq`, …); `aa`/`ii` for next
+  around/inside.
+- `mini.surround`: `gsa` add, `gsd` delete, `gsr` replace, `gsf`/`gsF` find,
+  `gsh` highlight, `gsn` update lines. `gss` surrounds the current line.
+- `mini.pairs`: auto-pair brackets/quotes (skips inside strings).
+- `mini.bracketed`: `[b`/`]b` buffers, `[q`/`]q` quickfix, `[t`/`]t` treesitter,
+  `[u`/`]u` undo states.
+- `mini.move` / `mini.splitjoin` / `mini.align` / `mini.operators`: `gX` exchange,
+  `g=` evaluate, `gM` multiply, `cr` replace, `gS` sort.
+- `mini.visits`: `<leader>va` add, `<leader>vv` select.
+
+Treesitter textobjects (in visual/operator-pending mode): `af`/`if` function
+outer/inner, `ac`/`ic` class, `aP`/`iP` parameter. Motions: `]m`/`[m` next/prev
+function start, `]M`/`[M` function end, `]C`/`[C` class start, `]a`/`[a` swap
+next/prev parameter. Provided by `nvim-treesitter-textobjects`;
+`nvim-ts-autotag` auto-closes/renames HTML tags.
 
 ## 🎬 Macros
 
 | Keybinding | Action |
 | :--- | :--- |
-| `q{letter}` | Start recording macro to register (e.g. `qa`) |
+| `q{letter}` | Start recording macro |
 | `q` | Stop recording |
-| `@{letter}` | Play macro from register (e.g. `@a`) |
-| `@@` | Repeat last played macro |
-| `{count}@{letter}` | Play macro N times (e.g. `10@a`) |
+| `@{letter}` / `@@` | Play macro / repeat last |
+| `{count}@{letter}` | Play macro N times |
 
-## 🐛 Python Debugging (DAP)
+## 🐛 Debugging (DAP)
 
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
-| `<leader>db` | Toggle Breakpoint | `nvim-dap` |
-| `<leader>dc` | Continue / Start Debugging | `nvim-dap` |
-| `<leader>di` | Step Into | `nvim-dap` |
-| `<leader>do` | Step Over | `nvim-dap` |
-| `<leader>dO` | Step Out | `nvim-dap` |
+| `<leader>db` / `<leader>dB` | Toggle breakpoint / conditional | `nvim-dap` |
+| `<leader>dc` / `<leader>dl` | Continue / run last | `nvim-dap` |
+| `<leader>di` / `<leader>do` / `<leader>dO` | Step into / over / out | `nvim-dap` |
 | `<leader>dr` | Toggle REPL | `nvim-dap` |
-| `<leader>dl` | Run Last | `nvim-dap` |
-| `<leader>dt` | Terminate Debugging | `nvim-dap` |
-| `<leader>dn` | Debug Nearest Test (pytest) | `nvim-dap-python` |
-| `<leader>df` | Debug Test File | `nvim-dap-python` |
-| `<leader>ds` | Debug Selection (visual mode) | `nvim-dap-python` |
+| `<leader>dt` | Terminate | `nvim-dap` |
+| `<leader>dn` / `<leader>df` / `<leader>ds` | Debug nearest / file / selection | `nvim-dap-python` |
+
+Supports Python, Go, C/C++, Rust, TS/React, Java (`nvim-dap-go`, `nvim-jdtls`,
+`rustaceanvim`, `nvim-vtsls`).
 
 ## 📓 Jupyter Notebooks (Molten)
 
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
-| `<leader>mi` | Initialize Jupyter Kernel | `molten-nvim` |
-| `<leader>ml` | Evaluate Current Line | `molten-nvim` |
-| `<leader>mv` | Evaluate Visual Selection | `molten-nvim` |
-| `<leader>mr` | Re-evaluate Cell | `molten-nvim` |
-| `<leader>mh` | Hide Output | `molten-nvim` |
-| `<leader>md` | Delete Cell Output | `molten-nvim` |
-| `<leader>mn` | Next Cell | `molten-nvim` |
-| `<leader>mp` | Previous Cell | `molten-nvim` |
-| `<leader>mo` | Open in Browser | `molten-nvim` |
+| `<leader>mi` | Initialize kernel | `molten-nvim` |
+| `<leader>ml` / `<leader>mv` / `<leader>mr` | Eval line / visual / re-eval cell | `molten-nvim` |
+| `<leader>mh` / `<leader>md` | Hide output / delete cell output | `molten-nvim` |
+| `<leader>mn` / `<leader>mp` | Next / prev cell | `molten-nvim` |
+| `<leader>mo` | Open in browser | `molten-nvim` |
+
+Needs Python 3 + `pynvim` + Jupyter kernel. `image.nvim` renders plots.
 
 ## 📝 Markdown
 
-`render-markdown.nvim` renders Markdown directly in the buffer — no keybinding needed, it just works when you open a `.md` file. Headings, bold, code blocks, etc. are displayed with proper formatting and colors.
+`render-markdown.nvim` renders Markdown in-buffer (headings, bold, code blocks).
+No keybinding needed. In Markdown buffers lists auto-continue on `<CR>` / `o` /
+`O`; pressing `<CR>` on an empty item exits the list, and numbered items
+renumber automatically (supports `-`/`*`/`+` and `1.`/`1)`).
 
 ## ✨ QoL Plugins
 
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
 | `<leader>gb` | Toggle inline git blame | `blame.nvim` |
-| `<leader>rr` | Refactoring menu (normal + visual) | `refactoring.nvim` |
-| `<leader>tr` / `<leader>ts` / `<leader>to` | Run test / summary / output panel | `neotest` |
-| `<leader>hr` | Send HTTP request (in `.http` files, buffer-local) | `rest.nvim` |
+| `<leader>rr` | Refactoring menu | `refactoring.nvim` |
+| `<leader>tr` / `<leader>ts` / `<leader>to` | Run test / summary / output | `neotest` |
+| `<leader>hr` | Send HTTP request | `rest.nvim` |
 | `<leader>o` | Toggle outline sidebar | `aerial.nvim` |
 | `<leader>fr` | Project find & replace | `grug-far.nvim` |
 | `<leader>p` | Paste image from clipboard | `img-clip.nvim` |
+| `<leader>st` | Search TODO comments | `todo-comments.nvim` |
 
-`snacks.nvim` (`vim.ui.input` + `vim.ui.select`, so code actions, quickfix and mason pickers all look like the rest of the UI) and `nvim-bqf` (quickfix preview) have no keybindings — they improve existing UI automatically.
+`snacks.nvim` (`vim.ui.input`/`select`) and `nvim-bqf` (quickfix preview) improve
+existing UI automatically. `which-key.nvim` shows key hints (groups: `[B]uffer`,
+`[X]` Trouble, `[V]isits`).
 
 ### 🔁 grug-far (project find & replace)
 
@@ -283,7 +273,7 @@ Press `<leader>fr`, fill the fields, matches preview live below:
 | Key | Action |
 | :--- | :--- |
 | `<localleader>s` | Apply replacement to all matches |
-| `<localleader>l` | Apply replacement to matches on current line only |
+| `<localleader>l` | Apply to matches on current line only |
 | `<localleader>c` | Close the panel |
 | `<localleader>t` | Browse/reuse search history |
 
@@ -291,9 +281,35 @@ Limit scope with the files filter (e.g. `*.py`); `<CR>` on a match jumps to it.
 
 ## 🐚 Terminal Navigation
 
-When inside the terminal:
-* `<Esc>` or `jk`: Exit terminal mode (return to normal mode).
-* `<C-h/j/k/l>`: Switch directly to another window from terminal mode.
+When inside the terminal: `<Esc>` or `jk` exits terminal mode; `<Esc><Esc>` also
+exits; `<C-h/j/k/l>` switches directly to another window.
+
+## 🎨 Themes
+
+Pick via `<leader>ty` (persisted): tokyonight (default), catppuccin, cyberdream,
+dracula, everforest, flexoki, github-theme, gruvbox, kanagawa, melange, nightfox,
+onedark, poimandres, rose-pine, and more. Nerd Font required (`have_nerd_font=true`).
+
+## 📊 Options & Behavior (selected)
+
+- `number` + `relativenumber` (hybrid) on; `signcolumn=yes`.
+- `ignorecase` + `smartcase`; `grepprg` uses ripgrep.
+- `undofile` on; `updatetime=350`; `timeoutlen=300`.
+- `breakindent`, `termguicolors`, `synmaxcol=300`.
+- `lazyredraw=true`; `pumheight=10`, `pummaxwidth=80`.
+- `virtualedit=block`, `wildignorecase=true`.
+- Large-file mode (>1 MiB) disables treesitter/LSP/lint/format.
+- Automatic: yank highlight, cursor restored on file open, spell auto-on for
+  prose filetypes, idle `checktime`, parent dir created on write, cmdline
+  completion menu auto-shows, which-key hints stay visible while recording macros.
+
+## 🔧 Mason / Tooling
+
+- Mason installs LSP servers + formatters/linters. Go-based tools (`gopls`,
+  `sqls`, `gofumpt`, `goimports`, `delve`) only when `go` is on `PATH`.
+- `tree-sitter` CLI is required (not via Mason) for `:TSInstall`.
+- `:StartupTime` profiles startup; `:NvimCheckPythonLsp` reports Python tooling.
+- `:SudoWrite` writes a root-owned buffer via `sudo tee`; `:ASToggle` toggles auto-save.
 
 ---
-*Generated based on your `init.lua` settings.*
+*Generated from the config files; regenerate after adding keymaps.*
