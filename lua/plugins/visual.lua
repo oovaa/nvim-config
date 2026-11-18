@@ -71,6 +71,11 @@ return {
         { '<leader>y', group = '[Y]ank' },
         { '<leader>h', group = '[H]ot reload' },
         { '<leader>l', group = '[L]SP' },
+        -- report-pick namespaces (bd/bp, xx..xq, va/vv) had no group label,
+        -- so which-key showed them as bare keys under an unlabeled prefix
+        { '<leader>b', group = '[B]uffer' },
+        { '<leader>x', group = '[X] Trouble / Diagnostics' },
+        { '<leader>v', group = '[V]isits (mini.visits)' },
         { 'gr', group = 'LSP Actions', mode = { 'n' } },
       },
     },

@@ -255,6 +255,19 @@ vim.opt.fillchars:append { eob = ' ' }
 -- EFFECT: 'split' = shows preview in a split window below
 vim.o.inccommand = 'split'
 
+-- VIRTUAL EDIT (block mode)
+-- WHAT: lets a visual-block selection extend past the end of short lines
+-- TO CHANGE: set to '' for strict end-of-line, or 'all' to also move freely in insert
+-- EFFECT: `v` block selections pad short lines with spaces instead of stopping
+--         at their EOL — the classic multi-line edit across ragged lines works
+vim.o.virtualedit = 'block'
+
+-- CASE-INSENSITIVE FILE COMPLETION on the command line (:e README.md vs readme.md)
+-- WHAT: :e/:cd/:split path completion ignores case
+-- TO CHANGE: remove for case-sensitive completion
+-- EFFECT: less retyping on case-mismatched filesystems (macOS, Windows mounts)
+vim.o.wildignorecase = true
+
 -- CURSOR LINE
 -- WHAT: Highlights the line where your cursor is
 -- TO CHANGE: Set to false to disable
