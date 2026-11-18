@@ -5,6 +5,18 @@
 
 -- Language servers managed by Mason (automatically installed via `:Mason`)
 --  See `:help lsp-config` for information about keys and how to configure
+-- Shared by root_markers and root_dir below; see the tailwindcss entry.
+local tailwind_markers = {
+  'tailwind.config.js',
+  'tailwind.config.cjs',
+  'tailwind.config.mjs',
+  'tailwind.config.ts',
+  'postcss.config.js',
+  'postcss.config.cjs',
+  'postcss.config.mjs',
+  'postcss.config.ts',
+}
+
 ---@type table<string, vim.lsp.Config>
 local servers = {
   -- clangd = {},
@@ -113,16 +125,12 @@ local servers = {
   tailwindcss = {
     cmd = { 'tailwindcss-language-server', '--stdio' },
     filetypes = { 'html', 'css', 'scss', 'less', 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue', 'svelte', 'astro' },
-    root_markers = {
-      'tailwind.config.js',
-      'tailwind.config.cjs',
-      'tailwind.config.mjs',
-      'tailwind.config.ts',
-      'postcss.config.js',
-      'postcss.config.cjs',
-      'postcss.config.mjs',
-      'postcss.config.ts',
-    },
+    root_markers = tailwind_markers,
+    -- root_markers alone still attaches with root_dir = cwd when no marker is
+    -- found (e.g. a TS file in a monorepo whose only Tailwind config lives in a
+    -- sibling package). Returning nil aborts the attach entirely — the server
+    -- is useless without a Tailwind config anyway.
+    root_dir = function(fname) return vim.fs.root(fname, tailwind_markers) end,
   },
   -- C/C++ LSP: clangd. Rust: rust-analyzer (rustup, not here).
   -- SQL: sqls — DB-aware completion/hover via `.sqls.yml`; without it,
