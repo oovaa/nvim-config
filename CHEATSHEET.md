@@ -46,6 +46,8 @@ This repository is based on `kickstart.nvim`, customized with several plugins to
 | `S` | Fast Jump Treesitter Mode | `flash.nvim` |
 | `<C-h/j/k/l>` | Switch focus between windows (editor, terminal, explorer) | built-in |
 
+Notes: hybrid relative line numbers are on (`relativenumber`); visual-block selections extend past end-of-line (`virtualedit=block`); cmdline file completion is case-insensitive (`wildignorecase`).
+
 ### 🗂️ Explorer Tricks
 
 Press `<leader>e` to toggle the file explorer. Inside it:
@@ -146,6 +148,23 @@ Statusline shows `SPELL` while it is on. Language: `en_us` (`vim.o.spelllang`).
 | `<leader>n` | Notification history | `snacks.nvim` |
 | `<leader>un` | Dismiss all notifications | `snacks.nvim` |
 | `:messages` | Raw message history | built-in |
+
+## 🗂️ File editing & diagnostics (report picks)
+
+| Keybinding | Action | Plugin |
+| :--- | :--- | :--- |
+| `-` | Edit current directory as a buffer (rename/delete/move files) | `oil.nvim` |
+| `<leader>xx` | Diagnostics panel (all) | `trouble.nvim` |
+| `<leader>xX` | Diagnostics panel (current buffer) | `trouble.nvim` |
+| `<leader>xs` | Symbols panel | `trouble.nvim` |
+| `<leader>xq` | Quickfix panel | `trouble.nvim` |
+| `<C-a>` / `<C-x>` | Increment / decrement (decimal, hex, date) | `dial.nvim` |
+| `<leader>j` | Split/join code block | `treesj` |
+| `<leader>gn` | Open neogit (magit-like git UI) | `neogit` |
+| `<leader>va` | Add current file to visited list | `mini.visits` |
+| `<leader>vv` | Select a visited file | `mini.visits` |
+| `<leader>z` | Toggle zen mode | `snacks.nvim` |
+| `<leader>Z` | Toggle zoom (zen) | `snacks.nvim` |
 
 ## 🌿 Git Integration
 
