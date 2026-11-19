@@ -273,7 +273,11 @@ return {
         if vim.g.nvim_disable_mason then return end
         if #vim.api.nvim_list_uis() == 0 then return end -- headless
         if vim.fn.has 'gui_running' == 0 and not (vim.env.TERM and #vim.env.TERM > 0) then return end
-        require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+        -- debounce_hours stops failed Go builds (delve/sqls) from retrying on
+        -- every startup: a timestamp is written before install, so once tried
+        -- it won't spam again for 24h. Install manually with :MasonInstall if
+        -- the first attempt was aborted by closing nvim or a transient DNS error.
+        require('mason-tool-installer').setup { ensure_installed = ensure_installed, debounce_hours = 24 }
       end, 250)
 
       -- Choose the fastest Python LSP host tools can provide; if none are
