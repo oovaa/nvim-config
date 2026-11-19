@@ -343,7 +343,7 @@ return {
       { '<C-x>', function() require('dial.map').manipulate('decrement', 'normal') end, desc = 'Decrement' },
     },
     config = function()
-      local augend = require('dial.augend')
+      local augend = require 'dial.augend'
       require('dial.config').augends:register_group {
         default = { augend.integer.alias.decimal, augend.integer.alias.hex, augend.date.alias['%Y-%m-%d'] },
       }
