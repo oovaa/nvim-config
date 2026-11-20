@@ -222,8 +222,12 @@ function M.setup_lualine()
       return 'replace'
     elseif m:find '^c' then
       return 'command'
-    elseif m:find '^t' then
+    elseif m:find 't$' then
+      -- 't' (terminal) and 'nt' (terminal-normal) both end in t.
       return 'terminal'
+    elseif m:find '^[sS\19]' then
+      -- Select modes get visual coloring, not the normal-mode pill.
+      return 'visual'
     else
       return 'normal'
     end

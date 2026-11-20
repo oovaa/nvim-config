@@ -13,7 +13,7 @@ function M.setup_bufferline()
     -- accent fallback from the theme's live highlights (statusline uses
     -- String's fg for green); hex is the last resort when the group is absent.
     local function live_fg(name)
-      local ok, h = pcall(vim.api.nvim_get_hl, 0, { name = name })
+      local ok, h = pcall(vim.api.nvim_get_hl, 0, { name = name, link = false })
       if ok and type(h) == 'table' and type(h.fg) == 'number' then return string.format('#%06x', h.fg) end
       return nil
     end

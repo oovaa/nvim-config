@@ -173,7 +173,9 @@ local function toggle_last()
   end
   if seen then return end -- terminal visible but unclosable (last window) — leave it
   if _state.last == 'float' then
-    toggle_float(vim.o.shell)
+    -- Restore the SAME command. Passing vim.o.shell here would kill a hidden
+    -- lazygit/tmux float (toggle_float stops the job when cmd differs).
+    toggle_float(float.cmd or vim.o.shell)
   else
     toggle_horiz(vim.o.shell)
   end

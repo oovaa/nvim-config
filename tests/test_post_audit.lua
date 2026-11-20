@@ -109,15 +109,17 @@ describe('post-audit fixes', function()
   end)
 
   describe('UI autocmds', function()
-    it('diag_float_win is declared local', function()
+    it('diag_float state is reload-safe global', function()
       local autocmds = H.read(vim.fn.stdpath 'config' .. '/lua/config/diag_float.lua')
-      assert.is_truthy(autocmds:match 'local%s+diag_float_win', 'diag_float_win must be local')
+      -- State moved from setup() upvalues to _G so <leader>ur reload can tear
+      -- down the old timer/float (b43f78f); a local would orphan the old timer.
+      assert.is_truthy(autocmds:match '_G%._diag_float_state', 'diag_float state must live in _G for reload safety')
     end)
 
     it('reuses single timer for diagnostic float', function()
       local autocmds = H.read(vim.fn.stdpath 'config' .. '/lua/config/diag_float.lua')
-      assert.is_truthy(autocmds:match 'local%s+diag_float_timer', 'diag_float_timer must be declared')
-      -- Count occurrences of new_timer: should be exactly 1 (the declaration)
+      assert.is_truthy(autocmds:match 'state%.timer', 'single reused state.timer must be used')
+      -- Count occurrences of new_timer: should be exactly 1 (reuse, not per-move)
       local count = 0
       for _ in autocmds:gmatch 'vim%.uv%.new_timer' do
         count = count + 1

@@ -142,26 +142,25 @@ return {
           -- Inlay hints: auto-enable when supported (skip large files), keep toggle.
           if client and client:supports_method('textDocument/inlayHint', event.buf) and vim.lsp.inlay_hint and not vim.b[event.buf].large_file_mode then
             vim.lsp.inlay_hint.enable(true, { bufnr = event.buf })
-            map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
+            map(
+              '<leader>th',
+              function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }, { bufnr = event.buf }) end,
+              '[T]oggle Inlay [H]ints'
+            )
           elseif client and client:supports_method('textDocument/inlayHint', event.buf) and vim.lsp.inlay_hint then
-            map('<leader>th', function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }) end, '[T]oggle Inlay [H]ints')
+            -- Large file: don't auto-enable, but keep a buffer-local toggle so
+            -- the key never flips hints globally (enable() with no filter does).
+            map(
+              '<leader>th',
+              function() vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf }, { bufnr = event.buf }) end,
+              '[T]oggle Inlay [H]ints'
+            )
           end
 
-          -- Codelens: auto-enable/refresh when supported (skip large files).
-          -- refresh() is deprecated in 0.12.6; enable(true, {bufnr}) is the replacement.
+          -- Codelens: auto-enable when supported (skip large files). Built-in
+          -- nvim_buf_attach on_lines handler refreshes on edits, so no explicit
+          -- refresh autocmd is needed (enable(true,...) is a no-op once enabled).
           if client and client:supports_method('textDocument/codeLens', event.buf) and vim.lsp.codelens and not vim.b[event.buf].large_file_mode then
-            local codelens_group = vim.api.nvim_create_augroup('lsp-codelens-' .. event.buf, { clear = true })
-            vim.api.nvim_create_autocmd({ 'BufEnter', 'CursorHold', 'InsertLeave' }, {
-              group = codelens_group,
-              buffer = event.buf,
-              callback = function(ev) pcall(vim.lsp.codelens.enable, true, { bufnr = ev.buf }) end,
-            })
-            local detach_codelens = vim.api.nvim_create_augroup('lsp-codelens-detach-' .. event.buf, { clear = true })
-            vim.api.nvim_create_autocmd('LspDetach', {
-              group = detach_codelens,
-              buffer = event.buf,
-              callback = function(ev) vim.api.nvim_clear_autocmds { group = 'lsp-codelens-' .. ev.buf } end,
-            })
             pcall(vim.lsp.codelens.enable, true, { bufnr = event.buf })
           end
 

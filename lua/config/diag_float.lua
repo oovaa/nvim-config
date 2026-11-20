@@ -90,8 +90,11 @@ function M.setup()
   vim.api.nvim_create_autocmd('DiagnosticChanged', {
     desc = 'Refresh diagnostic float on change (debounced)',
     group = vim.api.nvim_create_augroup('diag-float-on-change', { clear = true }),
-    callback = function()
+    callback = function(ev)
       if vim.api.nvim_get_mode().mode ~= 'n' then return end
+      -- Ignore updates for other buffers: they don't affect the current line
+      -- and only cause the float to flicker/reopen with streaming LSPs.
+      if ev.buf ~= vim.api.nvim_get_current_buf() then return end
       stop_diag_timer()
       state.last_lnum = nil
       local t = get_diag_timer()

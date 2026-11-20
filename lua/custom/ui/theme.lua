@@ -94,7 +94,9 @@ function M.setup_mode_line_colors()
   -- accent from the theme's live highlights (statusline reads String for
   -- green, DiagnosticWarn for yellow); tokyonight palette only as fallback.
   local function live_fg(name)
-    local ok, h = pcall(vim.api.nvim_get_hl, 0, { name = name })
+    -- link=false resolves linked groups (e.g. gruvbox DiagnosticWarn ->
+    -- GruvboxYellow) into a real fg instead of returning {link=...} with fg=nil.
+    local ok, h = pcall(vim.api.nvim_get_hl, 0, { name = name, link = false })
     if not (ok and type(h) == 'table') then return nil end
     if type(h.fg) == 'number' then return string.format('#%06x', h.fg) end
     if type(h.fg) == 'string' then

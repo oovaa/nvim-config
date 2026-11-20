@@ -83,3 +83,25 @@ Four plugins requested; three added as new lazy specs, one was already present.
 - `stylua --check` clean; headless boot OK; plugin count 74.
 - All commands and keymaps confirmed registered after force-load.
 - Full test suite: 18/19 files pass. The single failing file (`test_post_audit.lua`, 2 assertions) is a pre-existing stale test expecting the old `local` diag_float state that was moved to `_G._diag_float_state` in commit b43f78f — unrelated to this round.
+
+## Cross-test round (UI bugs, perf, edge cases)
+
+Full-config edge-case sweep (manual harnesses + two read-only subagents) found and fixed real defects. No breakage in boot, LSP, formatting, or lazy loading.
+
+### Bugs fixed
+1. **HIGH** `lua/config/options.lua` — removed `jump = { on_jump = true }` from `vim.diagnostic` config. `on_jump` must be a function; the boolean made `vim.diagnostic.jump()` throw `E5108`. The config's own `[d`/`]d` keymaps passed `float=true` and masked it; `diag_float` already shows the float on cursor move.
+2. **MED** `lua/config/terminal.lua` — `<C-\>` restore used `toggle_float(vim.o.shell)`, which killed a hidden lazygit/tmux float and reopened a shell. Now uses `toggle_float(float.cmd or vim.o.shell)` so the same command is restored.
+3. **MED** `lua/plugins/lsp.lua` — both `<leader>th` inlay-hint toggles now pass `{ bufnr = event.buf }`; `enable()`/`is_enabled()` with no filter toggled hints globally. Large-file branch keeps a buffer-local toggle.
+4. **MED** `lua/custom/ui/theme.lua` + `lua/custom/ui/tabline.lua` — `live_fg` used `nvim_get_hl(0, { name = linked_group })`, which returns a `{ link = ... }` table with no `fg` for linked groups. Added `link = false` so the resolved foreground is used.
+5. **LOW** `lua/config/diag_float.lua` — `DiagnosticChanged` callback now takes `ev` and early-returns for non-current buffers, so a float can't be opened for a background buffer.
+6. **LOW** `lua/custom/ui/statusline.lua` — `mode_hl_key` matched `^t` (missed `nt` terminal-normal) and left select modes uncolored. Now matches `t$` and maps `s`/`S`/`\19` to visual.
+7. **LOW-MED** `lua/plugins/lsp.lua` — removed an inert codelens refresh autocmd (wrong event/signature) that never fired; `vim.lsp.codelens.enable` still runs on attach.
+8. **TESTS** `tests/test_post_audit.lua` — two assertions checked the old `local` diag_float state moved to `_G._diag_float_state` in b43f78f; updated to the new state shape.
+
+### Verification
+- `stylua --check` clean on all edited Lua files; headless boot OK; plugin count 74.
+- Full test suite: 19/19 files pass, 0 failures.
+- Smoke tests: `vim.diagnostic.jump{count=1}` no longer throws; inlay-hint buffer filter works; linked-group `fg` resolves; statusline module loads.
+
+### Deliberately not fixed (LOW/TRIVIAL, minimal-diff judgment)
+- Dead `biome-organize-imports` config, duplicate `resolve()`/`ensure_installed`/`mason_bin`/fold-loop lines, per-buffer treesitter `fs_stat`, dashboard narrow-window clip, and `appearance.lua` markdown `cond` evaluated once at setup — all harmless or need larger reworks; left to keep the diff tight.

@@ -331,7 +331,9 @@ vim.diagnostic.config {
   float = { border = 'rounded', source = 'if_many' }, -- Floating window style
   underline = { severity = { min = vim.diagnostic.severity.WARN } }, -- Underline warnings+
   virtual_text = { current_line = true }, -- Only show inline error on current line
-  jump = { on_jump = true }, -- Auto-open float when jumping to diagnostic
+  -- No jump.on_jump here: it must be a function, not a boolean (E5108 on any
+  -- vim.diagnostic.jump() that doesn't pass float/on_jump itself). diag_float
+  -- already opens the float on CursorMoved, and [d/]d pass float=true.
 }
 
 -- ui2 (experimental 0.12 messages/cmdline UI) disabled: causes "cmdline_show
