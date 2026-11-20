@@ -121,8 +121,11 @@ running Neovim for the first time.
   (per `config.health.biome_root`), prettier fallback. `oxlint` lint chain.
   `js-debug-adapter` (pwa-node/pwa-chrome) for debugging.
 - **SQL** — `sqls` (DB-aware completion/hover via `.sqls.yml`) + `sqruff`
-  (Rust linter/formatter). Create a `.sqruff` with `dialect = postgres` (or
-  mysql, ansi, ...) at the project root; without it sqruff lints as ANSI.
+  (Rust linter/formatter). The config lives at `~/.config/nvim/sqruff.toml`
+  (postgres dialect, 180-char lines, duplicate-alias as WARN) and is passed
+  explicitly — no per-project `.sqruff` needed. SQL auto-formats on save like
+  the other languages; sqruff's exit code 1 (non-fixable lint findings) is
+  treated as success so it never raises a false format error.
 
 **Installed manually (NOT managed by Mason):**
 - [`@vtsls/language-server`](https://github.com/yioneko/vtsls) — the

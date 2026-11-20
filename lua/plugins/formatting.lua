@@ -156,6 +156,11 @@ return {
         -- raises line length so non-fixable lint rules stop failing `fix`.
         sqruff = {
           prepend_args = { '--config', vim.fs.normalize '~/.config/nvim/sqruff.toml' },
+          -- sqruff `fix` writes the formatted file but exits 1 when any
+          -- non-fixable lint rule remains (e.g. ST03 unused CTE). Treat 1 as
+          -- success like markdownlint/rubocop, so a save still "counts" as
+          -- formatted instead of raising a scary error notification.
+          exit_codes = { 0, 1 },
         },
       },
       -- You can also specify external formatters in here.

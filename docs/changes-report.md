@@ -120,3 +120,26 @@ SQL files showed a wall of sqruff diagnostics (LT02 indent, LT05 line-length, LT
 - `sqruff --config <cfg> fix` on `send-backs.sql` → "nothing to fix", exit 0 (no error notification).
 - `sqruff lint --config <cfg>` → only AL04 as WARN; LT02/LT05/LT08 noise gone.
 - `stylua --check` clean; headless boot OK; full suite 19/19 files pass.
+
+## SQL auto-format on save (follow-up to caf1bdd)
+
+The earlier `sqruff.toml` fixed the lint-diagnostic wall, but SQL still
+*looked* like it wasn't auto-formatting: every save raised
+`Formatter 'sqruff' error` because sqruff `fix` writes the formatted file yet
+exits 1 when any non-fixable lint rule remains (ST03 unused CTE, LT05 long
+lines, etc.). conform treats exit 1 as a formatter failure → scary error
+notification, even though formatting succeeded.
+
+### Change
+- `lua/plugins/formatting.lua` — added `exit_codes = { 0, 1 }` to the sqruff
+  formatter override (same pattern conform uses for markdownlint/rubocop/
+  oxlint). Formatting always applies; remaining lint findings stay visible in
+  the diagnostics/trouble panel via the linter, they just no longer masquerade
+  as formatter crashes.
+
+### Verification
+- Save test with an unfixable ST03 rule: spacing still formatted
+  (`select   a,b` → `select a, b`), **no** sqruff error notification.
+- `stylua --check` clean; headless boot OK; full suite 19/19 files pass.
+- Note: `LSP[sqls] no database connection` is a one-time on-attach info message
+  (sqls has no `.sqls.yml`), not a format error — left as-is.
