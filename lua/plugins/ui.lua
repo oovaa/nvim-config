@@ -203,9 +203,12 @@ return {
       -- cmd stored via a variable so the stress harness's `cmd = '...'` scan
       -- doesn't mistake the linter binary for an unmapped user command.
       local sqruff_bin = 'sqruff'
+      -- Explicit --config: keeps dialect/line-length rules consistent with the
+      -- conform formatter and avoids cwd-based auto-discovery surprises.
+      local sqruff_cfg = vim.fs.normalize '~/.config/nvim/sqruff.toml'
       lint.linters.sqruff = {
         cmd = sqruff_bin,
-        args = { 'lint', '--format', 'github-annotation-native', function() return vim.api.nvim_buf_get_name(0) end },
+        args = { 'lint', '--config', sqruff_cfg, '--format', 'github-annotation-native', function() return vim.api.nvim_buf_get_name(0) end },
         stdin = false,
         append_fname = false,
         stream = 'both',

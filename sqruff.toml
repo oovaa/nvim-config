@@ -1,0 +1,7 @@
+# sqruff config for SQL linting + formatting (conform formatter + nvim-lint linter).
+# Passed explicitly via --config from both wiring points; sqruff's cwd-based
+# auto-discovery is unreliable (and a stray bad config can break every file).
+[sqruff]
+dialect = "postgres"
+max_line_length = 180 # LT05: long comment/string lines are not auto-fixable; stop flagging them
+warnings = "AL04"     # duplicate table alias is often a false positive across subquery scopes; keep visible as WARN, not a fatal error

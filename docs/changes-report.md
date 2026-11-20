@@ -105,3 +105,18 @@ Full-config edge-case sweep (manual harnesses + two read-only subagents) found a
 
 ### Deliberately not fixed (LOW/TRIVIAL, minimal-diff judgment)
 - Dead `biome-organize-imports` config, duplicate `resolve()`/`ensure_installed`/`mason_bin`/fold-loop lines, per-buffer treesitter `fs_stat`, dashboard narrow-window clip, and `appearance.lua` markdown `cond` evaluated once at setup — all harmless or need larger reworks; left to keep the diff tight.
+
+## SQL lint/format noise fix (sqruff config)
+
+### Problem
+SQL files showed a wall of sqruff diagnostics (LT02 indent, LT05 line-length, LT08 CTE blank line) and scary "Formatter 'sqruff' error" notifications on save. Root cause: sqruff (both the conform formatter and the nvim-lint linter) ran with no explicit config, so it defaulted to ANSI dialect + `max_line_length=80`. `sqruff fix` exits 1 on non-fixable LT05/AL04, which conform reports as an error.
+
+### Changes
+1. Added `sqruff.toml` (repo root): `[sqruff]` with `dialect = "postgres"`, `max_line_length = 180`, `warnings = "AL04"`. Layout noise (LT02/LT05/LT08) is suppressed; the duplicate-alias rule (AL04, often a false positive across subquery scopes) stays visible as WARN instead of a fatal error.
+2. `lua/plugins/formatting.lua` — conform's sqruff formatter now prepends `--config ~/.config/nvim/sqruff.toml`.
+3. `lua/plugins/ui.lua` — the sqruff lint linter passes the same `--config` path. Explicit path avoids sqruff's unreliable cwd-based config discovery (a stray broken config can break every file).
+
+### Verification
+- `sqruff --config <cfg> fix` on `send-backs.sql` → "nothing to fix", exit 0 (no error notification).
+- `sqruff lint --config <cfg>` → only AL04 as WARN; LT02/LT05/LT08 noise gone.
+- `stylua --check` clean; headless boot OK; full suite 19/19 files pass.

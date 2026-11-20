@@ -151,6 +151,12 @@ return {
         prettier = {
           prepend_args = { '--config', vim.fs.normalize '~/.config/nvim/prettier.config.json' },
         },
+        -- Explicit config: sqruff's cwd-based auto-discovery is unreliable, and
+        -- a stray bad config breaks every file. Ours sets postgres dialect +
+        -- raises line length so non-fixable lint rules stop failing `fix`.
+        sqruff = {
+          prepend_args = { '--config', vim.fs.normalize '~/.config/nvim/sqruff.toml' },
+        },
       },
       -- You can also specify external formatters in here.
       formatters_by_ft = {

@@ -16,7 +16,7 @@ A starting point for Neovim that is:
 ## Features
 
 * **LSP**: gopls, clangd, dockerls + docker-compose LS, jsonls, yamlls, html, cssls, emmet, nginx_language_server (optional), sqls, lua_ls, a Python server picked from `ty` / `pyrefly` / `pyright-langserver`, vtsls (TS/JS), rust-analyzer via rustaceanvim, jdtls via nvim-jdtls — completions via [blink.cmp](https://github.com/Saghen/blink.cmp) (sources: LSP, path, snippets, buffer)
-* **Formatting**: [conform.nvim](https://github.com/stevearc/conform.nvim) on save (biome + prettier chain for JS/TS/JSON, stylua, ruff, goimports+gofumpt, rustfmt, google-java-format, clang-format, sqruff; nginxfmt optional) — large files skipped
+* **Formatting**: [conform.nvim](https://github.com/stevearc/conform.nvim) on save (biome + prettier chain for JS/TS/JSON, stylua, ruff, goimports+gofumpt, rustfmt, google-java-format, clang-format, sqruff for SQL with `sqruff.toml` postgres dialect; nginxfmt optional) — large files skipped; SQL lint uses the same config (layout noise suppressed, duplicate-alias as WARN)
 * **Fuzzy finding**: snacks picker — files, grep, symbols (`<leader>ls` document / `<leader>lS` workspace), projects, and `vim.ui.select` (code actions, quickfix, mason)
 * **Explorer**: snacks explorer on `<leader>e`
 * **UI**: tokyonight theme by default, any `<leader>ty` pick persisted across restarts, builtin statusline/tabline/dashboard, mode-colored line numbers, hybrid relative line numbers
