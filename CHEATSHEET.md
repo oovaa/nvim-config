@@ -159,8 +159,21 @@ Statusline shows `SPELL` while on. Language: `en_us`.
 | `<leader>gd` / `<leader>gp` | Diff split / preview hunk | `gitsigns` |
 | `<leader>gt` | Toggle showing deleted lines | `gitsigns` |
 | `<leader>gb` | Toggle inline git blame | `blame.nvim` |
+| `<leader>ugb` | Toggle virtual-text git blame (starts off) | `git-blame.nvim` |
 | `]x` / `[x` | Next / prev merge conflict | `git-conflict` |
 | `co` / `ct` / `cb` / `c0` | Take ours / theirs / both / none | `git-conflict` |
+
+## 🧭 Breadcrumbs & Neovim Tips
+
+| Keybinding | Action | Plugin |
+| :--- | :--- | :--- |
+| `<leader>;` | Pick a symbol in the breadcrumb bar | `dropbar` |
+| `[;` / `];` | Go to start of context / select next context | `dropbar` |
+| `<leader>nto` | Open the Neovim tips browser | `neovim-tips` |
+| `<leader>ntb` / `<leader>ntr` | Browse bookmarked / random tip | `neovim-tips` |
+| `<leader>nte` / `<leader>nta` | Edit tips / add a tip | `neovim-tips` |
+
+Dropbar shows an IDE-style breadcrumb winbar (file path + LSP/treesitter symbols) and auto-hides on large files, help, and special buffers.
 
 ## 🌐 Live Preview & Emmet (frontend)
 

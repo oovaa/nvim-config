@@ -132,4 +132,40 @@ return {
       },
     },
   },
+
+  -- Searchable collection of 2400+ Neovim tips/tricks/shortcuts.
+  -- Lazy-loaded on keys; daily tip stays off (it needs eager load at startup).
+  {
+    'saxon1964/neovim-tips',
+    version = '*',
+    dependencies = { 'MunifTanjim/nui.nvim' },
+    opts = { daily_tip = 0 },
+    keys = {
+      { '<leader>nto', '<cmd>NeovimTips<cr>', desc = '[N]eovim [T]ips [O]pen' },
+      { '<leader>ntb', '<cmd>NeovimTipsBookmarks<cr>', desc = '[N]eovim [T]ips [B]ookmarks' },
+      { '<leader>ntr', '<cmd>NeovimTipsRandom<cr>', desc = '[N]eovim [T]ips [R]andom' },
+      { '<leader>nte', '<cmd>NeovimTipsEdit<cr>', desc = '[N]eovim [T]ips [E]dit' },
+      { '<leader>nta', '<cmd>NeovimTipsAdd<cr>', desc = '[N]eovim [T]ips [A]dd' },
+    },
+  },
+
+  -- Git blame via virtual text (distinct from FabijanZulj/blame.nvim at <leader>gb).
+  -- Starts disabled; <leader>ugb toggles it on/off.
+  {
+    'f-person/git-blame.nvim',
+    keys = { { '<leader>ugb', '<cmd>GitBlameToggle<cr>', desc = '[G]it [B]lame toggle (virtual text)' } },
+    opts = { enabled = false },
+  },
+
+  -- IDE-like breadcrumbs winbar (path + LSP/treesitter symbols).
+  -- Drops down on click; self-lazy-loads. Skips big files/help/special bufs by default.
+  {
+    'Bekaboo/dropbar.nvim',
+    version = '*',
+    keys = {
+      { '<leader>;', function() require('dropbar.api').pick() end, desc = 'Pick symbols in winbar' },
+      { '[;', function() require('dropbar.api').goto_context_start() end, desc = 'Go to start of current context' },
+      { '];', function() require('dropbar.api').select_next_context() end, desc = 'Select next context' },
+    },
+  },
 }

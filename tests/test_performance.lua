@@ -12,8 +12,9 @@ describe('performance', function()
     -- its extensions were still in the tree.
     local n = vim.tbl_count(P)
     assert.is_true(n > 0, 'lazy registry must be populated')
-    -- Bumped for planned additions (inc-rename, neotest-golang, nvim-treesitter-textobjects).
-    assert.is_true(n <= 70, 'plugin count ' .. n .. ' should stay <= 70')
+    -- Bumped for planned additions (inc-rename, neotest-golang, nvim-treesitter-textobjects,
+    -- neovim-tips, git-blame.nvim, dropbar.nvim).
+    assert.is_true(n <= 75, 'plugin count ' .. n .. ' should stay <= 75')
   end)
 
   it('loads tokyonight eagerly so the theme never flashes', function()

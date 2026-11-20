@@ -22,10 +22,11 @@ A starting point for Neovim that is:
 * **UI**: tokyonight theme by default, any `<leader>ty` pick persisted across restarts, builtin statusline/tabline/dashboard, mode-colored line numbers, hybrid relative line numbers
 * **Editing**: oil.nvim edits directories as buffers (`-`), trouble.nvim diagnostics panels (`<leader>xx`/`xX`/`xs`/`xq`), dial.nvim dec/hex/date increment (`<C-a>`/`<C-x>`), treesj split/join (`<leader>j`), mini.visits tracking (`<leader>va`/`vv`), snacks zen (`<leader>z`/`Z`)
 * **Linting**: [nvim-lint](https://github.com/mfussenegger/nvim-lint) on save (oxlint or biome for JS/TS depending on `biome.json`, ruff, golangci-lint, clang-tidy, sqruff); errors surfaced via `vim.notify`
-* **Git**: gitsigns, LazyGit on `<leader>fg`, neogit (magit-like) on `<leader>gn`
+* **Git**: gitsigns, LazyGit on `<leader>fg`, neogit (magit-like) on `<leader>gn`, inline blame on `<leader>gb`, virtual-text blame toggle on `<leader>ugb`, conflict resolution (`]x`/`[x`, `co`/`ct`/`cb`/`c0`)
+* **Navigation & reference**: dropbar breadcrumbs winbar (path + LSP/treesitter symbols, `<leader>;` to pick), neovim-tips browser of 2400+ tips (`<leader>nto` and friends)
 * **Debugging**: nvim-dap for Python, Go, C/C++, Rust, TypeScript/React and Java; molten-nvim + image.nvim for Jupyter-style notebooks
 * **Live preview**: [kitehost.nvim](https://github.com/selimacerbas/kitehost.nvim) — `<leader>hs` serves the current page on 127.0.0.1 and refreshes the browser on save (CSS hot-swaps; `<leader>ht` toggles live reload)
-* **Performance**: warm headless startup ~150–190 ms on this machine (measured 2026-11-09; first boot after a config change is slower while caches rebuild); 70 plugins registered; large-file mode above 1 MiB disables treesitter/LSP/lint/format and more
+* **Performance**: warm headless startup ~150–190 ms on this machine (measured 2026-11-09; first boot after a config change is slower while caches rebuild); 74 plugins registered; large-file mode above 1 MiB disables treesitter/LSP/lint/format and more
 
 See `CHEATSHEET.md` for the full keybinding reference.
 

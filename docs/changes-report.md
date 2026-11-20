@@ -62,3 +62,24 @@ Follow-up config scan for issues/UI-UX improvements. No breakage found; two smal
 ### Verification
 - Headless boot OK with new options.
 - Full plenary suite: 19 files, 192 tests, 0 failures (startup budget 400ms passes).
+
+## Plugin additions round
+
+Four plugins requested; three added as new lazy specs, one was already present.
+
+### Added (all in `lua/custom/plugins/qol.lua`)
+1. **saxon1964/neovim-tips** — searchable browser of 2400+ tips. Keys `<leader>nto/ntb/ntr/nte/nta` (open / bookmarks / random / edit / add). `opts.daily_tip = 0` keeps it lazy; needs `MunifTanjim/nui.nvim`.
+2. **f-person/git-blame.nvim** — virtual-text git blame, toggled by `<leader>ugb` (starts disabled). Distinct from the existing `FabijanZulj/blame.nvim` on `<leader>gb` (inline + hover) — both are deliberately kept.
+3. **Bekaboo/dropbar.nvim** — IDE-style breadcrumb winbar (path + LSP/treesitter symbols). Keys `<leader>;` (pick), `[;` / `];` (context nav). Self-lazy-loads; auto-skips large files, help, and special buffers. Uses nvim-web-devicons already in the config.
+
+### Already present — no change
+- **akinsho/git-conflict.nvim** was already installed and configured (BufReadPre load, E2E test, documented in CHEATSHEET). Its buffer-local maps `]x`/`[x` and `co`/`ct`/`cb`/`c0` are unchanged.
+
+### Other changes
+- `tests/test_performance.lua` plugin-count bound raised `70 → 75` to cover the four new registrations (74 total).
+- README.md / CHEATSHEET.md updated with the new keys and features.
+
+### Verification
+- `stylua --check` clean; headless boot OK; plugin count 74.
+- All commands and keymaps confirmed registered after force-load.
+- Full test suite: 18/19 files pass. The single failing file (`test_post_audit.lua`, 2 assertions) is a pre-existing stale test expecting the old `local` diag_float state that was moved to `_G._diag_float_state` in commit b43f78f — unrelated to this round.
