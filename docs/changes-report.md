@@ -143,3 +143,40 @@ notification, even though formatting succeeded.
 - `stylua --check` clean; headless boot OK; full suite 19/19 files pass.
 - Note: `LSP[sqls] no database connection` is a one-time on-attach info message
   (sqls has no `.sqls.yml`), not a format error — left as-is.
+
+## Deep cross-test round (complex real-world workloads)
+
+A second, deeper cross-test across the full feature set using realistic
+multi-language monorepo workloads (TS/TSX, Python, JSON, YAML, JS, SQL) —
+multiple files open at once, splits, terminal + editor mixed layouts, and
+sustained-load checks. No config changes were needed: every apparent failure
+was traced to the test harness, not the config.
+
+### Verified working under load
+- **LSP**: all six representative files attached the correct servers —
+  `vtsls` (TS/JS), `vtsls` + `emmet` (TSX), `ty` (Python), `jsonls` (JSON),
+  `docker_compose_language_service` (YAML); winbar breadcrumbs rendered.
+- **Auto-save + format**: with a real `TextChanged` event, `x   =   1` was
+  formatted to `x = 1` and written to disk end-to-end.
+- **Formatting**: conform formatted Python and SQL; diagnostics navigation,
+  Treesj, gitsigns/blame/conflict, oil, trouble panels, aerial outline,
+  session save, pickers, grug-far, theme switch, zen, scratch, neotest and
+  neogit all responded correctly.
+- **Notifications**: zero WARN/ERROR notifications across all three harnesses.
+
+### Apparent failures confirmed as harness artifacts (not bugs)
+- LSP attach / which-key / checkhealth "failures" — async timing and mixed
+  window state; all pass in isolation.
+- Autocmd count rising (+895) — mini.nvim's own `SafeState` autocmds are
+  `once=true`, self-deleting, and fire constantly in interactive use; mini.notify
+  isn't even set up by this config. Not a leak.
+- `]d` "No identifier under cursor" — the harness used `normal!`, which bypasses
+  the `[d`/`]d` keymaps.
+- oil / rest.nvim / DAP command lookups — oil opens via `-`, rest.nvim is
+  configured through `<leader>hr` (no `:Rest`), and DAP configs live in a custom
+  module; the harness assumed the wrong entry points.
+- A ~300KB / 12k-line file staying on one LSP client is correct — it's under the
+  intentional 1 MiB large-file threshold.
+
+### Verification
+- No code changes; full suite 19/19 files pass as regression proof.
