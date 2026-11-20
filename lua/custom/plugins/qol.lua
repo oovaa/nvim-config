@@ -162,10 +162,16 @@ return {
   {
     'Bekaboo/dropbar.nvim',
     version = '*',
-    keys = {
-      { '<leader>;', function() require('dropbar.api').pick() end, desc = 'Pick symbols in winbar' },
-      { '[;', function() require('dropbar.api').goto_context_start() end, desc = 'Go to start of current context' },
-      { '];', function() require('dropbar.api').select_next_context() end, desc = 'Select next context' },
-    },
+    -- Must be non-lazy despite init.lua's global `defaults = { lazy = true }`:
+    -- dropbar builds _G.dropbar + winbars via its OWN startup FileType
+    -- autocmd, which never registers if lazy.nvim skips the plugin file.
+    -- Being keys-lazy also breaks it: the autocmd won't fire for an
+    -- already-open buffer, so pick() errors on a nil _G.dropbar.
+    lazy = false,
+    config = function()
+      vim.keymap.set('n', '<leader>;', function() require('dropbar.api').pick() end, { desc = 'Pick symbols in winbar' })
+      vim.keymap.set('n', '[;', function() require('dropbar.api').goto_context_start() end, { desc = 'Go to start of current context' })
+      vim.keymap.set('n', '];', function() require('dropbar.api').select_next_context() end, { desc = 'Select next context' })
+    end,
   },
 }
