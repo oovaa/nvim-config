@@ -12,7 +12,7 @@ VS Code-like experience. **Leader key:** `<Space>`.
 
 | Tool | Purpose |
 | :--- | :--- |
-| `pyrefly` / `ty` / `pyright` | LSP (first found on `PATH`; `:NvimCheckPythonLsp`) |
+| `ty` / `pyrefly` / `pyright` | LSP (first found on `PATH`; `:NvimCheckPythonLsp`) |
 | `ruff` | Linting + formatting |
 | Treesitter | Syntax highlighting |
 
@@ -23,7 +23,8 @@ VS Code-like experience. **Leader key:** `<Space>`.
 
 - Sessions saved on quit, restored from dashboard (`s`) via builtin `:mksession`
   (suppressed in `~/`, `~/Downloads`, `/etc`, `/tmp`).
-- Switch projects: `<leader>sp`. Restore last session: `<leader>sr`.
+- `<leader>sp` = Search Projects, `<leader>sr` = Search Resume (both Snacks
+  pickers). Neither restores a session — use the dashboard `s` entry for that.
 
 ## 🗂️ UI & File Navigation
 

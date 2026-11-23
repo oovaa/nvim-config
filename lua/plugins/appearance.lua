@@ -14,15 +14,27 @@ return {
   {
     'MeanderingProgrammer/render-markdown.nvim',
     ft = 'markdown',
-    -- Skip rendering on large markdown files.
-    cond = function()
-      local name = vim.api.nvim_buf_get_name(0)
-      if name == '' then return true end
-      local ok, st = pcall(vim.uv.fs_stat, name)
-      return not (ok and st and st.size > 200 * 1024)
-    end,
     dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' },
+    -- ponytail: guard per buffer in config. A `cond` runs once at lazy.setup()
+    -- against the startup buffer only — it either disables rendering for the
+    -- whole session or never guards a large file opened later.
     opts = {},
+    config = function(_, opts)
+      require('render-markdown').setup(opts)
+      local guard = function(buf)
+        local name = vim.api.nvim_buf_get_name(buf)
+        local ok, st = pcall(vim.uv.fs_stat, name)
+        if ok and st and st.size > 200 * 1024 then pcall(vim.api.nvim_buf_call, buf, function() require('render-markdown.api').buf_disable() end) end
+      end
+      vim.api.nvim_create_autocmd('BufWinEnter', {
+        group = vim.api.nvim_create_augroup('render-markdown-size-guard', { clear = true }),
+        pattern = '*.md',
+        callback = function(ev) guard(ev.buf) end,
+      })
+      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'markdown' then guard(buf) end
+      end
+    end,
   },
 
   -- COLORIZER

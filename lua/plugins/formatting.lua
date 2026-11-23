@@ -180,7 +180,7 @@ return {
         c = { 'clang-format' },
         cpp = { 'clang-format' },
         -- sqruff fix <file>: formats + applies safe lint fixes (Rust, fast).
-        -- Dialect comes from the nearest `.sqruff` file (e.g. dialect = postgres).
+        -- Dialect comes from ~/.config/nvim/sqruff.toml (passed via --config above).
         sql = { 'sqruff' },
         sh = { 'shfmt' },
         bash = { 'shfmt' },

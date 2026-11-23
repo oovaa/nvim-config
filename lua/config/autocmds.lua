@@ -184,8 +184,14 @@ vim.api.nvim_create_user_command('SudoWrite', function(args)
     vim.notify('SudoWrite: unnamed buffer, save normally first', vim.log.levels.ERROR)
     return
   end
-  vim.cmd(('write%s !sudo tee %s >/dev/null'):format(args.bang and '!' or '', vim.fn.shellescape(name)))
-  vim.cmd 'edit!'
+  -- :w !cmd never clears 'modified'; only force-reload on confirmed success,
+  -- otherwise a denied sudo would silently discard the unsaved edits.
+  local ok = pcall(vim.cmd, ('write%s !sudo tee %s >/dev/null'):format(args.bang and '!' or '', vim.fn.shellescape(name)))
+  if ok and vim.v.shell_error == 0 then
+    vim.cmd 'edit!'
+  else
+    vim.notify('SudoWrite: failed — buffer left unsaved', vim.log.levels.ERROR)
+  end
 end, { desc = 'Write current buffer via sudo', bang = true })
 
 -- :DiffOrig — side-by-side diff of the buffer against the file on disk.

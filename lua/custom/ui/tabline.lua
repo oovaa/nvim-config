@@ -35,11 +35,9 @@ function M.setup_bufferline()
       if bg then
         vim.api.nvim_set_hl(0, name, { fg = fg, bg = string.format('#%06x', bg), bold = true })
       else
-        -- transparent theme: no bg so dot inherits TabLine bg, clear stale bg
+        -- transparent theme: no bg so dot inherits TabLine bg. nvim_set_hl
+        -- replaces the whole definition, so no separate clear is needed.
         vim.api.nvim_set_hl(0, name, { fg = fg, bold = true })
-        -- nvim_set_hl without bg keeps old bg; force clear
-        local cur = vim.api.nvim_get_hl(0, { name = name })
-        if cur.bg then vim.api.nvim_set_hl(0, name, { fg = fg, bg = nil, bold = true }) end
       end
     end
     set_mod('TabLineMod', norm.bg)

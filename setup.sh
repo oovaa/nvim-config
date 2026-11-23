@@ -218,7 +218,8 @@ if have nvim && (( ! CHECK_ONLY )); then
   info "health check:"
   nvim --headless -c 'checkhealth config' -c 'qa!' 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E '^(OK|WARNING|ERROR)|- (OK|WARNING|ERROR)' | head -12 || true
   info "test suites:"
-  for t in test_critical_fixes test_keymaps_autocmds test_lsp_servers test_performance test_qol test_polish; do
+  for f in tests/test_*.lua; do
+    t=${f#tests/}; t=${t%.lua}
     res=$(nvim --headless -c "lua require(\"plenary.busted\").run(\"tests/$t.lua\")" -c 'qa!' 2>&1 \
       | sed 's/\x1b\[[0-9;]*m//g' | grep -E '^(Success|Failed)' | tr '\n' ' ')
     # shellcheck disable=SC2086
@@ -239,7 +240,7 @@ warn "rust: rustup component add rust-analyzer clippy rustfmt (mason RA mismatch
 warn "java: jdtls wants JDK 21+ (brew install temurin@21 or apt install openjdk-21-jdk)"
 warn "c/cpp: generate compile_commands.json (cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON, or bear -- make) and symlink to project root"
 warn "go: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest if .golangci.yml lint is empty"
-warn "sql: create .sqruff with your dialect (e.g. postgres) at the project root, e.g. '[sqruff] dialect = postgres'; DB-aware completion needs a .sqls.yml (see sqls docs)"
+warn "sql: sqruff config lives at ~/.config/nvim/sqruff.toml and is passed with --config — no per-project .sqruff needed; DB-aware completion needs .sqls.yml (see sqls docs)"
 warn "jdtls: mason downloads often 403 — install manually from https://open-vsx.org/api/redhat/java/latest (extract server/ into mason/packages/jdtls, equinox launcher), see README Language tooling"
 
 echo

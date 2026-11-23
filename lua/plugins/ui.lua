@@ -232,8 +232,7 @@ return {
         -- clang-tidy needs .clang-tidy or compile_commands.json; silent no-op without them
         c = { 'clangtidy' },
         cpp = { 'clangtidy' },
-        -- sqruff needs a .sqruff in the project for dialect (e.g. postgres);
-        -- without one it lints as ANSI, which still catches dead references
+        -- Dialect comes from ~/.config/nvim/sqruff.toml (passed via --config above).
         sql = { 'sqruff' },
       }
       vim.api.nvim_create_autocmd({ 'BufWritePost', 'InsertLeave' }, {

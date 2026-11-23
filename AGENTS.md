@@ -10,7 +10,7 @@ only covers what those don't say.
 # what CI runs: every suite, one file at a time (plus boot + stylua jobs)
 for f in tests/test_*.lua; do nvim --headless -c "lua require('plenary.busted').run('$f')" -c 'qa!'; done
 
-# full config stress test — CI `stress` job, ~2 min, exits non-zero on any FAIL,
+# full config stress test — CI `stress` job, ~4 min, exits non-zero on any FAIL,
 # rewrites the (gitignored) tests/stress-report.md
 nvim --headless -c 'luafile tests/stress.lua' -c 'qa!'
 
@@ -26,7 +26,9 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
 - `init.lua` — bootstrap only. `require 'config.{options,keymaps,autocmds}'` run
   **before** `lazy.setup` because `<leader>` and `vim.o` must exist early.
 - `lua/config/` — core config. `options` `keymaps` `autocmds` (pre-lazy, hand-required
-  from `init.lua`); `sessions` `terminal` `runner` `health` (post-lazy, from `init.lua`);
+  from `init.lua`); `sessions` `terminal` `runner` (post-lazy, from `init.lua`);
+  `health` (required by the formatting/ui plugin specs, not by `init.lua`);
+  `notify`, `diag_float`, `markdown`, `lsp_servers` (loaded by their plugin specs);
   `python_lsp` (required lazily by the lsp spec, not by `init.lua`).
 - `lua/plugins/*.lua` — lazy specs, one file per section, auto-imported via
   `{ import = 'plugins' }`. No index file; adding a file is enough.
@@ -77,14 +79,16 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
    exists because prettier's own cold start hit 2.3 s — don't lower it.
 6. **snacks owns `vim.notify` and replaces it on the first call**
    (`snacks/init.lua:219`). A monkey-patch installed at startup is dead by the
-   first notification — see the throttle in `init.lua` for the re-wrap pattern.
+   first notification — see the formatter-failed throttle in `lua/config/notify.lua`
+   for the re-wrap pattern (re-applied at `VeryLazy`).
    Also `require('snacks.config')` does not exist; use `require('snacks').config`.
    Its own `picker.ui_select` option is *not* what wires `vim.ui.select` here:
    snacks installs that only from its `UIEnter` setup, which never fires
    headless, so the snacks spec's `config` in `lua/plugins/ui.lua` assigns
    `vim.ui.select` explicitly right after `setup()`.
 7. **0.12-only options are set unguarded** in `lua/config/options.lua`
-   (`smoothscroll`, `winborder`, `inccommand = 'split'`) and CI pins nvim v0.12.6.
+   (`smoothscroll`, `winborder`, `inccommand = 'split'`, `pumborder`, `messagesopt`,
+   inline `diffopt`, `splitkeep`) and CI pins nvim v0.12.6.
    A pre-0.11 option needs a guard. Related trap that already bit:
    `foldmethod` is window-local since 0.11, so `vim.bo[buf].foldmethod` raises and
    aborts the rest of the callback — set it per window.
@@ -110,7 +114,7 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
     `stdpath('data')/sessions`; the trailing-slash and `%`-collision cases are
     handled in `session_file_for` (`lua/config/sessions.lua`). **The module is
     canonical**: the dashboard `s` picker resolves `config.sessions` first and
-    only falls back to `_G._builtin_find_session` / `_G._builtin_session_files`
+    only falls back to `_G._builtin_list_projects` / `_G._builtin_find_session`
     (`custom/ui/dashboard.lua`), which are plain aliases kept for the stress
     harness and legacy reload callers — don't "fix" the picker back onto the
     `_G` names. `~/`, `~/Downloads`, `/etc`, `/tmp` are suppressed (exact match, not subdirs).
@@ -139,7 +143,7 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
      `ignore_exitcode` swallows the exit 1, and the buffer just gets zero
      diagnostics. Both sides read `biome_root`, so a change there moves format
      and lint together — never edit one side's copy.
-14. **New language tooling (Go/Rust/Java/C/C++/SQL) has its own traps:**
+13. **New language tooling (Go/Rust/Java/C/C++/SQL) has its own traps:**
     - **rust-analyzer is NOT Mason-managed.** `rustaceanvim` registers it from
       `PATH`; Mason's rust-analyzer would mismatch the project's toolchain.
       Install via `rustup component add rust-analyzer clippy rustfmt`. The
@@ -150,8 +154,10 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
       older). Eclipse.org frequently 403s Mason's jdtls download — if it fails,
       install manually from open-vsx (redhat.java vsix) and point the wrapper
       script at `org.eclipse.equinox.launcher_*.jar` (the core jar has no
-      Main-Class). `setup_dap` must be called explicitly (it's not automatic)
-      to populate `dap.configurations.java`.
+      Main-Class). Pass `dap` opts declaratively to `start_or_attach`:
+      `{ dap = { hotcodereplace = 'auto' } }`. jdtls calls `setup_dap`
+      internally when `opts.dap` is present — a separate deferred call was a
+      duplicate and was removed.
     - **clangd needs `compile_commands.json`** in the project root (cmake with
       `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`, or `bear -- make`). Without it,
       clangd only does syntax, not project-wide indexing.
@@ -160,11 +166,13 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
       the binary to `~/.local/share/nvim/mason/bin/sqls`. `sqruff` is
       Mason-managed (Rust).
     - **nvim-dap config aborts on E730** if `dap-python` is called with a
-      table argument. It must be `setup()` (defaults to `python3`).
+      table argument; it must be a string. Use `'debugpy-adapter'` (Mason's
+      wrapper at `mason/bin/debugpy-adapter`, backed by the manually installed
+      debugpy venv). Plain `'python3'` has no debugpy on this host.
     - **Treesitter ft→lang mapping** must handle react compound filetypes
       (`typescriptreact` → `tsx`, `javascriptreact` → `javascript`), or the
       autocmd tries to install a nonexistent parser and spews a warning.
-13. **The Python LSP is a ladder, not a fixed server.**
+14. **The Python LSP is a ladder, not a fixed server.**
      `lua/config/python_lsp.lua` holds the choice — `M.resolve()` returns
      `{ name, cmd, settings }` for the first hit among `ty` → `pyrefly` →
      `pyright-langserver` (or `nil`), and `M.installed()` reports what is on

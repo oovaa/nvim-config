@@ -55,11 +55,16 @@ describe('formatting', function()
       vim.fn.writefile({ '{}' }, home_config)
       created = true
     end
-    -- the home config exists on this machine; it must not enable biome anywhere
-    assert.equals(vim.fs.normalize(vim.env.HOME), vim.fs.normalize(vim.fs.root(vim.env.HOME .. '/probe.js', { 'biome.json' })))
-    assert.is_nil(health.biome_root(vim.env.HOME .. '/probe.js'))
-    assert.equals('oxlint', health.js_linter(vim.env.HOME .. '/probe.js'))
+    local ok, err = pcall(function()
+      -- the home config exists on this machine; it must not enable biome anywhere
+      assert.equals(vim.fs.normalize(vim.env.HOME), vim.fs.normalize(vim.fs.root(vim.env.HOME .. '/probe.js', { 'biome.json' })))
+      assert.is_nil(health.biome_root(vim.env.HOME .. '/probe.js'))
+      assert.equals('oxlint', health.js_linter(vim.env.HOME .. '/probe.js'))
+    end)
+    -- Always clean up: a failed assertion must not leave $HOME/biome.json behind
+    -- (it would change format/lint selection for every repo below $HOME).
     if created then vim.fn.delete(home_config) end
+    assert.is_true(ok, tostring(err))
   end)
 
   it('keeps prettier for html and css', function()

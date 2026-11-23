@@ -36,7 +36,7 @@ return {
               lines[i] = (lines[i] or line):gsub(r[1], r[2])
             end
           end
-          vim.fn.writefile(lines, item[1])
+          pcall(vim.fn.writefile, lines, item[1]) -- plugin dirs may be read-only
         end
       end
     end,

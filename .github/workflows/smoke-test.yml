@@ -34,11 +34,23 @@ jobs:
           ln -sfn "$GITHUB_WORKSPACE" ~/.config/nvim
           nvim --version | head -1
 
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: latest
+
       - name: Install external toolchain (biome, tree-sitter CLI, ruff)
         run: |
-          npm i -g @biomejs/biome tree-sitter-cli
-          pip install ruff
-          node --version; biome --version; tree-sitter --version; ruff --version
+          bun add -g @biomejs/biome@2.5.15 tree-sitter-cli@0.27.2
+          uv tool install ruff==0.15.21
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH" # uv tool install puts ruff here
+          export PATH="$HOME/.local/bin:$PATH"      # ...and in this step too
+          bun --version; uv --version; biome --version; tree-sitter --version; ruff --version
 
       - name: Boot headless (fails if init.lua errors)
         run: |
@@ -55,10 +67,11 @@ jobs:
 
       - name: Install plugins via lazy.nvim
         run: |
+          set -o pipefail # a failed sync must fail the job, not just print a log
           timeout 120 nvim --headless \
             -c 'lua require("lazy").sync(); vim.wait(90000, function() local s=require("lazy").stats(); return s.count and s.count > 0 end, 500)' \
-            -c 'qa' 2>&1 | tee /tmp/lazy.log || true
-          cat /tmp/lazy.log | tail -20
+            -c 'qa' 2>&1 | tee /tmp/lazy.log
+          tail -20 /tmp/lazy.log
 
       - name: Run plenary tests
         run: |
@@ -105,17 +118,30 @@ jobs:
           ln -sfn "$GITHUB_WORKSPACE" ~/.config/nvim
           nvim --version | head -1
 
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: latest
+
       - name: Install external toolchain (biome, tree-sitter CLI, ruff)
         run: |
-          npm i -g @biomejs/biome tree-sitter-cli
-          pip install ruff
-          node --version; biome --version; tree-sitter --version; ruff --version
+          bun add -g @biomejs/biome@2.5.15 tree-sitter-cli@0.27.2
+          uv tool install ruff==0.15.21
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH" # uv tool install puts ruff here
+          export PATH="$HOME/.local/bin:$PATH"      # ...and in this step too
+          bun --version; uv --version; biome --version; tree-sitter --version; ruff --version
 
       - name: Install plugins via lazy.nvim
         run: |
+          set -o pipefail # a failed sync must fail the job, not just print a log
           timeout 120 nvim --headless \
             -c 'lua require("lazy").sync(); vim.wait(90000, function() local s=require("lazy").stats(); return s.count and s.count > 0 end, 500)' \
-            -c 'qa' 2>&1 | tail -5 || true
+            -c 'qa' 2>&1 | tail -5
 
-      - name: Run stress harness (~2 min, exits non-zero on any FAIL)
+      - name: Run stress harness (~4 min, exits non-zero on any FAIL)
         run: nvim --headless -c 'luafile tests/stress.lua' -c 'qa!'

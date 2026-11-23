@@ -57,7 +57,10 @@ describe('performance', function()
   end)
 
   it('attaches the native LSP and defines servers via vim.lsp.config', function()
-    if vim.fn.executable('lua-language-server') == 0 then pending('lua-language-server not installed on this machine') return end
+    if vim.fn.executable 'lua-language-server' == 0 then
+      pending 'lua-language-server not installed on this machine'
+      return
+    end
     local file = vim.fn.tempname() .. '.lua'
     local fh = assert(io.open(file, 'w'))
     fh:write 'local x = 1\nreturn x\n'
@@ -187,7 +190,10 @@ describe('performance', function()
   end)
 
   it('attempts a parser install at most once per language per session', function()
-    if vim.fn.executable('tree-sitter') == 0 then pending('tree-sitter CLI missing on this machine') return end
+    if vim.fn.executable 'tree-sitter' == 0 then
+      pending 'tree-sitter CLI missing on this machine'
+      return
+    end
     require('lazy').load { plugins = { 'nvim-treesitter' } }
     -- :TSInstall only runs for a language with no parser built, so drive one
     -- this box has not built (none of these are in the 16-language bootstrap)

@@ -10,7 +10,9 @@ return {
   -- TO CHANGE: Remove this plugin if you prefer manual settings
   -- EFFECT: When you open a file, it detects if it uses 2-space, 4-space, or tabs
   --         and sets your indent settings accordingly. Very small, safe to keep.
-  { 'NMAC427/guess-indent.nvim', event = 'BufReadPost', opts = {} },
+  -- BufReadPre (not Post): the plugin registers its own BufReadPost worker on
+  -- setup, and autocmds registered during an event don't run for that event.
+  { 'NMAC427/guess-indent.nvim', event = 'BufReadPre', opts = {} },
 
   -- GITSIGNS
   -- WHAT: Shows git change indicators in the left gutter (next to line numbers)

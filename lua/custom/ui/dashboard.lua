@@ -224,11 +224,7 @@ function M.setup_starter()
       vim.wo.cursorline = false
 
       for _, b in ipairs(btns) do
-        if type(b.action) == 'string' then
-          vim.keymap.set('n', b.key, b.action, { buffer = buf, silent = true, desc = b.label })
-        else
-          vim.keymap.set('n', b.key, b.action, { buffer = buf, silent = true, desc = b.label })
-        end
+        vim.keymap.set('n', b.key, b.action, { buffer = buf, silent = true, desc = b.label })
       end
       for i, r in ipairs(recent) do
         local path = r.path

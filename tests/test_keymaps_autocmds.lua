@@ -16,7 +16,12 @@ describe('keymaps/autocmds', function()
   end)
   it('CursorHold float helper tolerates lines without diagnostics', function()
     vim.cmd 'enew'
-    assert.is_true(vim.tbl_isempty(vim.diagnostic.get(0, { lnum = 0 })))
+    local buf = vim.api.nvim_get_current_buf()
+    assert.is_true(vim.tbl_isempty(vim.diagnostic.get(buf, { lnum = 0 })))
+    -- Drive the diag_float state machine on a clean line: open_diag_float must
+    -- bail out via its no-diagnostics guard rather than raising.
+    local ok, err = pcall(vim.api.nvim_exec_autocmds, 'CursorMoved', { buffer = buf })
+    assert.is_true(ok, tostring(err))
   end)
   it('no duplicate lhs in normal mode keymaps', function()
     local seen, dupes = {}, {}
@@ -26,9 +31,10 @@ describe('keymaps/autocmds', function()
     end
     assert.are.same({}, dupes)
   end)
-  it('<leader>ty is not Themery command', function()
-    local map = vim.fn.maparg('<leader>ty', 'n')
-    assert.is_truthy(map == '' or not map:match 'Themery', 'must not map to Themery')
+  it('<leader>ty opens the theme picker', function()
+    local map = vim.fn.maparg('<leader>ty', 'n', false, true)
+    assert.is_truthy(map.desc and map.desc:match 'heme', 'must map to the theme picker')
+    assert.is_falsy(map.desc and map.desc:match 'Themery', 'must not map to Themery')
   end)
   it('z= spell fix mapping is registered', function() assert.is_truthy(vim.fn.maparg('z=', 'n') ~= '', 'z= must be overridden by spell_fix') end)
   it('mode-line restore does not error before ColorScheme re-snapshot', function()

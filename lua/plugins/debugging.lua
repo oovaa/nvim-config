@@ -45,13 +45,12 @@ return {
       dap.listeners.before.event_exited['dapui_config'] = function() dapui.close() end
       dap.listeners.before.event_disconnect['dapui_config'] = function() dapui.close() end
 
-      -- dap-python takes setup(python_path) — with no argument it defaults to
-      -- 'python3' (must be on PATH and have debugpy importable; see :checkhealth).
-      -- Installed via `uv pip install --system --break-system-packages debugpy`
-      -- (mason cannot install it: no ensurepip on brew python).
+      -- dap-python takes setup(python_path). System python3 has no debugpy
+      -- import here; Mason ships a working adapter at mason/bin/debugpy-adapter
+      -- (venv python with debugpy installed), which nvim-dap-python supports.
       -- Clear any stale configs first so repeated reloads don't duplicate entries.
       dap.configurations.python = {}
-      require('dap-python').setup 'python3'
+      require('dap-python').setup 'debugpy-adapter'
 
       -- Helper: check if a binary is available on PATH or in Mason's bin dir.
       -- Mason's bin is not always on PATH in headless/early startup, so we

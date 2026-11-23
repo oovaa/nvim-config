@@ -11,6 +11,11 @@ Sources: r/neovim monthly config-review threads, r/neovim "show off your statusl
 
 This is already top-decile. Gaps below are additive, not foundational.
 
+> Status: this was a research wishlist, not a TODO. Items 2 (oil), 3 (trouble),
+> 4 (snacks zen), 5 (neogit), 6 (mini.visits), 7 (dial) and 8 (treesj) have since
+> been implemented — see `changes-report.md`. Only item 1 (AI assistant) remains
+> genuinely open. Numbers below are retained for historical context.
+
 ## High-value additions (recommended)
 
 ### 1. AI assistant — avante.nvim or codecompanion.nvim

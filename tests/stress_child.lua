@@ -296,11 +296,16 @@ S.terminal = function()
     for _, w in ipairs(vim.api.nvim_list_wins()) do
       if vim.api.nvim_win_get_config(w).relative ~= '' then fbuf = vim.api.nvim_win_get_buf(w) end
     end
-    H.t('terminal: <leader>fg reuses the float buffer', function()
-      if fbuf ~= T.float then return 'float buffer is ' .. tostring(fbuf) .. ', previous was ' .. tostring(T.float) end
+    -- a different command intentionally drops the old float buffer (terminal.lua:55-60)
+    H.t('terminal: <leader>fg opens a fresh float buffer for a different command', function()
+      if not fbuf then return 'no float buffer after <leader>fg' end
+      if fbuf == T.float then return 'float buffer still the old ' .. tostring(fbuf) end
       return true
     end)
-    H.truthy('terminal: reused float buffer is a terminal buffer', vim.bo[T.float].buftype == 'terminal')
+    H.t(
+      'terminal: new float buffer is a terminal buffer',
+      function() return fbuf and vim.api.nvim_buf_is_valid(fbuf) and vim.bo[fbuf].buftype == 'terminal' or 'invalid float buffer' end
+    )
   end
   cleanup()
 

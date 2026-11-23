@@ -8,7 +8,7 @@
 ## Results
 - Headless boot: OK (no errors/tracebacks).
 - Plenary suite: all `tests/test_*.lua` files — 0 failures, 0 errors in both local and clean CI container.
-- Plugin count: 70 (at budget). Lazy startup ~20ms (unchanged). Total startup ~39ms (under 400ms budget).
+- Plugin count: 75 (at budget). Lazy startup ~20ms (unchanged). Total startup ~39ms (under 400ms budget).
 
 ## Failures found and fixed
 1. `test_lint.lua` — `vim.fs.normalize(nil)` when `~/biome.json` absent (same root cause as the earlier `test_formatting.lua` CI failure). Fix: create `~/biome.json` if absent, track `created`, delete only if created.

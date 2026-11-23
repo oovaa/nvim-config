@@ -121,7 +121,7 @@ do
   H.truthy('option: diagnostic severity_sort', d.severity_sort)
   H.eq('option: diagnostic float border', 'rounded', d.float and d.float.border)
   H.eq('option: diagnostic virtual_text current_line', true, d.virtual_text and d.virtual_text.current_line)
-  H.truthy('option: diagnostic jump on_jump', d.jump and d.jump.on_jump)
+  H.truthy('option: diagnostic jump wrap', d.jump and d.jump.wrap)
   H.eq('option: diagnostic underline min severity', vim.diagnostic.severity.WARN, d.underline and d.underline.severity and d.underline.severity.min)
 
   -- provider / builtin disables the config claims
@@ -1002,9 +1002,10 @@ do
   local ba = vim.api.nvim_get_current_buf()
   local lua_ls_available = vim.fn.executable 'lua-language-server' == 1
   local attached = lua_ls_available and vim.wait(12000, function() return #vim.lsp.get_clients { bufnr = ba, name = 'lua_ls' } > 0 end, 200)
-  H.t('lsp: lua_ls attaches to the first lua buffer', function()
-    return lua_ls_available and attached or { level = 'WARN', msg = 'lua-language-server is not installed, skipped' }
-  end)
+  H.t(
+    'lsp: lua_ls attaches to the first lua buffer',
+    function() return lua_ls_available and attached or { level = 'WARN', msg = 'lua-language-server is not installed, skipped' } end
+  )
   H.t('lsp: LSP keymaps are registered on the first buffer', function()
     if not lua_ls_available then return { level = 'WARN', msg = 'lua-language-server is not installed, skipped' } end
     local missing = {}
@@ -1026,9 +1027,10 @@ do
   vim.cmd('silent! edit! ' .. vim.fn.fnameescape(lb))
   local bb = vim.api.nvim_get_current_buf()
   local attached2 = lua_ls_available and vim.wait(12000, function() return #vim.lsp.get_clients { bufnr = bb, name = 'lua_ls' } > 0 end, 200)
-  H.t('lsp: lua_ls attaches to the second lua buffer', function()
-    return lua_ls_available and attached2 or { level = 'WARN', msg = 'lua-language-server is not installed, skipped' }
-  end)
+  H.t(
+    'lsp: lua_ls attaches to the second lua buffer',
+    function() return lua_ls_available and attached2 or { level = 'WARN', msg = 'lua-language-server is not installed, skipped' } end
+  )
   H.t('lsp: LSP keymaps are registered on the SECOND buffer too', function()
     if not lua_ls_available then return { level = 'WARN', msg = 'lua-language-server is not installed, skipped' } end
     local missing = {}
@@ -1147,7 +1149,7 @@ do
       for _, f in ipairs(vim.fn.glob(dir .. '/lua/**/*.lua', false, true)) do
         local rel = f:sub(#(dir .. '/lua/') + 1):gsub('%.lua$', ''):gsub('/init$', ''):gsub('/', '.')
         avail[rel] = true
-        avail[rel:match '^[%w_%.]+'] = true -- every parent is requireable too
+        avail[rel:match '^([^%.]+)'] = true -- every top-level module is requireable too
       end
     end
   end
@@ -1162,7 +1164,7 @@ do
     end
   end
   for mod in pairs(mods) do
-    local top = mod:match '^([%w_]+)'
+    local top = mod:match '^([^%.]+)' -- hyphens are valid in plugin module names
     if not vim.tbl_contains(builtins, top) and not avail[top] then missing[#missing + 1] = mod end
   end
   table.sort(missing)

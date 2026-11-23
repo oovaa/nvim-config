@@ -23,14 +23,6 @@ describe('Phase 1: Critical Bug Fixes', function()
       assert.is_truthy(content:match 'skip_next%s*=', 'Should have skip_next configuration')
       assert.is_truthy(content:match 'skip_ts%s*=', 'Should have skip_ts configuration')
     end)
-
-    it('skips pairing inside strings', function()
-      -- This is a behavioral test - we verify the config is set
-      -- Actual behavior testing would require more complex setup
-      -- ponytail: path kept for context; assertions read the whole config
-      local content = H.all()
-      assert.is_truthy(content:match 'skip_ts' or content:match 'skip_next')
-    end)
   end)
 
   -- Test 3: Treesitter on-demand install (no upfront loop)
@@ -46,7 +38,7 @@ describe('Phase 1: Critical Bug Fixes', function()
 
       -- Should have FileType autocmd for on-demand install
       local has_on_demand = content:match 'FileType' and content:match 'TSInstall'
-      -- Note: on-demand may be implemented differently, this is a basic check
+      assert.is_truthy(has_on_demand, 'Should have FileType autocmd for on-demand TSInstall')
     end)
 
     it('has FileType autocmd that triggers TSInstall for missing parsers', function()
@@ -95,9 +87,7 @@ describe('Phase 1: Critical Bug Fixes', function()
     end)
 
     describe('editor timing', function()
-      it('keeps timeoutlen aligned with the stress harness baseline', function()
-        assert.equal(300, vim.o.timeoutlen)
-      end)
+      it('keeps timeoutlen aligned with the stress harness baseline', function() assert.equal(300, vim.o.timeoutlen) end)
     end)
   end)
 

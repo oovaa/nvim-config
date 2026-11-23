@@ -253,7 +253,7 @@ return {
         -- (needs `sudo apt install python3.12-venv`), so mason can't build
         -- its venv and would retry+fail on every FileType. Installed manually
         -- into mason/packages/debugpy/venv (pip install debugpy); dap-python
-        -- picks it up via debugpy_path below. Re-add after apt fix.
+        -- uses the resulting mason/bin/debugpy-adapter. Re-add after apt fix.
       })
       -- Go toolchain-gated installs: mason builds these with `go install`, so
       -- they only succeed when `go` is on PATH. Adding them unconditionally
@@ -311,25 +311,22 @@ return {
       -- Add the selected Python LSP without making it a required Mason install.
       -- The ladder itself (which binary wins) lives in config/python_lsp.lua so
       -- tests/test_python_tools.lua can drive it without this whole spec.
-      do
-        local python_server = require('config.python_lsp').resolve()
-        if python_server then
-          servers[python_server.name] = {
-            cmd = python_server.cmd,
-            filetypes = { 'python' },
-            root_markers = { 'pyproject.toml', 'setup.cfg', 'requirements.txt', 'setup.py', '.git' },
-            settings = python_server.settings,
-          }
-          lsp_filetypes[python_server.name] = { 'python' }
-        end
+      local python_server = require('config.python_lsp').resolve()
+      if python_server then
+        servers[python_server.name] = {
+          cmd = python_server.cmd,
+          filetypes = { 'python' },
+          root_markers = { 'pyproject.toml', 'setup.cfg', 'requirements.txt', 'setup.py', '.git' },
+          settings = python_server.settings,
+        }
+        lsp_filetypes[python_server.name] = { 'python' }
       end
 
       -- Keep pyrefly registered for stress/tool visibility even when the
       -- host selects another Python LSP or no binary is installed, but only
       -- auto-enable it when it is the ladder winner (prevents double-attach
-      -- when ty+pyrefly coexist).
-      local py_winner = require('config.python_lsp').resolve()
-      local py_winner_name = py_winner and py_winner.name or nil
+      -- when ty+pyrefly coexist). Reuse the resolver result above.
+      local py_winner_name = python_server and python_server.name or nil
       servers.pyrefly = servers.pyrefly
         or {
           cmd = { 'pyrefly', 'lsp' },
@@ -370,6 +367,20 @@ return {
             vim.lsp.enable(server)
           end,
         })
+      end
+
+      -- Autocmds registered during FileType don't fire for that same event, so
+      -- `nvim foo.lua` would otherwise enable no server for the startup file.
+      -- Cover every buffer already open when this config() ran.
+      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(buf) then
+          local ft = vim.bo[buf].filetype
+          if ft ~= '' then
+            for server, filetypes in pairs(lsp_filetypes) do
+              if vim.tbl_contains(filetypes, ft) then vim.lsp.enable(server) end
+            end
+          end
+        end
       end
 
       vim.api.nvim_create_user_command('NvimCheckPythonLsp', function()

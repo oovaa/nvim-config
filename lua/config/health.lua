@@ -51,7 +51,7 @@ local optional = {
   { bin = 'google-java-format', why = 'java formatter' },
   { bin = 'js-debug-adapter', why = 'React/Node debugger (<leader>dc, pwa-node)' },
   { bin = 'sqls', why = 'sql LSP (DB-aware features via .sqls.yml)' },
-  { bin = 'sqruff', why = 'sql linter/formatter (Rust; needs .sqruff with dialect for non-ANSI)' },
+  { bin = 'sqruff', why = 'sql linter/formatter (Rust; dialect from ~/.config/nvim/sqruff.toml)' },
   { bin = 'rust-analyzer', why = 'rust LSP (prefer `rustup component add rust-analyzer` over mason)' },
   { bin = 'rustfmt', why = 'rust formatter (rustup component add rustfmt)' },
   { bin = 'jupyter', why = 'molten notebooks (external binary, see init.lua)' },
@@ -128,7 +128,6 @@ function M.check()
       vim.health.warn(t.bin .. ' missing — ' .. t.why, 'Install ' .. t.bin)
     end
   end
-  local mason_bin = vim.fn.stdpath 'data' .. '/mason/bin/'
   for _, bin in ipairs {
     'stylua',
     'lua-language-server',

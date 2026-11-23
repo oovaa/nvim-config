@@ -362,7 +362,9 @@ function M.setup_lualine()
       if M._icons[ft_s] == nil and package.loaded['nvim-web-devicons'] then
         local ok, dev = pcall(require, 'nvim-web-devicons')
         if ok then
-          local icon, color = dev.get_icon_by_filetype(ft_s)
+          -- get_icon_by_filetype returns a highlight group, not a hex color;
+          -- get_icon_colors_by_filetype returns the hex nvim_set_hl expects.
+          local icon, color = dev.get_icon_colors_by_filetype(ft_s)
           if icon then
             if color then
               local safe = ft_s:gsub('%W', '_')

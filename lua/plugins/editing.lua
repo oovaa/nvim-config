@@ -257,17 +257,8 @@ return {
           },
         },
       }, { dap = { hotcodereplace = 'auto' } })
-
-      -- Discover main-class debug configs after jdtls is ready (on_attach is
-      -- not reliably fired by vim.lsp.start for jdtls in all contexts).
-      vim.schedule(function()
-        vim.defer_fn(function()
-          if #bundles > 0 then
-            pcall(require('jdtls.dap').setup_dap, { hotcodereplace = 'auto' })
-            pcall(require('jdtls.dap').setup_dap_main_class_configs)
-          end
-        end, 10000)
-      end)
+      -- jdtls calls setup_dap internally when opts.dap is passed; the deferred
+      -- duplicate was removed (main-class configs are discovered in on_attach).
     end,
   },
 
