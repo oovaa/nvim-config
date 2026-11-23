@@ -115,6 +115,9 @@ S.keymaps = function()
     ['<leader>nta'] = true,
     ['[C'] = true,
     [']C'] = true,
+    -- mini.operators replace (crr) needs a non-empty register; the headless
+    -- scratch buffer has nothing yanked, so it errors by design.
+    ['crr'] = true,
     ['<leader>t1'] = true,
     ['<leader>t2'] = true,
     ['<leader>t3'] = true,
