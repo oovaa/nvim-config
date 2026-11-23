@@ -105,6 +105,16 @@ S.keymaps = function()
     ['<leader>tf'] = true,
     ['<leader>fg'] = true,
     ['<leader>tm'] = true,
+    -- dB uses blocking vim.fn.input() (not the stubbed vim.ui.input); headless
+    -- stdin EOF kills the child mid-sweep. The command itself is checked by
+    -- the integrity section.
+    ['<leader>dB'] = true,
+    -- nta opens an interactive prompt; [C/]C hit an upstream
+    -- treesitter-textobjects error in a scratch buffer with no parser. Both
+    -- work in a real buffer and tell us nothing about the mapping itself.
+    ['<leader>nta'] = true,
+    ['[C'] = true,
+    [']C'] = true,
     ['<leader>t1'] = true,
     ['<leader>t2'] = true,
     ['<leader>t3'] = true,
