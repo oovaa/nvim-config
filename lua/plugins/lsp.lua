@@ -150,7 +150,15 @@ return {
           -- Codelens: auto-enable when supported (skip large files). Built-in
           -- nvim_buf_attach on_lines handler refreshes on edits, so no explicit
           -- refresh autocmd is needed (enable(true,...) is a no-op once enabled).
-          if client and client:supports_method('textDocument/codeLens', event.buf) and vim.lsp.codelens and not vim.b[event.buf].large_file_mode then
+          -- CodeLens needs a real textDocument URI. Unnamed scratch buffers have
+          -- none, and enabling it there lets a late refresh hit a wiped buffer.
+          if
+            client
+            and client:supports_method('textDocument/codeLens', event.buf)
+            and vim.lsp.codelens
+            and not vim.b[event.buf].large_file_mode
+            and vim.api.nvim_buf_get_name(event.buf) ~= ''
+          then
             pcall(vim.lsp.codelens.enable, true, { bufnr = event.buf })
           end
 

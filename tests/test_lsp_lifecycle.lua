@@ -28,7 +28,7 @@ describe('lsp lifecycle', function()
   local root = '/tmp/nvim-lsp-lifecycle-' .. tostring(vim.uv.hrtime())
   local old_executable, old_isdirectory, old_notify
   local old_java, old_jdtls, old_blink, old_vtsls
-  local old_get_client, old_get_clients, old_clear_references, old_start, old_detach
+  local old_get_client, old_get_clients, old_clear_references, old_start, old_detach, old_codelens
 
   before_each(function()
     vim.fn.mkdir(root, 'p')
@@ -39,6 +39,7 @@ describe('lsp lifecycle', function()
     old_vtsls = package.loaded.vtsls
     old_get_client, old_get_clients, old_clear_references = vim.lsp.get_client_by_id, vim.lsp.get_clients, vim.lsp.buf.clear_references
     old_start, old_detach = vim.lsp.start, vim.lsp.buf_detach_client
+    old_codelens = vim.lsp.codelens
     vim.fn.executable = function(name)
       if name == 'java' then return 1 end
       return old_executable(name)
@@ -56,6 +57,7 @@ describe('lsp lifecycle', function()
     vim.fn.executable, vim.fn.isdirectory, vim.notify = old_executable, old_isdirectory, old_notify
     vim.lsp.get_client_by_id, vim.lsp.get_clients, vim.lsp.buf.clear_references = old_get_client, old_get_clients, old_clear_references
     vim.lsp.start, vim.lsp.buf_detach_client = old_start, old_detach
+    vim.lsp.codelens = old_codelens
     package.loaded.java, package.loaded.jdtls, package.loaded['blink.cmp'], package.loaded.vtsls = old_java, old_jdtls, old_blink, old_vtsls
     pcall(vim.api.nvim_del_augroup_by_name, 'jdtls-attach')
     vim.fn.delete(root, 'rf')
@@ -106,6 +108,33 @@ describe('lsp lifecycle', function()
 
     assert.is_true(ok, tostring(err))
     assert.equals(0, count, 'no root means no callback, including no nil callback')
+  end)
+
+  it('only enables CodeLens for named buffers', function()
+    local enabled = {}
+    vim.lsp.get_client_by_id = function()
+      return {
+        id = 61,
+        supports_method = function(_, method) return method == 'textDocument/codeLens' end,
+      }
+    end
+    vim.lsp.codelens = {
+      enable = function(on, opts) enabled[#enabled + 1] = { on, opts.bufnr } end,
+    }
+    local unnamed = vim.api.nvim_create_buf(true, false)
+    local named = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_buf_set_name(named, root .. '/codelens.md')
+
+    local ok, err = pcall(mason_spec().config)
+    assert.is_true(ok, tostring(err))
+    local attach = vim.api.nvim_get_autocmds({ event = 'LspAttach', group = 'kickstart-lsp-attach' })[1]
+    assert.is_function(attach.callback)
+    attach.callback { buf = unnamed, data = { client_id = 61 } }
+    attach.callback { buf = named, data = { client_id = 61 } }
+
+    assert.same({ { true, named } }, enabled, 'unnamed buffers have no textDocument URI for CodeLens')
+    vim.api.nvim_buf_delete(unnamed, { force = true })
+    vim.api.nvim_buf_delete(named, { force = true })
   end)
 
   it('keeps highlight autocmds until the final supporting client detaches', function()
