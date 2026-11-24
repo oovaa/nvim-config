@@ -154,11 +154,8 @@ describe('e2e: shipped features', function()
     assert.is_truthy(stdout:match 'attached=0,0,0', 'large buffers must have no attached clients: ' .. stdout)
   end)
 
-  it('[optional] disables CodeLens before wiping an edited Markdown buffer', function()
-    if vim.fn.executable 'marksman' == 0 then
-      pending 'marksman not installed on this machine'
-      return
-    end
+  it('disables CodeLens before wiping an edited Markdown buffer', function()
+    assert.are.equal(1, vim.fn.executable 'marksman', 'this case needs marksman on PATH')
     local dir = tmpdir 'codelens-wipe'
     local file = dir .. '/lens.md'
     write(file, { '# Title' })

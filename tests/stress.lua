@@ -997,8 +997,8 @@ do
   end)
 
   -- --- real attach, two buffers ---
-  local la = helpers.fixture_path 'stress_probe_a'
-  local lb = helpers.fixture_path 'stress_probe_b'
+  local la = helpers.fixture_path 'stress_probe_a.lua'
+  local lb = helpers.fixture_path 'stress_probe_b.lua'
   vim.fn.writefile({ 'local function stress_a() return 1 end', 'return stress_a' }, la)
   vim.fn.writefile({ 'local function stress_b() return 2 end', 'return stress_b' }, lb)
   pcall(vim.cmd, 'silent! only')

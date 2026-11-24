@@ -20,7 +20,7 @@ local required = {
 }
 
 local optional = {
-  { bin = 'bun', why = 'JS/TS tooling, vtsls install' },
+  { bin = 'bun', why = 'JS/TS tooling' },
   { bin = 'python3', why = 'molten-nvim, neotest-python, pyrefly/ty' },
   { bin = 'make', why = 'LuaSnip jsregexp build' },
   { bin = 'fd', why = 'snacks picker speed' },
@@ -28,7 +28,7 @@ local optional = {
   { bin = 'docker', why = 'dockerls, docker_compose_language_service (optional)' },
   { bin = 'pyrefly', why = 'python LSP (optional; uv tool install pyrefly)' },
   { bin = 'ty', why = 'fast python LSP fallback (optional)' },
-  { bin = 'vtsls', why = 'typescript LSP (not a mason package; resolved from ~/.bun/bin — absence silently disables TS)' },
+  { bin = 'vtsls', why = 'typescript LSP (mason-managed; absence silently disables TS)' },
   { bin = 'biome', why = 'fast JS/TS/JSON formatting + lint (optional)' },
   { bin = 'bash-language-server', why = 'bash/sh/zsh LSP' },
   { bin = 'marksman', why = 'markdown LSP (mason)' },

@@ -222,9 +222,8 @@ return {
         'stylua', -- lua formatter (conform needs it; health checks it)
         'ruff', -- python lint+format backend for conform + nvim-lint
         'oxlint', -- fast Rust JS/TS linter used by nvim-lint
-        -- vtsls: binary comes from bun/npm (`bun install -g @vtsls/language-server`),
-        -- mason package `vtsls` provides the same binary; listed here so clean
-        -- machines get TS LSP without manual steps.
+        -- vtsls: Mason-managed TS LSP; clean machines get it without a manual
+        -- bun/npm install. Needs node on PATH at runtime.
         'vtsls',
         -- biome: leads the JS/TS format + lint chain inside a repo that has its
         -- own biome.json (config.health.biome_root — ~/biome.json does not count).

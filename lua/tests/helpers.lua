@@ -16,7 +16,11 @@ function M.fixture_path(label)
   -- tempname()'s final component is only a per-process counter; retain its random parent.
   local tmp = vim.fn.tempname()
   local base = vim.fn.fnamemodify(vim.fn.fnamemodify(tmp, ':h'), ':t') .. '-' .. vim.fn.fnamemodify(tmp, ':t')
-  local p = FIXTURE_ROOT .. '/' .. (label or 'fx') .. '-' .. base
+  label = label or 'fx'
+  -- Keep a trailing extension last so filetype-driven tests (lua_ls) still fire.
+  local stem, ext = label:match '^(.+)%.([^.]+)$'
+  local name = stem and (stem .. '-' .. base .. '.' .. ext) or (label .. '-' .. base)
+  local p = FIXTURE_ROOT .. '/' .. name
   if vim.uv.fs_stat(p) then error('fixture_path: path already exists: ' .. p) end
   OWNED[p] = true
   return p

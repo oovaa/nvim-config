@@ -169,6 +169,20 @@ describe('data-safety', function()
     helpers.remove_fixture(p)
   end)
 
+  it('T1.fixture: a labelled extension stays last; extensionless labels keep their shape', function()
+    local helpers = require 'tests.helpers'
+    local p = helpers.fixture_path 'owned.lua'
+    local name = vim.fn.fnamemodify(p, ':t')
+    assert.is_truthy(name:match '^owned%-.+%.lua$', '.lua must remain the final suffix: ' .. name)
+    assert.is_truthy(name:match '^owned%-(.+)%-%d+%.lua$', 'the random component must sit before the extension: ' .. name)
+    helpers.remove_fixture(p)
+
+    local plain = helpers.fixture_path 'owned-plain'
+    local plain_name = vim.fn.fnamemodify(plain, ':t')
+    assert.is_truthy(plain_name:match '^owned%-plain%-.+%-%d+$', 'extensionless labels keep the old shape: ' .. plain_name)
+    helpers.remove_fixture(plain)
+  end)
+
   it('T1.8: :q with unsaved changes never silently discards them', function()
     -- vim.o.confirm is on and auto-save's QuitPre saves first, so :q on a
     -- dirty buffer succeeds by writing — E37 cannot fire in the shipped

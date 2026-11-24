@@ -4,12 +4,14 @@
 
 -- LAUNCH-PATH SELF-HEAL
 -- WHAT: GUI launchers/keybinds often start nvim without the toolchain on PATH,
---        so node-based servers (jsonls, vtsls) die with exit 127 (`env: 'node'`).
+--        so node-based servers (jsonls, Mason-installed vtsls) die with exit
+--        127 (`env: 'node'`).
 --        biome has the same problem: its launcher is `#!/usr/bin/env node`, so
 --        it silently exits 127 and conform/lint just skip it.
 -- TO CHANGE: Add your prefix if the toolchain lives elsewhere.
 -- EFFECT: Prepends the first prefix containing node, plus ~/.bun/bin when biome
---         or vtsls lives there, once, and only when something is unresolvable.
+--         (or a legacy bun-installed vtsls) lives there, once, and only when
+--         something is unresolvable. vtsls itself is Mason-managed now.
 --         Terminal launches (node already visible) skip the node half.
 if (vim.fn.exepath 'node' == '' or vim.fn.exepath 'biome' == '') and not vim.g._path_self_healed then
   local bun = vim.fn.expand '~/.bun/bin'
@@ -32,6 +34,7 @@ if (vim.fn.exepath 'node' == '' or vim.fn.exepath 'biome' == '') and not vim.g._
       break
     end
   end
+  -- Kept as a legacy fallback for hosts with vtsls in bun; Mason installs it.
   if vim.fn.executable(bun .. '/biome') == 1 or vim.fn.executable(bun .. '/vtsls') == 1 then vim.env.PATH = bun .. ':' .. vim.env.PATH end
   vim.g._path_self_healed = true
 end

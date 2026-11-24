@@ -59,9 +59,13 @@ local function yank_diagnostics(all)
     msg = diag[1].message
   end
   vim.fn.setreg(yank_reg(), msg)
-  -- ponytail: report the message actually yanked, not how many diagnostics
-  -- share the line — `gy` means "nearest one", so a total misleads.
-  vim.notify('Yanked diagnostic: ' .. msg:gsub('\n', ' '):sub(1, 60), vim.log.levels.INFO)
+  -- ponytail: `gy` yanks the nearest message, so report that one; the all-line
+  -- yank yanks several, so report the count alongside the messages.
+  if all then
+    vim.notify('Yanked ' .. #diag .. ' diagnostics: ' .. msg:gsub('\n', ' '):sub(1, 60), vim.log.levels.INFO)
+  else
+    vim.notify('Yanked diagnostic: ' .. msg:gsub('\n', ' '):sub(1, 60), vim.log.levels.INFO)
+  end
 end
 
 -- Copy the full diagnostic message under the cursor to the clipboard

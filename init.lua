@@ -111,7 +111,7 @@ vim.api.nvim_create_user_command('StartupTime', function()
   vim.fn.delete(log)
   -- ponytail: headless `+q` omits UI/VimEnter stages, so this log is a lower
   -- bound on an interactive start. --startuptime appends, so clear it first.
-  vim.cmd('!nvim --startuptime ' .. vim.fn.fnameescape(log) .. ' +q && sort -k2,2nr ' .. vim.fn.fnameescape(log) .. ' | tail -n 15')
+  vim.cmd('!nvim --startuptime ' .. vim.fn.shellescape(log) .. ' +q && sort -k2,2nr ' .. vim.fn.shellescape(log) .. ' | tail -n 15')
   local ok, lazy = pcall(require, 'lazy')
   if ok then
     local s = lazy.stats()
