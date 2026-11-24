@@ -607,7 +607,7 @@ git commit -m 'fix: align dashboard picker and terminal behavior'
 - Modify: `lua/config/keymaps.lua`
 - Modify: `lua/plugins/visual.lua`
 - Modify: `lua/plugins/formatting.lua`
-- Test: `tests/test_post_audit.lua`, `tests/test_formatting.lua`
+- Test: `tests/test_post_audit.lua`, `tests/test_formatting.lua`, `tests/test_qol.lua`
 
 **Interfaces:**
 - Remote Markdown images default to no automatic download; users can explicitly opt in.
@@ -622,12 +622,14 @@ Add focused assertions that:
 4. `gy` copies the nearest diagnostic message rather than reporting the line total.
 5. The `<leader>h` which-key description matches its actual KiteHost/HTTP action.
 6. Docs describe temp-subtree sessions, `<leader>nn`, tips coverage, Mason-managed vtsls, and StartupTime limitations consistently.
+7. Which-key groups expose `<leader>n` as Notifications/Neovim tips and `<leader>nt` as Neovim Tips.
 
 - [ ] **Step 2: Run focused tests and verify failure**
 
 ```bash
 nvim --headless -c "lua require('plenary.busted').run('tests/test_post_audit.lua')" -c 'qa!'
 nvim --headless -c "lua require('plenary.busted').run('tests/test_formatting.lua')" -c 'qa!'
+nvim --headless -c "lua require('plenary.busted').run('tests/test_qol.lua')" -c 'qa!'
 bash -n setup.sh
 ```
 
@@ -646,8 +648,9 @@ Make `gy` yank the nearest diagnostic message. Correct the `<leader>h` label. Re
 ```bash
 nvim --headless -c "lua require('plenary.busted').run('tests/test_post_audit.lua')" -c 'qa!'
 nvim --headless -c "lua require('plenary.busted').run('tests/test_formatting.lua')" -c 'qa!'
+nvim --headless -c "lua require('plenary.busted').run('tests/test_qol.lua')" -c 'qa!'
 bash -n setup.sh
-stylua --check lua/custom/plugins/init.lua lua/config/keymaps.lua lua/plugins/visual.lua lua/plugins/formatting.lua tests/test_post_audit.lua tests/test_formatting.lua
+stylua --check lua/custom/plugins/init.lua lua/config/keymaps.lua lua/plugins/visual.lua lua/plugins/formatting.lua tests/test_post_audit.lua tests/test_formatting.lua tests/test_qol.lua
 ```
 
 Expected: all focused checks pass.
@@ -655,7 +658,7 @@ Expected: all focused checks pass.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add lua/custom/plugins/init.lua setup.sh README.md SETUP.md AGENTS.md CHEATSHEET.md lua/config/keymaps.lua lua/plugins/visual.lua lua/plugins/formatting.lua tests/test_post_audit.lua tests/test_formatting.lua
+git add lua/custom/plugins/init.lua setup.sh README.md SETUP.md AGENTS.md CHEATSHEET.md lua/config/keymaps.lua lua/plugins/visual.lua lua/plugins/formatting.lua tests/test_post_audit.lua tests/test_formatting.lua tests/test_qol.lua
 git commit -m 'fix: harden markdown and correct setup guidance'
 ```
 
