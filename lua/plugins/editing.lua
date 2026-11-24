@@ -288,6 +288,7 @@ return {
       -- Registers VtsExec/VtsRename + the move-to-file handler via the
       -- plugin's LspAttach autocmd; without this enableMoveToFileCodeAction is dead.
       require('vtsls').config {}
+      local lsp_servers = require 'config.lsp_servers'
       local filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue' }
       -- Native equivalent of the old require('vtsls').lspconfig bridge:
       -- same cmd/filetypes/root priority, same settings (user's plus the
@@ -331,7 +332,7 @@ return {
         },
       })
       local function start(bufnr)
-        if vim.b[bufnr].large_file_mode then return end
+        if vim.b[bufnr].large_file_mode or not lsp_servers.sync_buffer(bufnr) then return end
         local config = vim.lsp.config.vtsls
         vim.lsp.start(config, { bufnr = bufnr, reuse_client = config.reuse_client, _root_markers = config.root_markers })
       end

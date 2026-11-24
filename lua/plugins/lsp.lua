@@ -177,7 +177,7 @@ return {
           for _, attached in ipairs(vim.lsp.get_clients { bufnr = event.buf }) do
             if attached.id ~= event.data.client_id and attached:supports_method('textDocument/documentHighlight', event.buf) then return end
           end
-          vim.lsp.buf.clear_references()
+          vim.api.nvim_buf_call(event.buf, vim.lsp.buf.clear_references)
           vim.api.nvim_clear_autocmds { group = highlight_augroup, buffer = event.buf }
         end,
       })
@@ -362,12 +362,19 @@ return {
         end
       end
 
+      vim.api.nvim_create_autocmd('FileType', {
+        group = vim.api.nvim_create_augroup('lsp-buffer-applicability', { clear = true }),
+        callback = function(args)
+          if not vim.b[args.buf].large_file_mode then lsp_servers.sync_buffer(args.buf) end
+        end,
+      })
+
       for server, filetypes in pairs(lsp_filetypes) do
         vim.api.nvim_create_autocmd('FileType', {
           group = vim.api.nvim_create_augroup('lsp-on-demand-' .. server, { clear = true }),
           pattern = filetypes,
           callback = function(args)
-            if vim.b[args.buf].large_file_mode then return end
+            if vim.b[args.buf].large_file_mode or not lsp_servers.sync_buffer(args.buf) then return end
             start_server(server, args.buf)
           end,
         })
@@ -377,7 +384,7 @@ return {
       -- `nvim foo.lua` would otherwise start no server for the startup file.
       -- Cover every buffer already open when this config() ran.
       for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_is_loaded(buf) and not vim.b[buf].large_file_mode then
+        if vim.api.nvim_buf_is_loaded(buf) and not vim.b[buf].large_file_mode and lsp_servers.sync_buffer(buf) then
           local ft = vim.bo[buf].filetype
           if ft ~= '' then
             for server, filetypes in pairs(lsp_filetypes) do

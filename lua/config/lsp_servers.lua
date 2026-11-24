@@ -1,7 +1,8 @@
 ---@module 'config.lsp_servers'
--- Static LSP server definitions + mason name mapping. Extracted from
--- lua/plugins/lsp.lua so the table is reusable/testable; lsp.lua still adds
--- the Python ladder winner and registers everything via vim.lsp.config.
+-- Static LSP server definitions + mason name mapping and per-buffer
+-- applicability helpers. Extracted from lua/plugins/lsp.lua so the table is
+-- reusable/testable; lsp.lua still adds the Python ladder winner and registers
+-- everything via vim.lsp.config.
 
 -- Language servers managed by Mason (automatically installed via `:Mason`)
 --  See `:help lsp-config` for information about keys and how to configure
@@ -237,7 +238,35 @@ local lsp_to_mason = {
   tailwindcss = 'tailwindcss-language-server',
 }
 
+local M = {}
+
+-- Port vim.lsp.enable's per-buffer applicability work without installing its
+-- global FileType activator (which would bypass our large-file start guard).
+function M.sync_buffer(bufnr)
+  local buftype = vim.bo[bufnr].buftype
+  if buftype ~= '' and buftype ~= 'help' then return false end
+  local filetype = vim.bo[bufnr].filetype
+  for _, client in ipairs(vim.lsp.get_clients { bufnr = bufnr, _uninitialized = true }) do
+    local config = vim.lsp.config[client.name]
+    if config then
+      if type(config.filetypes) == 'table' and not vim.tbl_contains(config.filetypes, filetype) then
+        vim.lsp.buf_detach_client(bufnr, client.id)
+      else
+        local new_language_id = client.get_language_id(bufnr, filetype)
+        local old_language_id = client.attached_buffers and client.attached_buffers[bufnr]
+        if old_language_id and old_language_id ~= new_language_id then
+          client:_text_document_did_close_handler(bufnr)
+          client.attached_buffers[bufnr] = new_language_id
+          client:_text_document_did_open_handler(bufnr)
+        end
+      end
+    end
+  end
+  return true
+end
+
 return {
   servers = servers,
   lsp_to_mason = lsp_to_mason,
+  sync_buffer = M.sync_buffer,
 }

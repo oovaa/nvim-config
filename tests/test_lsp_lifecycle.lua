@@ -10,6 +10,13 @@ local function jdtls_spec()
   error 'nvim-jdtls spec not found'
 end
 
+local function vtsls_spec()
+  for _, spec in ipairs(editing) do
+    if spec[1] == 'yioneko/nvim-vtsls' then return spec end
+  end
+  error 'nvim-vtsls spec not found'
+end
+
 local function mason_spec()
   for _, spec in ipairs(require 'plugins.lsp') do
     if spec[1] == 'mason-org/mason.nvim' then return spec end
@@ -20,8 +27,8 @@ end
 describe('lsp lifecycle', function()
   local root = '/tmp/nvim-lsp-lifecycle-' .. tostring(vim.uv.hrtime())
   local old_executable, old_isdirectory, old_notify
-  local old_java, old_jdtls, old_blink
-  local old_get_client, old_get_clients, old_clear_references
+  local old_java, old_jdtls, old_blink, old_vtsls
+  local old_get_client, old_get_clients, old_clear_references, old_start, old_detach
 
   before_each(function()
     vim.fn.mkdir(root, 'p')
@@ -29,7 +36,9 @@ describe('lsp lifecycle', function()
     old_java = package.loaded.java
     old_jdtls = package.loaded.jdtls
     old_blink = package.loaded['blink.cmp']
+    old_vtsls = package.loaded.vtsls
     old_get_client, old_get_clients, old_clear_references = vim.lsp.get_client_by_id, vim.lsp.get_clients, vim.lsp.buf.clear_references
+    old_start, old_detach = vim.lsp.start, vim.lsp.buf_detach_client
     vim.fn.executable = function(name)
       if name == 'java' then return 1 end
       return old_executable(name)
@@ -46,7 +55,8 @@ describe('lsp lifecycle', function()
   after_each(function()
     vim.fn.executable, vim.fn.isdirectory, vim.notify = old_executable, old_isdirectory, old_notify
     vim.lsp.get_client_by_id, vim.lsp.get_clients, vim.lsp.buf.clear_references = old_get_client, old_get_clients, old_clear_references
-    package.loaded.java, package.loaded.jdtls, package.loaded['blink.cmp'] = old_java, old_jdtls, old_blink
+    vim.lsp.start, vim.lsp.buf_detach_client = old_start, old_detach
+    package.loaded.java, package.loaded.jdtls, package.loaded['blink.cmp'], package.loaded.vtsls = old_java, old_jdtls, old_blink, old_vtsls
     pcall(vim.api.nvim_del_augroup_by_name, 'jdtls-attach')
     vim.fn.delete(root, 'rf')
   end)
@@ -100,16 +110,18 @@ describe('lsp lifecycle', function()
 
   it('keeps highlight autocmds until the final supporting client detaches', function()
     local buf = vim.api.nvim_create_buf(true, false)
+    local other = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_set_current_buf(other)
     local clients = {
-      { id = 41, bufnr = buf },
-      { id = 42, bufnr = buf },
+      { id = 41, name = 'fake-highlight-a', bufnr = buf },
+      { id = 42, name = 'fake-highlight-b', bufnr = buf },
     }
     for _, client in ipairs(clients) do
       client.supports_method = function(self, method, bufnr) return method == 'textDocument/documentHighlight' and bufnr == self.bufnr end
     end
     local active = { clients[1], clients[2] }
     local by_id = { [41] = clients[1], [42] = clients[2] }
-    local cleared = 0
+    local cleared, cleared_buf = 0, nil
     vim.lsp.get_client_by_id = function(id) return by_id[id] end
     vim.lsp.get_clients = function(opts)
       local attached = {}
@@ -118,13 +130,16 @@ describe('lsp lifecycle', function()
       end
       return attached
     end
-    vim.lsp.buf.clear_references = function() cleared = cleared + 1 end
+    vim.lsp.buf.clear_references = function()
+      cleared = cleared + 1
+      cleared_buf = vim.api.nvim_get_current_buf()
+    end
 
     local ok, err = pcall(mason_spec().config)
     assert.is_true(ok, tostring(err))
     local function callback(event, group)
       local autocmds = vim.api.nvim_get_autocmds { event = event, group = group }
-      assert.equals(1, #autocmds, group .. ' must have one ' .. event .. ' autocmd')
+      assert.is_true(#autocmds > 0, group .. ' must have a ' .. event .. ' autocmd')
       assert.is_function(autocmds[1].callback)
       return autocmds[1].callback
     end
@@ -152,6 +167,89 @@ describe('lsp lifecycle', function()
     detach { buf = buf, data = { client_id = 42 } }
     assert.same({}, highlight_ids(), 'the final supporting detach must remove the handlers')
     assert.equals(1, cleared, 'references must be cleared after the final supporting detach')
+    assert.equals(buf, cleared_buf, 'references must be cleared in the detached buffer, not the current buffer')
+    vim.api.nvim_buf_delete(buf, { force = true })
+    vim.api.nvim_buf_delete(other, { force = true })
+  end)
+
+  it('detaches inapplicable clients and refreshes language ids after filetype changes', function()
+    package.loaded.vtsls = { config = function() end }
+    local buf = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_buf_set_name(buf, root .. '/changing.ts')
+    local function set_filetype(ft)
+      vim.api.nvim_buf_call(buf, function() vim.cmd('noautocmd set ft=' .. ft) end)
+    end
+    set_filetype 'typescript'
+    local function fake_client(id, name, language_id)
+      return {
+        id = id,
+        name = name,
+        attached_buffers = { [buf] = language_id },
+        closed = 0,
+        opened = 0,
+        get_language_id = function(bufnr, ft) return ft end,
+        _text_document_did_close_handler = function(self) self.closed = self.closed + 1 end,
+        _text_document_did_open_handler = function(self) self.opened = self.opened + 1 end,
+      }
+    end
+    local ts = fake_client(51, 'vtsls', 'typescript')
+    local json = fake_client(52, 'jsonls', 'json')
+    local active = { ts }
+    local detached, starts = {}, {}
+    vim.lsp.get_clients = function(opts)
+      local clients = {}
+      for _, client in ipairs(active) do
+        if client.attached_buffers[opts.bufnr] then clients[#clients + 1] = client end
+      end
+      return clients
+    end
+    vim.lsp.buf_detach_client = function(bufnr, id)
+      detached[#detached + 1] = { bufnr, id }
+      for i, client in ipairs(active) do
+        if client.id == id then table.remove(active, i) end
+      end
+    end
+    vim.lsp.start = function(config, opts) starts[#starts + 1] = { name = config.name, bufnr = opts.bufnr } end
+
+    local ok, err = pcall(function()
+      vtsls_spec().config()
+      mason_spec().config()
+    end)
+    assert.is_true(ok, tostring(err))
+    starts = {}
+    local function callback(event, group)
+      local autocmds = vim.api.nvim_get_autocmds { event = event, group = group }
+      assert.is_true(#autocmds > 0, group .. ' must have a ' .. event .. ' autocmd')
+      assert.is_function(autocmds[1].callback)
+      return autocmds[1].callback
+    end
+    local apply = callback('FileType', 'lsp-buffer-applicability')
+    local start_json = callback('FileType', 'lsp-on-demand-jsonls')
+    local start_vtsls = callback('FileType', 'vtsls-enable')
+
+    set_filetype 'json'
+    apply { buf = buf }
+    start_json { buf = buf }
+    assert.same({ { buf, ts.id } }, detached, 'VTSLS must detach when the buffer is no longer TypeScript')
+    assert.is_true(vim.tbl_contains(vim.tbl_map(function(item) return item.name end, starts), 'jsonls'), 'JSON LS must still start')
+
+    active = { json }
+    set_filetype 'jsonc'
+    apply { buf = buf }
+    start_json { buf = buf }
+    assert.same({ { buf, ts.id } }, detached, 'a supported filetype change must not detach JSON LS')
+    assert.equals(1, json.closed, 'JSON LS must close the old language document')
+    assert.equals(1, json.opened, 'JSON LS must open the new language document')
+    assert.equals('jsonc', json.attached_buffers[buf], 'JSON LS must track the new language id')
+
+    vim.bo[buf].buftype = 'nofile'
+    local before = #starts
+    set_filetype 'json'
+    apply { buf = buf }
+    start_json { buf = buf }
+    set_filetype 'typescript'
+    start_vtsls { buf = buf }
+    assert.equals(before, #starts, 'non-file buffers must not start native or direct LSP clients')
     vim.api.nvim_buf_delete(buf, { force = true })
   end)
 
