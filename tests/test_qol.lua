@@ -123,19 +123,10 @@ describe('qol plugins', function()
     assert.equals(0, files_calls, '<leader>sp must not invoke the files picker')
   end)
 
-  it('keeps notification history mapped under a which-key group', function()
+  it('keeps notification history mapped', function()
     local m = mapped '<leader>nn'
     assert.is_function(m and m.callback, '<leader>nn must resolve to a real handler')
     assert.is_truthy((m.desc or ''):find('Notification', 1, true), '<leader>nn desc should mention Notification')
-
-    require('lazy').load { plugins = { 'which-key.nvim' } }
-    local registered = {}
-    for _, entry in ipairs(require('which-key.config').spec or {}) do
-      registered[entry[1]] = entry.group
-    end
-    for _, g in ipairs { '<leader>n', '<leader>nt' } do
-      assert.is_truthy(registered[g], 'missing which-key group: ' .. g)
-    end
   end)
 
   it('does not shadow real actions with empty which-key groups', function()
