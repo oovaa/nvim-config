@@ -268,7 +268,7 @@ return {
       })
       -- FileType already fired before this lazy plugin loaded; attach those too.
       for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].filetype == 'java' then start { bufnr = bufnr } end
+        if vim.api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].filetype == 'java' then start { buf = bufnr } end
       end
       -- jdtls calls setup_dap internally when opts.dap is passed; the deferred
       -- duplicate was removed (main-class configs are discovered in on_attach).

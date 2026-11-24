@@ -67,6 +67,27 @@ describe('lsp lifecycle', function()
     assert.same({ project }, calls, 'the discovered root must be delivered exactly once')
   end)
 
+  it('does not call Tailwind on_dir without a discovered root', function()
+    local config = require('config.lsp_servers').servers.tailwindcss
+    local buf = vim.api.nvim_create_buf(true, false)
+    local project = root .. '/tailwind-missing'
+    vim.fn.mkdir(project .. '/src', 'p')
+    vim.api.nvim_buf_set_name(buf, project .. '/src/index.ts')
+    assert.is_nil(vim.fs.root(buf, config.root_markers), 'fixture must not inherit a Tailwind root')
+
+    local count = 0
+    local ok, err = pcall(function()
+      config.root_dir(buf, function(found)
+        count = count + 1
+        assert.is_not_nil(found, 'on_dir must never receive nil')
+      end)
+    end)
+    vim.api.nvim_buf_delete(buf, { force = true })
+
+    assert.is_true(ok, tostring(err))
+    assert.equals(0, count, 'no root means no callback, including no nil callback')
+  end)
+
   it('attaches each Java buffer with its own root, data dir and launcher', function()
     package.loaded['blink.cmp'] = { get_lsp_capabilities = function() error 'JDTLS must not require Blink capabilities' end }
     local recorded, requested = {}, nil
@@ -133,5 +154,53 @@ describe('lsp lifecycle', function()
       assert.is_table(opts.capabilities, 'built-in capabilities must be available without Blink')
       assert.same({}, opts.bundles)
     end
+  end)
+
+  it('attaches an already-open Java buffer through the per-buffer handler and skips large files', function()
+    local recorded, requested = {}, nil
+    require('jdtls').start_or_attach = function(opts, start_opts)
+      recorded[#recorded + 1] = opts
+      requested = start_opts
+    end
+
+    local project = root .. '/java-open'
+    local large_project = root .. '/java-open-large'
+    for _, dir in ipairs { project, large_project } do
+      vim.fn.mkdir(dir .. '/src', 'p')
+      vim.fn.writefile({}, dir .. '/pom.xml')
+    end
+    local old_glob = vim.fn.glob
+    vim.fn.glob = function(pattern, ...)
+      if pattern:match 'org%.eclipse%.equinox%.launcher_%*%.jar' then
+        return vim.fn.stdpath 'data' .. '/mason/packages/jdtls/plugins/org.eclipse.equinox.launcher_1.jar'
+      end
+      if pattern:match 'java%-test/extension/server' or pattern:match 'java%-debug%-adapter/extension/server' then return '' end
+      return old_glob(pattern, ...)
+    end
+
+    local buf = vim.api.nvim_create_buf(true, false)
+    local large_buf = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_buf_set_name(buf, project .. '/src/Open.java')
+    vim.api.nvim_buf_set_name(large_buf, large_project .. '/src/Large.java')
+    -- Suppress FileType so lazy does not run the config before the sweep test.
+    vim.api.nvim_buf_call(buf, function() vim.cmd 'noautocmd setfiletype java' end)
+    vim.api.nvim_buf_call(large_buf, function() vim.cmd 'noautocmd setfiletype java' end)
+    vim.b[large_buf].large_file_mode = true
+
+    local ok, err = pcall(jdtls_spec().config)
+    vim.fn.glob = old_glob
+    vim.api.nvim_buf_delete(buf, { force = true })
+    vim.api.nvim_buf_delete(large_buf, { force = true })
+    assert.is_true(ok, tostring(err))
+
+    local autocmds = vim.api.nvim_get_autocmds { event = 'FileType', pattern = 'java', group = 'jdtls-attach' }
+    assert.equals(1, #autocmds, 'the sweep and future FileType events must share one handler')
+    assert.equals(1, #recorded, 'only the small already-open Java buffer should attach during the sweep')
+    assert.same({ bufnr = buf, dap = { hotcodereplace = 'auto' } }, requested)
+    assert.equals(project, recorded[1].root_dir)
+    assert.equals(
+      vim.fn.stdpath 'cache' .. '/jdtls/' .. vim.fn.fnamemodify(project, ':p:h:t') .. '-' .. vim.fn.sha256(project),
+      recorded[1].cmd[#recorded[1].cmd]
+    )
   end)
 end)
