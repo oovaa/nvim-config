@@ -1,5 +1,5 @@
 -- Post-audit fix verification: SQL, Rust clippy, UI caches, cmdline noselect,
--- blink capabilities merge, Java DAP wiring, treesitter ft->lang mapping.
+-- built-in LSP capabilities and lazy Blink, Java DAP wiring, treesitter mappings.
 -- Run with: nvim --headless -c 'lua require("plenary.busted").run("tests/test_post_audit.lua")' -c 'qa!'
 
 describe('post-audit fixes', function()
@@ -149,14 +149,29 @@ describe('post-audit fixes', function()
   end)
 
   -- ============================================================
-  -- LSP capabilities merge
+  -- LSP capabilities and completion laziness
   -- ============================================================
-  describe('LSP capabilities merge', function()
-    it('merges blink.cmp capabilities into all servers', function()
-      local lsp = H.read(vim.fn.stdpath 'config' .. '/lua/plugins/lsp.lua')
-      assert.is_truthy(lsp:match 'blink%.get_lsp_capabilities', 'must call blink.get_lsp_capabilities')
-      assert.is_truthy(lsp:match 'vim%.tbl_deep_extend.*blink_caps', 'must merge blink_caps into each server')
-      assert.is_truthy(lsp:match 'for _, server in pairs%(servers%)', 'must iterate all servers')
+  describe('LSP capabilities and completion laziness', function()
+    it('provides snippet support through built-in client capabilities', function()
+      local capabilities = vim.lsp.protocol.make_client_capabilities()
+      assert.is_true(capabilities.textDocument.completion.completionItem.snippetSupport, 'built-in capabilities must support snippets')
+    end)
+
+    it('keeps Blink and LuaSnip behind InsertEnter', function()
+      local blink
+      for _, spec in ipairs(require 'plugins.completion') do
+        if spec[1] == 'saghen/blink.cmp' then blink = spec end
+      end
+      assert.is_table(blink, 'Blink spec must exist')
+      assert.equals('InsertEnter', blink.event, 'Blink must load on InsertEnter')
+      assert.equals('luasnip', blink.opts.snippets.preset, 'Blink must keep the LuaSnip preset')
+      assert.is_false(blink.opts.cmdline.enabled, 'Blink cmdline completion must stay disabled')
+      local has_luasnip = false
+      for _, dependency in ipairs(blink.dependencies) do
+        if type(dependency) == 'table' and dependency[1] == 'L3MON4D3/LuaSnip' then has_luasnip = true end
+      end
+      assert.is_true(has_luasnip, 'LuaSnip must remain a Blink dependency')
+      -- Actual package.loaded assertions before/after InsertEnter live in test_e2e_features.lua.
     end)
   end)
 
@@ -181,7 +196,7 @@ describe('post-audit fixes', function()
   describe('Java DAP wiring', function()
     it('passes declarative DAP opts with hotcodereplace auto', function()
       local editing = H.read(vim.fn.stdpath 'config' .. '/lua/plugins/editing.lua')
-      assert.is_truthy(editing:match "{ dap = { hotcodereplace = 'auto' } }", 'jdtls must receive declarative dap opts')
+      assert.is_truthy(editing:match "{ bufnr = bufnr, dap = { hotcodereplace = 'auto' } }", 'jdtls must receive per-buffer declarative dap opts')
       assert.is_falsy(editing:match 'vim%.defer_fn%s*%(.-setup_dap', 'must not defer a duplicate setup_dap call')
     end)
 
