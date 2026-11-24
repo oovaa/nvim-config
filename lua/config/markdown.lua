@@ -12,12 +12,16 @@ function M.setup()
     desc = 'Markdown list continue + empty list exits',
     group = vim.api.nvim_create_augroup('markdown-lists', { clear = true }),
     callback = function(args)
-      vim.opt_local.formatoptions:append 'ron'
-      -- Overwrite, not append: the runtime markdown ftplugin sets fb:-/fb:*/fb:+
-      -- whose f flag means "leader on first line only, never repeat it". First
-      -- match wins, so appended b:- entries would be shadowed and Enter/o would
-      -- never continue the list.
-      vim.opt_local.comments = { 'b:-', 'b:*', 'b:+', 'n:>' }
+      -- FileType can fire for a buffer that is not the window's current one;
+      -- opt_local would then silently configure the wrong buffer.
+      vim.api.nvim_buf_call(args.buf, function()
+        vim.opt_local.formatoptions:append 'ron'
+        -- Overwrite, not append: the runtime markdown ftplugin sets fb:-/fb:*/fb:+
+        -- whose f flag means "leader on first line only, never repeat it". First
+        -- match wins, so appended b:- entries would be shadowed and Enter/o would
+        -- never continue the list.
+        vim.opt_local.comments = { 'b:-', 'b:*', 'b:+', 'n:>' }
+      end)
       -- ponytail: native r/n/o/O repeats dash markers but can't increment numbers
       -- (verified in clean nvim). Numbered items go through native keys (so
       -- insert mode/indent behave exactly like stock), then a scheduled renumber

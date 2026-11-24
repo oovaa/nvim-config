@@ -7,22 +7,31 @@
 vim.o.sessionoptions = 'blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions'
 local M = {}
 local suppressed = { ['~/'] = true, ['~/Downloads'] = true, ['/etc'] = true, ['/tmp'] = true }
-local function suppressed_dir(cwd)
-  cwd = (cwd or vim.uv.cwd() or vim.fn.getcwd()):gsub('/+$', '')
-  if cwd == '' then cwd = '/' end
-  for d in pairs(suppressed) do
-    local e = vim.fn.expand(d):gsub('/+$', '')
-    if e == '' then e = '/' end
-    if cwd == e then return true end -- exact only; not subdirs (fixes ~/ blocking ~/projects/*)
-  end
-  return false
+-- one normalizer for cwds and temp roots: strip trailing slashes, '/' for empty
+local function norm_path(p)
+  p = (p or ''):gsub('/+$', '')
+  if p == '' then p = '/' end
+  return p
 end
 -- normalize a cwd to the exact string the session name is derived from:
 -- resolved, absolute, no trailing slash (so `/a/b` and `/a/b/` share one file)
 local function norm_cwd(cwd)
-  cwd = (cwd and vim.fn.fnamemodify(vim.fn.resolve(cwd), ':p') or vim.fn.fnamemodify(vim.fn.resolve(vim.fn.getcwd()), ':p')):gsub('/+$', '')
-  if cwd == '' then cwd = '/' end
-  return cwd
+  cwd = cwd and vim.fn.fnamemodify(vim.fn.resolve(cwd), ':p') or vim.fn.fnamemodify(vim.fn.resolve(vim.fn.getcwd()), ':p')
+  return norm_path(cwd)
+end
+-- shared predicate: exact matches for ~, ~/Downloads, /etc, /tmp, plus the
+-- whole temp tree. `/` is never a temp *subtree*, or TMPDIR='/' suppresses all.
+local function is_suppressed(cwd)
+  cwd = norm_path(cwd or vim.uv.cwd() or vim.fn.getcwd())
+  for d in pairs(suppressed) do
+    if cwd == norm_path(vim.fn.expand(d)) then return true end -- exact only; not subdirs (fixes ~/ blocking ~/projects/*)
+  end
+  -- temp is different: every throwaway cwd under it (test sandboxes, /tmp/nvim/*)
+  -- would otherwise leave a session that clutters the dashboard `s` picker.
+  local temp = norm_path(os.getenv 'TMPDIR' or os.getenv 'TEMP' or os.getenv 'TMP' or '/tmp')
+  if cwd == temp then return true end
+  if temp ~= '/' and cwd:sub(1, #temp + 1) == temp .. '/' then return true end
+  return false
 end
 local function session_file_for(cwd)
   cwd = norm_cwd(cwd)
@@ -51,6 +60,9 @@ end
 local function find_session_for(cwd)
   local norm = norm_cwd(cwd)
   local f = session_file_for(norm)
+  -- callers always get a path (stress/tests rely on that), but a suppressed cwd
+  -- must never be revived from a scan hit left by an older session write.
+  if is_suppressed(norm) then return f end
   local function has_badd(p)
     if vim.fn.filereadable(p) ~= 1 then return false end
     for _, l in ipairs(vim.fn.readfile(p)) do
@@ -98,7 +110,7 @@ local function list_projects(dir)
           if label == '' then label = '/' end
         end
       end
-      if has_badd and label then
+      if has_badd and label and not is_suppressed(label) then
         local cur = seen[label]
         if not cur or e.mtime > cur.mtime or (e.mtime == cur.mtime and e.path < cur.path) then
           seen[label] = { label = label, path = e.path, mtime = e.mtime }
@@ -114,6 +126,7 @@ local function list_projects(dir)
   return out
 end
 -- module-visible accessors (primary API)
+M.is_suppressed = is_suppressed
 M.find_session_for = find_session_for
 M.session_files = session_files
 M.session_file_for = session_file_for
@@ -137,7 +150,7 @@ vim.api.nvim_create_autocmd('VimLeavePre', {
   -- second session writer (AGENTS.md trap 2)
   group = vim.api.nvim_create_augroup('BuiltinSessions', { clear = true }),
   callback = function()
-    if suppressed_dir() then return end
+    if is_suppressed() then return end
     -- don't overwrite good session with empty dashboard/no-file state
     local has_file = false
     for _, b in ipairs(vim.api.nvim_list_bufs()) do

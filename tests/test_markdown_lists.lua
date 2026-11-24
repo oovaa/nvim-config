@@ -3,6 +3,8 @@
 -- whole implementation is expr mappings whose return values decide the result.
 -- Run with: nvim --headless -c 'lua require("plenary.busted").run("tests/test_markdown_lists.lua")' -c 'qa!'
 
+local helpers = require 'tests.helpers'
+
 describe('markdown lists', function()
   -- ponytail: renumbering runs in vim.schedule (synchronous buffer edits plus
   -- :startinsert from a mapping silently fail to enter insert mode), so every
@@ -64,6 +66,26 @@ describe('markdown lists', function()
     vim.cmd 'bwipeout!'
   end)
 
+  it('sets list options on the FileType buffer, not the current buffer', function()
+    vim.cmd 'enew!'
+    local current = vim.api.nvim_get_current_buf()
+    local current_fo, current_comments = vim.bo[current].formatoptions, vim.bo[current].comments
+    -- create a second buffer but leave `current` as the window's buffer; setting
+    -- its filetype fires FileType for that buffer while it is not current.
+    local target = vim.api.nvim_create_buf(true, true)
+    vim.bo[target].filetype = 'markdown'
+    assert.is_not.equals(target, vim.api.nvim_get_current_buf(), 'premise: target is not the current buffer')
+
+    assert.same({ 'b:-', 'b:*', 'b:+', 'n:>' }, vim.split(vim.bo[target].comments, ','), 'comments land on the FileType buffer')
+    local fo = vim.bo[target].formatoptions
+    for _, flag in ipairs { 'r', 'o', 'n' } do
+      assert.is_truthy(fo:match(flag), ('target formatoptions must carry %q (got %q)'):format(flag, fo))
+    end
+    assert.equals(current_fo, vim.bo[current].formatoptions, 'current buffer formatoptions untouched')
+    assert.equals(current_comments, vim.bo[current].comments, 'current buffer comments untouched')
+    vim.api.nvim_buf_delete(target, { force = true })
+  end)
+
   for _, c in ipairs(cases) do
     local name, lines, cur, seq, want, want_row = c[1], c[2], c[3], c[4], c[5], c[6]
     it(name, function()
@@ -75,4 +97,56 @@ describe('markdown lists', function()
       vim.cmd 'bwipeout!'
     end)
   end
+end)
+
+describe('render-markdown size guard', function()
+  local spec
+  for _, s in ipairs(require 'plugins.appearance') do
+    if s[1] == 'MeanderingProgrammer/render-markdown.nvim' then spec = s end
+  end
+
+  it('disables oversized markdown buffers by filetype, not by .md filename', function()
+    assert.is_table(spec, 'render-markdown spec must be present')
+    -- the plugin's own config owns the guard augroup; load it once so it cannot
+    -- clear our instrumented copy when the first markdown buffer opens.
+    pcall(function() require('lazy').load { plugins = { 'render-markdown.nvim' } } end)
+
+    local dir = helpers.fixture_path 'render-guard'
+    vim.fn.mkdir(dir, 'p')
+    local big = string.rep('x', 200 * 1024 + 1)
+    local files = { dir .. '/big.markdown', dir .. '/big.mdx', dir .. '/small.md', dir .. '/big.txt' }
+    vim.fn.writefile({ big }, files[1])
+    vim.fn.writefile({ big }, files[2])
+    vim.fn.writefile({ '# small' }, files[3])
+    vim.fn.writefile({ big }, files[4])
+
+    local disabled = {}
+    local saved = { package.loaded['render-markdown'], package.loaded['render-markdown.api'] }
+    package.loaded['render-markdown'] = { setup = function() end }
+    package.loaded['render-markdown.api'] = {
+      buf_disable = function() disabled[vim.api.nvim_get_current_buf()] = true end,
+    }
+    local bufs = {}
+    local ok, err = pcall(function()
+      spec.config(nil, {})
+      for i, path in ipairs(files) do
+        vim.cmd('edit! ' .. vim.fn.fnameescape(path))
+        local b = vim.api.nvim_get_current_buf()
+        local want_ft = i == 4 and 'text' or 'markdown'
+        if vim.bo[b].filetype ~= want_ft then vim.bo[b].filetype = want_ft end
+        bufs[i] = b
+      end
+      assert.is_true(disabled[bufs[1]], 'oversized .markdown must be disabled')
+      assert.is_true(disabled[bufs[2]], 'oversized .mdx must be disabled')
+      assert.is_nil(disabled[bufs[3]], 'small .md must stay enabled')
+      assert.is_nil(disabled[bufs[4]], 'oversized non-markdown buffer must stay enabled')
+    end)
+    package.loaded['render-markdown'] = saved[1]
+    package.loaded['render-markdown.api'] = saved[2]
+    for _, b in ipairs(bufs) do
+      pcall(vim.api.nvim_buf_delete, b, { force = true })
+    end
+    helpers.remove_fixture(dir)
+    assert.is_true(ok, tostring(err))
+  end)
 end)

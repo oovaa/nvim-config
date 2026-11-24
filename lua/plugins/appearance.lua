@@ -20,19 +20,24 @@ return {
     -- whole session or never guards a large file opened later.
     opts = {},
     config = function(_, opts)
-      require('render-markdown').setup(opts)
+      local render = require 'render-markdown'
+      local api = require 'render-markdown.api'
+      render.setup(opts)
       local guard = function(buf)
+        if not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].filetype ~= 'markdown' then return end
         local name = vim.api.nvim_buf_get_name(buf)
         local ok, st = pcall(vim.uv.fs_stat, name)
-        if ok and st and st.size > 200 * 1024 then pcall(vim.api.nvim_buf_call, buf, function() require('render-markdown.api').buf_disable() end) end
+        if ok and st and st.size > 200 * 1024 then pcall(vim.api.nvim_buf_call, buf, function() api.buf_disable() end) end
       end
-      vim.api.nvim_create_autocmd('BufWinEnter', {
+      -- filetype, not *.md: .markdown/.mdx buffers are markdown too, and the
+      -- byte threshold (fs_stat.size) stays the same for every extension.
+      vim.api.nvim_create_autocmd('FileType', {
         group = vim.api.nvim_create_augroup('render-markdown-size-guard', { clear = true }),
-        pattern = '*.md',
+        pattern = 'markdown',
         callback = function(ev) guard(ev.buf) end,
       })
       for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'markdown' then guard(buf) end
+        guard(buf)
       end
     end,
   },

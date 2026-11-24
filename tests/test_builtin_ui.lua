@@ -2,6 +2,8 @@
 -- and that the saved colorscheme comes back. Both are silent when they break.
 -- Run with: nvim --headless -c 'lua require("plenary.busted").run("tests/test_builtin_ui.lua")" -c 'qa!'
 
+local helpers = require 'tests.helpers'
+
 describe('builtin tabline', function()
   local tabline = require 'custom.ui.tabline'
 
@@ -93,10 +95,13 @@ describe('dashboard projects', function()
   local S = require 'config.sessions'
 
   local function tmpdir()
-    local dir = ('/tmp/nvim-dash-test-%d'):format(vim.uv.hrtime())
+    -- unique, non-suppressed fixture: suppressed cwds have no sessions at all
+    local dir = helpers.fixture_path 'nvim-dash-test'
     vim.fn.mkdir(dir, 'p')
     return dir
   end
+
+  local function short(path) return (path:gsub('^' .. vim.pesc(vim.fn.expand '~'), '~')) end
 
   local function write_session(path, cd, with_badd)
     local lines = { 'cd ' .. cd }
@@ -108,6 +113,12 @@ describe('dashboard projects', function()
   --- Render the dashboard through its real VimEnter handler, with the
   --- production cwd-session lookup replaced by `find_result`.
   local function render(find_result)
+    -- the Resume row is gated on the canonical suppression predicate; run from
+    -- a real (non-suppressed) cwd so the stubbed find can be exercised at all.
+    local cwd_fx = helpers.fixture_path 'dash-render-cwd'
+    vim.fn.mkdir(cwd_fx, 'p')
+    local orig_cwd = vim.fn.getcwd()
+    vim.cmd('cd ' .. vim.fn.fnameescape(cwd_fx))
     -- drop deleted-file litter from earlier blocks: wiping a dashboard lands on
     -- such a buffer and nvim prints E211 while re-entering it
     for _, b in ipairs(vim.api.nvim_list_bufs()) do
@@ -128,6 +139,8 @@ describe('dashboard projects', function()
       return vim.api.nvim_buf_get_lines(0, 0, -1, false)
     end)
     S.find_session_for = orig_find
+    vim.cmd('cd ' .. vim.fn.fnameescape(orig_cwd))
+    helpers.remove_fixture(cwd_fx)
     assert.is_truthy(ok, tostring(res))
     return res
   end
@@ -158,7 +171,7 @@ describe('dashboard projects', function()
     assert.is_nil(M.get_resume_for(function() return nil end, readable), 'no path, no row')
     assert.is_nil(M.get_resume_for(function() return sess end, function() return false end), 'unreadable session, no row')
     assert.equals(vim.fn.stdpath 'data' .. '/sessions', M.sessions_dir())
-    vim.fn.delete(dir, 'rf')
+    helpers.remove_fixture(dir)
   end)
 
   it('renders the Resume row first only when the cwd session is restorable', function()
@@ -189,7 +202,7 @@ describe('dashboard projects', function()
     assert.is_nil(row_index(gated, 'Resume:'), 'a session without badd must not produce a Resume row')
 
     wipe_dashboard_buffers()
-    vim.fn.delete(dir, 'rf')
+    helpers.remove_fixture(dir)
   end)
 
   it('s picker consumes list_projects order and restores in place', function()
@@ -223,7 +236,7 @@ describe('dashboard projects', function()
     assert.is_truthy(ok, tostring(err))
     assert.equals(M.sessions_dir(), captured_dir, 'the picker must read the dashboard sessions dir')
     assert.equals('Select session:', captured_prompt)
-    assert.same({ zzz, aaa }, captured_items, 'items keep list_projects (recency) order, no alphabetical re-sort')
+    assert.same({ short(zzz), short(aaa) }, captured_items, 'items keep list_projects (recency) order, no alphabetical re-sort')
 
     ok, err = pcall(on_choice, captured_items[1])
     local picked_cwd = vim.fn.getcwd()
@@ -232,6 +245,33 @@ describe('dashboard projects', function()
     assert.equals(vim.fn.fnamemodify(dir, ':p'), vim.fn.fnamemodify(picked_cwd, ':p'), 'picking sources the session, whose cd moves nvim in place')
 
     wipe_dashboard_buffers()
-    vim.fn.delete(dir, 'rf')
+    helpers.remove_fixture(dir)
+  end)
+
+  it('s picker drops stale temp sessions even from an unfiltered list source', function()
+    local dir = tmpdir()
+    local live = helpers.fixture_path 'dash-live'
+    local stale_cd = vim.fn.tempname()
+    local orig_list, orig_select = S.list_projects, vim.ui.select
+    S.list_projects = function()
+      return {
+        { label = live, path = dir .. '/live.vim', mtime = 2 },
+        { label = stale_cd, path = dir .. '/stale.vim', mtime = 1 },
+      }
+    end
+    local captured
+    vim.ui.select = function(items) captured = items end
+    render(nil)
+    local s_map
+    for _, m in ipairs(vim.api.nvim_buf_get_keymap(0, 'n')) do
+      if m.lhs == 's' then s_map = m.callback end
+    end
+    local ok, err = pcall(s_map)
+    vim.ui.select, S.list_projects = orig_select, orig_list
+    assert.is_truthy(ok, tostring(err))
+    assert.same({ short(live) }, captured, 'a stale temp cwd must not be a dashboard choice')
+    helpers.remove_fixture(live)
+    wipe_dashboard_buffers()
+    helpers.remove_fixture(dir)
   end)
 end)

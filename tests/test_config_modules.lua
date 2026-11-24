@@ -14,13 +14,56 @@ describe('config.sessions', function()
   local sessions = require 'config.sessions'
   local session_file = sessions.session_file_for
   local session_files = sessions.session_files
+  local is_suppressed = sessions.is_suppressed
 
   it('exports its helpers for the dashboard session picker', function()
     assert.is_function(session_file, 'must export the path builder')
     assert.is_function(session_files, 'must export the listing fn')
     assert.is_function(sessions.find_session_for)
+    assert.is_function(is_suppressed, 'must export the shared suppression predicate')
     -- compat shim remains usable
     assert.is_function(_G._builtin_find_session)
+  end)
+
+  it('normalizes suppression: trailing slashes, sibling prefixes, home vs child', function()
+    assert.is_true(is_suppressed '/tmp', 'exact /tmp')
+    assert.is_true(is_suppressed '/tmp/', 'one trailing slash')
+    assert.is_true(is_suppressed '/tmp///', 'many trailing slashes')
+    assert.is_false(is_suppressed '/tmp-other', 'a sibling prefix is not the temp root')
+    assert.is_false(is_suppressed '/tmp-other/child')
+    local home = vim.fn.expand '~'
+    assert.is_true(is_suppressed(home), 'exact home')
+    assert.is_true(is_suppressed(home .. '/'), 'home with trailing slash')
+    assert.is_false(is_suppressed(home .. '/projects/x'), 'a home child is not suppressed')
+    assert.is_true(is_suppressed(vim.fn.expand '~/Downloads'), 'exact Downloads')
+    assert.is_false(is_suppressed(vim.fn.expand '~/Downloads/x'), 'a Downloads child is not suppressed')
+    assert.is_true(is_suppressed '/etc')
+    assert.is_false(is_suppressed '/etc/hosts', 'an /etc child is not suppressed')
+  end)
+
+  it('uses a custom TMPDIR subtree, but TMPDIR=/ must not suppress every cwd', function()
+    local original = vim.env.TMPDIR
+    local custom = helpers.fixture_path 'tmpdir-root'
+    vim.fn.mkdir(custom, 'p')
+    local plain = helpers.fixture_path 'under-root'
+    local ok, err = pcall(function()
+      vim.env.TMPDIR = custom
+      assert.is_true(is_suppressed(custom), 'exact custom temp root')
+      assert.is_true(is_suppressed(custom .. '/nested/child'), 'custom temp subtree')
+      assert.is_false(is_suppressed(custom .. '-sibling'), 'sibling of the custom temp root')
+      assert.is_true(is_suppressed '/tmp', 'exact /tmp stays suppressed via the explicit set')
+      assert.is_false(is_suppressed '/tmp/scratch', '/tmp is no longer the temp root')
+      vim.env.TMPDIR = '/'
+      assert.is_false(is_suppressed(plain .. '/child'), 'TMPDIR=/ must not suppress every cwd')
+      assert.is_false(is_suppressed(plain), 'nor an unrelated cwd')
+    end)
+    if original then
+      vim.env.TMPDIR = original
+    else
+      vim.env.TMPDIR = nil
+    end
+    helpers.remove_fixture(custom)
+    assert.is_true(ok, tostring(err))
   end)
 
   it('names a session per cwd under stdpath(data)/sessions', function()
@@ -69,11 +112,11 @@ describe('config.sessions', function()
 
   it('finds an existing session by its cd line', function()
     -- find_session_for only scans the real sessions dir, so the fixture has to
-    -- live there; it is removed again at the end.
-    local dir = scratch_dir()
-    local target = dir .. '/proj'
+    -- live there; it is removed again at the end. The target cwd must be outside
+    -- the temp tree now that find_session_for honours suppression.
+    local target = helpers.fixture_path 'find-session-proj'
     vim.fn.mkdir(target, 'p')
-    local p = vim.fn.stdpath 'data' .. '/sessions/zz-test-' .. vim.fn.sha256(dir):sub(1, 8) .. '.vim'
+    local p = vim.fn.stdpath 'data' .. '/sessions/zz-test-' .. vim.fn.sha256(target):sub(1, 8) .. '.vim'
     vim.fn.mkdir(vim.fn.stdpath 'data' .. '/sessions', 'p')
     local fd = assert(io.open(p, 'w'))
     fd:write('badd 1\n' .. 'cd ' .. target .. '\n')
@@ -83,7 +126,23 @@ describe('config.sessions', function()
     -- old global access path still works during transition
     assert.equals(p, _G._builtin_find_session(target))
     vim.fn.delete(p)
-    vim.fn.delete(dir, 'rf')
+    helpers.remove_fixture(target)
+  end)
+
+  it('does not revive a suppressed cwd from an old session file', function()
+    -- A stale session written before temp suppression existed must not be
+    -- rediscovered: find_session_for still returns a path (callers expect one),
+    -- but never a scan hit for a suppressed cwd.
+    local dir = vim.fn.stdpath 'data' .. '/sessions'
+    vim.fn.mkdir(dir, 'p')
+    local temp_cwd = vim.fn.tempname()
+    vim.fn.mkdir(temp_cwd, 'p')
+    local legacy = dir .. '/legacy-suppressed-' .. vim.fn.sha256(temp_cwd):sub(1, 8) .. '.vim'
+    vim.fn.writefile({ 'badd +1 x', 'cd ' .. temp_cwd }, legacy)
+    local got = sessions.find_session_for(temp_cwd)
+    vim.fn.delete(legacy)
+    vim.fn.delete(temp_cwd, 'rf')
+    assert.is_not.equals(legacy, got, 'a suppressed cwd must not scan-hit an old session')
   end)
 
   it('registers exactly one VimLeavePre writer so reload cannot stack it', function()
@@ -141,57 +200,86 @@ describe('sessions.list_projects', function()
 
   it('lists newest-first, deduped by cwd, newest mtime wins', function()
     local dir = scratch_dir()
-    local a = write_session(dir, 'a.vim', { 'badd +1 file', 'cd ' .. vim.fn.expand '~' }, 1000000)
-    local b = write_session(dir, 'b.vim', { 'badd +2 other', 'cd ' .. vim.fn.expand '~' }, 2000000)
+    local first, other, nobadd = helpers.fixture_path 'lp-first', helpers.fixture_path 'lp-other', helpers.fixture_path 'lp-no-badd'
+    local a = write_session(dir, 'a.vim', { 'badd +1 file', 'cd ' .. first }, 1000000)
+    local b = write_session(dir, 'b.vim', { 'badd +2 other', 'cd ' .. first }, 2000000)
     local list = sessions.list_projects(dir)
     assert.equals(1, #list, 'same cwd dedupes to one project')
-    assert.equals(vim.fn.expand '~', list[1].label)
+    assert.equals(first, list[1].label)
     assert.equals(b, list[1].path, 'the newest file wins the dedupe')
 
     -- a different cwd at an even newer mtime must land above it
-    local c = write_session(dir, 'c.vim', { 'badd +3 third', 'cd /tmp/lp-other' }, 3000000)
+    local c = write_session(dir, 'c.vim', { 'badd +3 third', 'cd ' .. other }, 3000000)
     list = sessions.list_projects(dir)
     assert.equals(2, #list)
     assert.equals(c, list[1].path, 'newest mtime first')
-    assert.equals('/tmp/lp-other', list[1].label)
+    assert.equals(other, list[1].label)
 
     -- the dashboard's has_badd contract: no badd line, no resume row
-    write_session(dir, 'd.vim', { 'cd /tmp/lp-no-badd' }, 4000000)
+    write_session(dir, 'd.vim', { 'cd ' .. nobadd }, 4000000)
     assert.equals(2, #sessions.list_projects(dir), 'session without badd must be skipped')
+    helpers.remove_fixture(first)
+    helpers.remove_fixture(other)
+    helpers.remove_fixture(nobadd)
     vim.fn.delete(dir, 'rf')
   end)
 
   it('breaks equal-mtime ties by path ascending', function()
     local dir = scratch_dir()
-    local a = write_session(dir, 'zz.vim', { 'badd +1 f', 'cd /tmp/lp-tsta' }, 5000000)
-    local b = write_session(dir, 'aa.vim', { 'badd +1 f', 'cd /tmp/lp-tstb' }, 5000000)
+    local tsta, tstb = helpers.fixture_path 'lp-tsta', helpers.fixture_path 'lp-tstb'
+    local a = write_session(dir, 'zz.vim', { 'badd +1 f', 'cd ' .. tsta }, 5000000)
+    local b = write_session(dir, 'aa.vim', { 'badd +1 f', 'cd ' .. tstb }, 5000000)
     assert.same({
-      { label = '/tmp/lp-tstb', path = b, mtime = 5000000 },
-      { label = '/tmp/lp-tsta', path = a, mtime = 5000000 },
+      { label = tstb, path = b, mtime = 5000000 },
+      { label = tsta, path = a, mtime = 5000000 },
     }, sessions.list_projects(dir), 'same mtime -> lexicographically smaller path wins')
+    helpers.remove_fixture(tsta)
+    helpers.remove_fixture(tstb)
     vim.fn.delete(dir, 'rf')
   end)
 
   it('breaks dedupe ties on equal mtime by path ascending', function()
     local dir = scratch_dir()
-    local home = vim.fn.expand '~'
-    write_session(dir, 'zz.vim', { 'badd +1 f', 'cd ' .. home }, 5000000)
-    local b = write_session(dir, 'aa.vim', { 'badd +1 f2', 'cd ' .. home }, 5000000)
+    local cwd = helpers.fixture_path 'lp-dedupe'
+    write_session(dir, 'zz.vim', { 'badd +1 f', 'cd ' .. cwd }, 5000000)
+    local b = write_session(dir, 'aa.vim', { 'badd +1 f2', 'cd ' .. cwd }, 5000000)
     local list = sessions.list_projects(dir)
     assert.equals(1, #list)
     assert.equals(b, list[1].path, 'equal mtime dedupe -> lexicographically smaller path wins')
+    helpers.remove_fixture(cwd)
     vim.fn.delete(dir, 'rf')
   end)
 
   it('%-containing cd paths round-trip to the real cwd label', function()
     local dir = scratch_dir()
-    local p = write_session(dir, 'c.vim', { 'cd /tmp/a%20test', 'badd +1 x' }, 1000000)
-    local list = sessions.list_projects(dir)
+    local pct = helpers.fixture_path 'a%20test'
+    write_session(dir, 'c.vim', { 'cd ' .. pct, 'badd +1 x' }, 1000000)
     local labels = {}
-    for _, e in ipairs(list) do
+    for _, e in ipairs(sessions.list_projects(dir)) do
       labels[#labels + 1] = e.label
     end
-    assert.is_truthy(vim.tbl_contains(labels, '/tmp/a%20test'), 'expanded cd text preserved verbatim')
+    assert.is_truthy(vim.tbl_contains(labels, pct), 'expanded cd text preserved verbatim')
+    helpers.remove_fixture(pct)
+    vim.fn.delete(dir, 'rf')
+  end)
+
+  it('drops stale sessions whose cd is a suppressed temp path', function()
+    local dir = scratch_dir()
+    local good = helpers.fixture_path 'lp-live'
+    local stale_cd = vim.fn.tempname()
+    local stale = write_session(dir, 'stale.vim', { 'badd +1 f', 'cd ' .. stale_cd }, 9000000)
+    local kept = write_session(dir, 'kept.vim', { 'badd +1 f', 'cd ' .. good }, 8000000)
+    local list = sessions.list_projects(dir)
+    local labels, paths = {}, {}
+    for _, e in ipairs(list) do
+      labels[#labels + 1] = e.label
+      paths[#paths + 1] = e.path
+    end
+    assert.is_false(vim.tbl_contains(labels, stale_cd), 'temp cwd must not be a project choice')
+    assert.is_false(vim.tbl_contains(paths, stale), 'its session file must be gone too')
+    assert.is_true(vim.tbl_contains(labels, good), 'a live cwd stays')
+    assert.equals(kept, list[1].path)
+    helpers.remove_fixture(good)
     vim.fn.delete(dir, 'rf')
   end)
 end)

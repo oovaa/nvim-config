@@ -62,6 +62,13 @@ function M.setup_starter()
     local ok, m = pcall(require, 'config.sessions')
     if ok and type(m) == 'table' then return m end
   end
+  -- suppression lives in ONE place; both the Resume row and the `s` choices go
+  -- through it (no local copy of the exact/temp rules).
+  local function is_suppressed(cwd)
+    local sess_mod = builtin_sessions()
+    if not (sess_mod and sess_mod.is_suppressed) then return false end
+    return sess_mod.is_suppressed(cwd) == true
+  end
   local buttons = {
     { key = 'e', icon = nf(0xf15b), label = 'New File', action = '<cmd>ene<CR>' },
     { key = 'f', icon = nf(0xf002), label = 'Find File', action = function() require('snacks').picker.files() end },
@@ -78,6 +85,7 @@ function M.setup_starter()
         local sess_mod = builtin_sessions()
         local list_fn = (sess_mod and sess_mod.list_projects) or _G._builtin_list_projects
         local projects = list_fn and list_fn(M.sessions_dir()) or {}
+        projects = vim.tbl_filter(function(e) return not is_suppressed(e.label) end, projects)
         local items, map = {}, {}
         for _, e in ipairs(projects) do
           local disp = e.label:gsub('^' .. vim.pesc(vim.fn.expand '~'), '~')
@@ -132,9 +140,12 @@ function M.setup_starter()
       local buf = vim.api.nvim_get_current_buf()
       -- conditional Resume row: an ordinary first button, inserted before any
       -- offset math so label_w/highlights/recents all derive from #buttons
-      local sess_mod = builtin_sessions()
-      local find_fn = (sess_mod and (sess_mod.find_session_for or sess_mod.find_session)) or _G._builtin_find_session
-      local resume = M.get_resume_for(function() return find_fn and find_fn(nil) or nil end, restorable)
+      local resume
+      if not is_suppressed() then
+        local sess_mod = builtin_sessions()
+        local find_fn = (sess_mod and (sess_mod.find_session_for or sess_mod.find_session)) or _G._builtin_find_session
+        resume = M.get_resume_for(function() return find_fn and find_fn(nil) or nil end, restorable)
+      end
       local btns = vim.list_extend({}, buttons)
       if resume then table.insert(btns, 1, resume) end
       local recent = collect_recent()
