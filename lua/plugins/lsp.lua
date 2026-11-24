@@ -59,6 +59,8 @@ return {
       --    That is to say, every time a new file is opened that is associated with
       --    an lsp (for example, opening `main.rs` is associated with `rust_analyzer`) this
       --    function will be executed to configure the current buffer
+      local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = true })
+      local detach_augroup = vim.api.nvim_create_augroup('kickstart-lsp-detach', { clear = true })
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
         callback = function(event)
@@ -106,10 +108,9 @@ return {
           -- When you move your cursor, the highlights will be cleared (the second autocommand).
           local client = vim.lsp.get_client_by_id(event.data.client_id)
           if client and client:supports_method('textDocument/documentHighlight', event.buf) then
-            local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
             -- Clear any stale highlight autocmds for this buffer before re-adding,
             -- so a re-attach (no intervening detach) cannot stack duplicates.
-            vim.api.nvim_clear_autocmds { group = 'kickstart-lsp-highlight', buffer = event.buf }
+            vim.api.nvim_clear_autocmds { group = highlight_augroup, buffer = event.buf }
             -- Opt-in at rest (vim.g.lsp_document_highlight, default off) to avoid
             -- a documentHighlight request to the server on every CursorHold.
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
@@ -125,17 +126,6 @@ return {
               buffer = event.buf,
               group = highlight_augroup,
               callback = vim.lsp.buf.clear_references,
-            })
-
-            local detach_augroup = vim.api.nvim_create_augroup('kickstart-lsp-detach', { clear = false })
-            vim.api.nvim_clear_autocmds { group = detach_augroup, buffer = event.buf }
-            vim.api.nvim_create_autocmd('LspDetach', {
-              buffer = event.buf,
-              group = detach_augroup,
-              callback = function(event2)
-                vim.lsp.buf.clear_references()
-                vim.api.nvim_clear_autocmds { group = 'kickstart-lsp-highlight', buffer = event2.buf }
-              end,
             })
           end
 
@@ -178,6 +168,17 @@ return {
           vim.keymap.set('n', 'gO', spick(function(p) p.lsp_symbols() end), { buffer = event.buf, desc = 'Open Document Symbols' })
           vim.keymap.set('n', 'gW', spick(function(p) p.lsp_workspace_symbols() end), { buffer = event.buf, desc = 'Open Workspace Symbols' })
           vim.keymap.set('n', 'grt', spick(function(p) p.lsp_type_definitions() end), { buffer = event.buf, desc = '[G]oto [T]ype Definition' })
+        end,
+      })
+
+      vim.api.nvim_create_autocmd('LspDetach', {
+        group = detach_augroup,
+        callback = function(event)
+          for _, attached in ipairs(vim.lsp.get_clients { bufnr = event.buf }) do
+            if attached.id ~= event.data.client_id and attached:supports_method('textDocument/documentHighlight', event.buf) then return end
+          end
+          vim.lsp.buf.clear_references()
+          vim.api.nvim_clear_autocmds { group = highlight_augroup, buffer = event.buf }
         end,
       })
 
@@ -281,7 +282,7 @@ return {
 
       -- Choose the fastest Python LSP host tools can provide; if none are
       -- available, Python simply has no LSP attach until one is installed.
-      -- Only enable LSP servers when their filetype is opened
+      -- Only start LSP servers when their filetype is opened
       local lsp_filetypes = {
         lua_ls = { 'lua' },
         gopls = { 'go', 'gomod', 'gowork', 'gotmpl' },
@@ -337,47 +338,50 @@ return {
       if py_winner_name == 'pyrefly' then lsp_filetypes.pyrefly = lsp_filetypes.pyrefly or { 'python' } end
 
       -- Register every server AFTER the resolver above has added the python
-      -- winner: vim.lsp.enable() on a name with no config is a silent no-op,
-      -- so registering first meant a ty-only host got no python LSP at all.
-      -- Merge blink.cmp completion capabilities into every server so snippet
-      -- support, resolve support, and label details propagate uniformly
-      -- (previously only vtsls + jdtls did this; audit flagged the gap).
-      local blink_caps = {}
-      local blink_ok, blink = pcall(require, 'blink.cmp')
-      if blink_ok then blink_caps = blink.get_lsp_capabilities() or {} end
-      for _, server in pairs(servers) do
-        if type(server) == 'table' then server.capabilities = vim.tbl_deep_extend('force', blink_caps, server.capabilities or {}) end
-      end
-
+      -- winner: looking up a name with no config is a silent no-op, so
+      -- registering first meant a ty-only host got no python LSP at all.
+      -- Neovim's built-in client capabilities already include snippet support;
+      -- requiring Blink here would defeat its InsertEnter lazy loading.
       for name, server in pairs(servers) do
         vim.lsp.config(name, server)
+      end
+
+      -- Start per buffer rather than enabling globally: vim.lsp.enable installs
+      -- its own FileType handler, which would still start on later large buffers.
+      local function start_server(server, bufnr)
+        local config = vim.deepcopy(vim.lsp.config[server])
+        local opts = { bufnr = bufnr, reuse_client = config.reuse_client }
+        if type(config.root_dir) == 'function' then
+          config.root_dir(bufnr, function(root_dir)
+            config.root_dir = root_dir
+            vim.lsp.start(config, opts)
+          end)
+        else
+          opts._root_markers = config.root_markers
+          vim.lsp.start(config, opts)
+        end
       end
 
       for server, filetypes in pairs(lsp_filetypes) do
         vim.api.nvim_create_autocmd('FileType', {
           group = vim.api.nvim_create_augroup('lsp-on-demand-' .. server, { clear = true }),
           pattern = filetypes,
-          once = true,
-          callback = function()
-            -- Enable once on the first FileType event. Doing this before the
-            -- large-file early return matters: with `once = true`, returning
-            -- early would consume the autocmd and leave every later buffer of
-            -- this filetype without LSP. The large-file detach autocmds in
-            -- config/autocmds.lua unwind any attach on oversized buffers.
-            vim.lsp.enable(server)
+          callback = function(args)
+            if vim.b[args.buf].large_file_mode then return end
+            start_server(server, args.buf)
           end,
         })
       end
 
       -- Autocmds registered during FileType don't fire for that same event, so
-      -- `nvim foo.lua` would otherwise enable no server for the startup file.
+      -- `nvim foo.lua` would otherwise start no server for the startup file.
       -- Cover every buffer already open when this config() ran.
       for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_is_loaded(buf) then
+        if vim.api.nvim_buf_is_loaded(buf) and not vim.b[buf].large_file_mode then
           local ft = vim.bo[buf].filetype
           if ft ~= '' then
             for server, filetypes in pairs(lsp_filetypes) do
-              if vim.tbl_contains(filetypes, ft) then vim.lsp.enable(server) end
+              if vim.tbl_contains(filetypes, ft) then start_server(server, buf) end
             end
           end
         end

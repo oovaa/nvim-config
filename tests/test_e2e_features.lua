@@ -56,14 +56,102 @@ describe('e2e: shipped features', function()
     -- Fake `ty` on PATH; the ladder tries ty first so it wins regardless.
     local path = bin .. ':' .. vim.env.PATH
     local stdout = boot((probe:gsub('%s+', ' ')), {
-      env = {
-        PATH = path,
-      },
+      env = vim.tbl_extend('force', vim.fn.environ(), { PATH = path }),
     })
     assert.is_truthy(stdout:match 'picked=ty', 'the ladder must pick the fake ty: ' .. stdout)
     assert.is_truthy(stdout:match 'cfg=table|ty,server', 'ty must get a config: ' .. stdout)
     assert.is_truthy(stdout:match 'enable_ok=true', 'vim.lsp.enable("ty") must not error: ' .. stdout)
     assert.is_truthy(stdout:match 'enabled=true', 'ty must be enabled after enable(): ' .. stdout)
+  end)
+
+  it('keeps Blink and LuaSnip unloaded until InsertEnter', function()
+    local enter = [[
+      vim.api.nvim_create_autocmd('VimEnter', {
+        once = true,
+        callback = function()
+          local at_enter = tostring(package.loaded['blink.cmp'])
+          vim.lsp.start = function() end
+          vim.cmd('enew')
+          vim.api.nvim_buf_set_name(0, '/tmp/nvim-e2e-lazy-completion.ts')
+          vim.bo.filetype = 'typescript'
+          vim.wait(300, function() return false end)
+          io.stdout:write('enter_blink=' .. at_enter .. ' ft_blink=' .. tostring(package.loaded['blink.cmp']) .. ' luasnip=' .. tostring(package.loaded['luasnip']))
+          vim.cmd('qa!')
+        end,
+      })
+    ]]
+    local res = run { 'nvim', '--headless', '--cmd', 'lua ' .. (enter:gsub('%s+', ' ')) }
+    assert.is_truthy(res.stdout:match 'enter_blink=nil', 'Blink must stay unloaded at VimEnter: ' .. res.report)
+    assert.is_truthy(res.stdout:match 'ft_blink=nil', 'Opening TypeScript must not force Blink before InsertEnter: ' .. res.report)
+    assert.is_truthy(res.stdout:match 'luasnip=nil', 'LuaSnip must stay unloaded before InsertEnter: ' .. res.report)
+  end)
+
+  it('retains built-in snippet support without eager completion', function()
+    local probe = [[
+      local caps = vim.lsp.protocol.make_client_capabilities()
+      io.stdout:write('snippet=' .. tostring(caps.textDocument.completion.completionItem.snippetSupport))
+    ]]
+    local stdout = boot((probe:gsub('%s+', ' ')))
+    assert.is_truthy(stdout:match 'snippet=true', 'built-in client capabilities must support snippets: ' .. stdout)
+  end)
+
+  it('does not start LSP clients for fresh 2 MiB TypeScript, Java, or Lua buffers', function()
+    local dir = tmpdir 'large-lsp'
+    local files = {}
+    for _, fixture in ipairs {
+      { 'typescript', 'ts', '//' },
+      { 'java', 'java', '//' },
+      { 'lua', 'lua', '--' },
+    } do
+      local file = string.format('%s/large.%s', dir, fixture[2])
+      local line = fixture[3] .. string.rep('x', 100)
+      local lines = {}
+      for i = 1, math.ceil(2 * 1024 * 1024 / #line) do
+        lines[i] = line
+      end
+      write(file, lines)
+      files[#files + 1] = file
+    end
+    local small_ts, small_lua = dir .. '/small.ts', dir .. '/small.lua'
+    write(small_ts, { 'const x = 1' })
+    write(small_lua, { 'local x = 1' })
+    local probe_args = { files[1], files[2], files[3], small_ts, files[1], small_lua, files[3] }
+
+    local probe = string.format(
+      [[
+        _G.starts, _G.large_starts = 0, 0
+        vim.lsp.start = function(_, opts)
+          _G.starts = _G.starts + 1
+          if opts and opts.bufnr and vim.b[opts.bufnr].large_file_mode then _G.large_starts = _G.large_starts + 1 end
+        end
+        local files = {%q, %q, %q}
+        local large, attached = {}, {}
+        for _, file in ipairs(files) do
+          vim.cmd('edit ' .. vim.fn.fnameescape(file))
+          local buf = vim.api.nvim_get_current_buf()
+          vim.wait(500, function() return false end)
+          large[#large + 1] = tostring(vim.b[buf].large_file_mode)
+          attached[#attached + 1] = #vim.lsp.get_clients { bufnr = buf }
+        end
+        local fresh_starts = _G.starts
+        for _, pair in ipairs { {%q, %q}, {%q, %q} } do
+          vim.cmd('edit ' .. vim.fn.fnameescape(pair[1]))
+          vim.wait(300, function() return false end)
+          vim.cmd('edit ' .. vim.fn.fnameescape(pair[2]))
+          vim.wait(300, function() return false end)
+        end
+        io.stdout:write('large=' .. table.concat(large, ',') .. ' fresh_starts=' .. fresh_starts .. ' small_starts=' .. _G.starts .. ' large_starts=' .. _G.large_starts .. ' attached=' .. table.concat(attached, ','))
+      ]],
+      unpack(probe_args)
+    )
+    local stdout = boot((probe:gsub('%s+', ' ')))
+    vim.fn.delete(dir, 'rf')
+    assert.is_truthy(stdout:match 'large=true,true,true', 'each fixture must enter large-file mode: ' .. stdout)
+    assert.is_truthy(stdout:match 'fresh_starts=0', 'large buffers must not request an LSP start: ' .. stdout)
+    local small_starts = tonumber(stdout:match 'small_starts=(%d+)')
+    assert.is_true(small_starts and small_starts > 0, 'small buffers must still request LSP startup: ' .. stdout)
+    assert.is_truthy(stdout:match 'large_starts=0', 'a previously enabled server must not start on a later large buffer: ' .. stdout)
+    assert.is_truthy(stdout:match 'attached=0,0,0', 'large buffers must have no attached clients: ' .. stdout)
   end)
 
   it('reports the tree-sitter cli and the biome linter in :checkhealth config', function()
@@ -86,7 +174,7 @@ describe('e2e: shipped features', function()
     vim.uv.fs_symlink(real .. '/site', std .. '/site', { dir = true })
     write(std .. '/rplugin.vim', { "' blank manifest" }) -- no molten section
 
-    local env = { XDG_DATA_HOME = data, XDG_STATE_HOME = data .. '/state' }
+    local env = vim.tbl_extend('force', vim.fn.environ(), { XDG_DATA_HOME = data, XDG_STATE_HOME = data .. '/state' })
     local keys = [[
       local lead = vim.g.mapleader or ' '
       local n = 0

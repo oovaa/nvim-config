@@ -282,15 +282,13 @@ return {
   -- LOADING: ft = only loads for JavaScript/TypeScript files
   {
     'yioneko/nvim-vtsls',
-    dependencies = { 'nvim-lua/plenary.nvim', 'saghen/blink.cmp' },
+    dependencies = { 'nvim-lua/plenary.nvim' },
     ft = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue' },
     config = function()
-      require('lazy').load { plugins = { 'blink.cmp' } }
-      local blink_ok, blink = pcall(require, 'blink.cmp')
-      local capabilities = blink_ok and blink.get_lsp_capabilities() or {}
       -- Registers VtsExec/VtsRename + the move-to-file handler via the
       -- plugin's LspAttach autocmd; without this enableMoveToFileCodeAction is dead.
       require('vtsls').config {}
+      local filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue' }
       -- Native equivalent of the old require('vtsls').lspconfig bridge:
       -- same cmd/filetypes/root priority, same settings (user's plus the
       -- updateImportsOnFileMove/enableMoveToFileCodeAction defaults lspconfig merged in).
@@ -298,9 +296,8 @@ return {
         cmd = { 'vtsls', '--stdio' },
         -- vue: vtsls picks up typescript-vue-plugin when present; prettier
         -- formats vue (formatting.lua); oxlint skips .vue SFC (prettier-only).
-        filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue' },
+        filetypes = filetypes,
         root_markers = { 'tsconfig.json', 'jsconfig.json', 'package.json', '.git' },
-        capabilities = capabilities,
         settings = {
           typescript = {
             updateImportsOnFileMove = 'always',
@@ -333,7 +330,20 @@ return {
           },
         },
       })
-      vim.lsp.enable 'vtsls'
+      local function start(bufnr)
+        if vim.b[bufnr].large_file_mode then return end
+        local config = vim.lsp.config.vtsls
+        vim.lsp.start(config, { bufnr = bufnr, reuse_client = config.reuse_client, _root_markers = config.root_markers })
+      end
+      local group = vim.api.nvim_create_augroup('vtsls-enable', { clear = true })
+      vim.api.nvim_create_autocmd('FileType', {
+        group = group,
+        pattern = filetypes,
+        callback = function(args) start(args.buf) end,
+      })
+      for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(bufnr) and vim.tbl_contains(filetypes, vim.bo[bufnr].filetype) then start(bufnr) end
+      end
     end,
   },
 
