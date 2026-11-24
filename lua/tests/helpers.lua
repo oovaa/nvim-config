@@ -13,7 +13,9 @@ local OWNED = {}
 
 function M.fixture_path(label)
   vim.fn.mkdir(FIXTURE_ROOT, 'p')
-  local base = vim.fn.fnamemodify(vim.fn.tempname(), ':t')
+  -- tempname()'s final component is only a per-process counter; retain its random parent.
+  local tmp = vim.fn.tempname()
+  local base = vim.fn.fnamemodify(vim.fn.fnamemodify(tmp, ':h'), ':t') .. '-' .. vim.fn.fnamemodify(tmp, ':t')
   local p = FIXTURE_ROOT .. '/' .. (label or 'fx') .. '-' .. base
   if vim.uv.fs_stat(p) then error('fixture_path: path already exists: ' .. p) end
   OWNED[p] = true

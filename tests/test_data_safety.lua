@@ -158,6 +158,19 @@ describe('data-safety', function()
     vim.fn.delete(d, 'rf')
   end)
 
+  it('T1.fixture: basename keeps the process-random tempname parent and counter', function()
+    local helpers = require 'tests.helpers'
+    local tmp = vim.fn.tempname()
+    local process = vim.fn.fnamemodify(vim.fn.fnamemodify(tmp, ':h'), ':t')
+    local p = helpers.fixture_path 'owned-prefix'
+    local prefix, counter = vim.fn.fnamemodify(p, ':t'):match '^owned%-prefix%-(.+)%-(%d+)$'
+
+    assert.is_not_nil(prefix, 'basename must include a non-empty process-random prefix plus a numeric counter')
+    assert.equals(process, prefix, "basename prefix must match this process's tempname parent")
+    assert.is_truthy(counter:match '^%d+$', 'basename suffix must be the tempname counter')
+    helpers.remove_fixture(p)
+  end)
+
   it('T1.8: :q with unsaved changes never silently discards them', function()
     -- vim.o.confirm is on and auto-save's QuitPre saves first, so :q on a
     -- dirty buffer succeeds by writing — E37 cannot fire in the shipped
