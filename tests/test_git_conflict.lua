@@ -4,11 +4,11 @@
 -- the right bytes on disk.
 -- The inner nvim runs under a PTY (`script`): the plugin parses buffers from
 -- its decoration provider, which only runs on screen redraw — never under
--- --headless. pending() where git/script are missing instead of failing.
+-- --headless. git and util-linux script are required on the CI runner.
 describe('git-conflict', function()
   it('detects a real merge conflict on open and resolves it with co', function()
-    if vim.fn.executable 'git' == 0 then pending 'git not available' end
-    if vim.fn.executable 'script' == 0 then pending 'util-linux script not available (needed for the PTY)' end
+    assert.are.equal(1, vim.fn.executable 'git', 'CI runner must provide git')
+    assert.are.equal(1, vim.fn.executable 'script', 'CI runner must provide util-linux script for the PTY')
 
     local d = '/tmp/nvim-gitconflict-' .. tostring(vim.uv.hrtime())
     local repo = d .. '/repo'

@@ -2,7 +2,7 @@
 -- Run with: nvim --headless -c 'lua require("plenary.busted").run("tests/test_lsp_servers.lua")' -c 'qa!'
 
 describe('lsp servers', function()
-  it('lua_ls attaches to lua buffers', function()
+  it('[optional] lua_ls attaches to lua buffers', function()
     if vim.fn.executable 'lua-language-server' == 0 then
       pending 'lua-language-server not installed on this machine'
       return

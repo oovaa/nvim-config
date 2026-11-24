@@ -11,6 +11,10 @@ local function run(cmd, opts)
   local obj = vim.system(cmd, { text = true, cwd = opts.cwd, env = opts.env, timeout = 30000 })
   local res = obj:wait()
   res.report = (res.stdout or '') .. (res.stderr or '')
+  assert(res.code == 0, string.format('child command failed (exit %s):\n%s', tostring(res.code), res.report))
+  for _, marker in ipairs { 'Invalid buffer id', 'stack traceback:', 'Error in command line:', 'vim.schedule callback:' } do
+    assert(not res.report:find(marker, 1, true), string.format('child output contained %q:\n%s', marker, res.report))
+  end
   return res
 end
 
@@ -212,6 +216,17 @@ describe('e2e: shipped features', function()
     assert.is_true(n and tonumber(n) > 0, 'statusline must render: ' .. stdout)
     assert.is_true(m and tonumber(m) > 0, 'tabline must render: ' .. stdout)
     assert.is_truthy(stdout:match 'click=function', 'tabclick must be installed: ' .. stdout)
+  end)
+
+  it('rejects failed children and hidden runtime output', function()
+    local ok = pcall(run, { 'nvim', '--headless', '-c', 'cquit 7', '-c', 'qa!' })
+    assert.is_false(ok, 'a non-zero child exit must fail the E2E helper')
+
+    for _, marker in ipairs { 'Invalid buffer id', 'stack traceback:', 'Error in command line:', 'vim.schedule callback:' } do
+      local lua = string.format('io.stderr:write(%q)', marker)
+      ok = pcall(run, { 'nvim', '--headless', '-c', 'lua ' .. lua, '-c', 'qa!' })
+      assert.is_false(ok, marker .. ' in child output must fail the E2E helper')
+    end
   end)
 
   it('keeps the config root the only thing a boot needs', function()

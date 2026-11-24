@@ -56,7 +56,7 @@ describe('performance', function()
     assert.is_false((pcall(require, 'mason-lspconfig')), 'mason-lspconfig must not be installed')
   end)
 
-  it('attaches the native LSP and defines servers via vim.lsp.config', function()
+  it('[optional] attaches the native LSP and defines servers via vim.lsp.config', function()
     if vim.fn.executable 'lua-language-server' == 0 then
       pending 'lua-language-server not installed on this machine'
       return
@@ -190,10 +190,7 @@ describe('performance', function()
   end)
 
   it('attempts a parser install at most once per language per session', function()
-    if vim.fn.executable 'tree-sitter' == 0 then
-      pending 'tree-sitter CLI missing on this machine'
-      return
-    end
+    assert.are.equal(1, vim.fn.executable 'tree-sitter', 'CI must install the tree-sitter CLI')
     require('lazy').load { plugins = { 'nvim-treesitter' } }
     -- :TSInstall only runs for a language with no parser built, so drive one
     -- this box has not built (none of these are in the 16-language bootstrap)

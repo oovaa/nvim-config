@@ -2,8 +2,8 @@
 -- T1.4 guards Trap 11 (a save fired mid-insert must write RAW text); T1.1 and
 -- T1.2 cover auto-save's two paths; T1.7 the undofile round-trip; T1.8 the
 -- E37 quit guard; T1.11 the large-file format skip.
--- Cases needing an external binary `pending()` when it is absent instead of
--- failing, so the suite stays green on machines without the toolchain.
+-- Cases needing an external binary assert that CI provides it instead of
+-- silently becoming pending.
 
 local function tmpdir(name)
   local d = '/tmp/nvim-safety-' .. name .. '-' .. tostring(vim.uv.hrtime())
@@ -11,9 +11,7 @@ local function tmpdir(name)
   return d
 end
 
-local function need(bin)
-  if vim.fn.executable(bin) == 0 then pending(bin .. ' not on PATH — data-safety case skipped') end
-end
+local function need(bin) assert.are.equal(1, vim.fn.executable(bin), bin .. ' must be on PATH') end
 
 -- The real format_on_save closure from the conform spec (not a copy of it).
 local function format_on_save()

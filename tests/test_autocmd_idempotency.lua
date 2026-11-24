@@ -1,15 +1,24 @@
--- Config-source idempotency: sourcing $MYVIMRC repeatedly must not accumulate
+-- Config-reload idempotency: invoking <leader>ur repeatedly must not accumulate
 -- autocmds. Each autocmd must live in a named, cleared augroup.
 -- Run with: nvim --headless -c 'lua require("plenary.busted").run("tests/test_autocmd_idempotency.lua")' -c 'qa!'
 
 describe('autocmd idempotency', function()
   local H = require 'tests.helpers'
 
-  it('sourcing MYVIMRC 4 times does not grow named augroups', function()
+  it('the reload callback 4 times does not grow named augroups', function()
     local before = H.autocmd_count()
     before[''] = nil
+
+    local lhs = (vim.g.mapleader or ' ') .. 'ur'
+    local mapping
+    for _, m in ipairs(vim.api.nvim_get_keymap 'n') do
+      if m.lhs == lhs then mapping = m end
+    end
+    assert.is_not_nil(mapping, 'normal-mode ' .. lhs .. ' mapping must exist')
+    assert.is_function(mapping.callback, 'reload mapping must be a Lua callback')
+
     for _ = 1, 4 do
-      vim.cmd('source ' .. vim.env.MYVIMRC)
+      mapping.callback()
     end
     local after = H.autocmd_count()
     after[''] = nil
