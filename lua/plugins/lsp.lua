@@ -182,6 +182,12 @@ return {
         end,
       })
 
+      vim.api.nvim_create_autocmd('BufWipeout', {
+        desc = 'Disable CodeLens before buffer invalidation',
+        group = vim.api.nvim_create_augroup('kickstart-lsp-codelens-cleanup', { clear = true }),
+        callback = function(ev) pcall(vim.lsp.codelens.enable, false, { bufnr = ev.buf }) end,
+      })
+
       -- Language servers managed by Mason (automatically installed via `:Mason`)
       -- Static definitions live in config.lsp_servers; mutated below for Python.
       local lsp_servers = require 'config.lsp_servers'

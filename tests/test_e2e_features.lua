@@ -154,6 +154,45 @@ describe('e2e: shipped features', function()
     assert.is_truthy(stdout:match 'attached=0,0,0', 'large buffers must have no attached clients: ' .. stdout)
   end)
 
+  it('[optional] disables CodeLens before wiping an edited Markdown buffer', function()
+    if vim.fn.executable 'marksman' == 0 then
+      pending 'marksman not installed on this machine'
+      return
+    end
+    local dir = tmpdir 'codelens-wipe'
+    local file = dir .. '/lens.md'
+    write(file, { '# Title' })
+    local probe = string.format(
+      [[
+        vim.cmd('edit %s')
+        local buf = vim.api.nvim_get_current_buf()
+        assert(vim.wait(8000, function()
+          return #vim.lsp.get_clients { bufnr = buf, name = 'marksman' } > 0
+        end, 50), 'marksman must attach')
+        local client = vim.lsp.get_clients { bufnr = buf, name = 'marksman' }[1]
+        assert(client:supports_method('textDocument/codeLens', buf), 'marksman must support CodeLens')
+        local enabled = vim.lsp.codelens.is_enabled { bufnr = buf, client_id = client.id }
+        local cleaned = false
+        local enable = vim.lsp.codelens.enable
+        vim.lsp.codelens.enable = function(value, filter)
+          if value == false and filter and filter.bufnr == buf and vim.api.nvim_buf_is_valid(buf) then cleaned = true end
+          return enable(value, filter)
+        end
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, { '# Changed' })
+        vim.wait(250, function() return false end)
+        vim.api.nvim_buf_delete(buf, { force = true })
+        vim.wait(250, function() return false end)
+        io.stdout:write('enabled=' .. tostring(enabled) .. ' cleaned=' .. tostring(cleaned))
+        vim.fn.delete(%q, 'rf')
+      ]],
+      vim.fn.fnameescape(file),
+      dir
+    )
+    local stdout = boot((probe:gsub('%s+', ' ')))
+    assert.is_truthy(stdout:match 'enabled=true', 'CodeLens must be enabled before the wipe: ' .. stdout)
+    assert.is_truthy(stdout:match 'cleaned=true', 'CodeLens must be disabled while the buffer is still valid: ' .. stdout)
+  end)
+
   it('reports the tree-sitter cli and the biome linter in :checkhealth config', function()
     local probe = [[
       vim.cmd('checkhealth config')

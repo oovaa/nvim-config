@@ -50,7 +50,10 @@ function M.setup()
     if not ok_cursor then return end
     local lnum = cursor[1] - 1
     if lnum == state.last_lnum then return end
-    if #vim.diagnostic.get(0, { lnum = lnum }) == 0 then return end
+    if #vim.diagnostic.get(0, { lnum = lnum }) == 0 then
+      close_diag_float()
+      return
+    end
     close_diag_float()
     local ok, _, win = pcall(vim.diagnostic.open_float, nil, {
       focusable = false,
@@ -95,6 +98,7 @@ function M.setup()
       -- Ignore updates for other buffers: they don't affect the current line
       -- and only cause the float to flicker/reopen with streaming LSPs.
       if ev.buf ~= vim.api.nvim_get_current_buf() then return end
+      close_diag_float()
       stop_diag_timer()
       state.last_lnum = nil
       local t = get_diag_timer()

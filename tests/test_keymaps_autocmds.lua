@@ -23,6 +23,28 @@ describe('keymaps/autocmds', function()
     local ok, err = pcall(vim.api.nvim_exec_autocmds, 'CursorMoved', { buffer = buf })
     assert.is_true(ok, tostring(err))
   end)
+  it('closes a tracked diagnostic float when diagnostics disappear', function()
+    vim.cmd 'enew'
+    local buf = vim.api.nvim_get_current_buf()
+    local ns = vim.api.nvim_create_namespace 'diag-float-regression'
+    vim.diagnostic.set(ns, buf, {
+      { lnum = 0, col = 0, severity = vim.diagnostic.severity.ERROR, message = 'stale float' },
+    })
+    vim.api.nvim_exec_autocmds('CursorMoved', { buffer = buf })
+    local opened = vim.wait(500, function()
+      local win = _G._diag_float_state and _G._diag_float_state.win
+      return win ~= nil and vim.api.nvim_win_is_valid(win)
+    end, 10)
+    assert.is_true(opened, 'diagnostic float must open before diagnostics are reset')
+    local win = _G._diag_float_state.win
+
+    vim.diagnostic.reset(ns, buf)
+    vim.wait(100, function() return false end)
+    assert.is_false(vim.api.nvim_win_is_valid(win), 'diagnostic float must close without cursor movement')
+
+    vim.diagnostic.reset(ns, buf)
+    vim.cmd 'bwipeout!'
+  end)
   it('no duplicate lhs in normal mode keymaps', function()
     local seen, dupes = {}, {}
     for _, m in ipairs(vim.api.nvim_get_keymap 'n') do
