@@ -102,7 +102,9 @@ return {
       -- that way — vim.o.smoothscroll owns scrolling and the custom statusline owns
       -- the gutter. Don't set enabled = true here; that's what fought smoothscroll.
       scratch = { ft = 'markdown' }, -- ponytail: always markdown, never inherits python/js ft (no pyrefly/eslint in scratch)
-      words = { enabled = true },
+      -- ponytail: off — <leader>uH (LSP document highlight) is the single toggle;
+      -- snacks words would highlight twice and eat a buffer-local flag on large files.
+      words = { enabled = false },
     },
     -- ponytail: explicit config (instead of bare `opts`) only to claim
     -- vim.ui.select AFTER setup() — lazy's implicit setup() would run first
@@ -121,10 +123,10 @@ return {
       { '<leader>.', function() require('snacks').scratch() end, desc = 'Toggle Scratch Buffer' },
       { '<leader>S', function() require('snacks').scratch.select() end, desc = 'Select Scratch Buffer' },
       {
-        '<leader>n',
+        '<leader>nn',
         function()
           -- ponytail: `require('snacks.config')` does not exist in current
-          -- snacks; it raised E492/E5108 on every <leader>n press. The config
+          -- snacks; it raised E492/E5108 on every <leader>nn press. The config
           -- table hangs off the Snacks module itself.
           local cfg = require('snacks').config
           if cfg and cfg.picker and cfg.picker.enabled then
@@ -240,6 +242,14 @@ return {
         callback = function(ev)
           -- Skip linting on large files (large_file_mode set in autocmds.lua).
           if vim.b[ev.buf].large_file_mode then return end
+          -- Skip BufWritePost while mid-typing: auto-save writes the buffer from
+          -- inside insert mode, and linting half-typed lines just spams diags.
+          -- InsertLeave (and manual :Lint) must still run in every mode.
+          if ev.event == 'BufWritePost' then
+            local mode = vim.api.nvim_get_mode().mode
+            local m0 = mode:sub(1, 1)
+            if m0 == 'i' or mode:sub(1, 2) == 'ni' or m0 == 's' or m0 == 'S' or m0 == 'R' or m0 == '\19' then return end
+          end
           local ok, err = pcall(lint.try_lint)
           if not ok then vim.notify('Lint error: ' .. tostring(err), vim.log.levels.WARN) end
         end,

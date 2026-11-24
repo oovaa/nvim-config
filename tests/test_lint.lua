@@ -116,4 +116,54 @@ describe('lint', function()
     if created then vim.fn.delete(home_config) end
     assert.is_true(ok, tostring(err))
   end)
+
+  it('skips BufWritePost lint in raw modes but keeps InsertLeave and manual lint', function()
+    local lint = lint_mod()
+    -- premise: the lint-on-save group owns the BufWritePost callback
+    local autocmds = vim.api.nvim_get_autocmds { group = 'lint-on-save' }
+    assert.is_true(#autocmds > 0, 'lint-on-save group must be registered')
+    local callback
+    for _, a in ipairs(autocmds) do
+      local evs = type(a.event) == 'table' and a.event or { a.event }
+      if vim.tbl_contains(evs, 'BufWritePost') then callback = a.callback end
+    end
+    assert.is_function(callback, 'BufWritePost lint callback must exist')
+
+    local real_try, real_mode = lint.try_lint, vim.api.nvim_get_mode
+    local calls = 0
+    lint.try_lint = function() calls = calls + 1 end
+    local buf = vim.api.nvim_create_buf(false, true)
+    local ok, err = pcall(function()
+      local function set_mode(m)
+        vim.api.nvim_get_mode = function() return { mode = m, blocking = false } end
+      end
+      local function fire(event) callback { buf = buf, event = event } end
+
+      -- Raw modes: BufWritePost writes the buffer untouched; InsertLeave still lints.
+      for _, m in ipairs { 'i', 'niI', 's', 'S', '\19', 'R', 'Rc' } do
+        set_mode(m)
+        calls = 0
+        fire 'BufWritePost'
+        assert.equals(0, calls, 'BufWritePost must skip lint in mode ' .. vim.inspect(m))
+        calls = 0
+        fire 'InsertLeave'
+        assert.equals(1, calls, 'InsertLeave must lint even in mode ' .. vim.inspect(m))
+      end
+
+      -- Normal mode: BufWritePost lints as before.
+      set_mode 'n'
+      calls = 0
+      fire 'BufWritePost'
+      assert.equals(1, calls, 'BufWritePost must lint in normal mode')
+
+      -- Manual lint calls try_lint directly, with no mode guard in the way.
+      calls = 0
+      lint.try_lint()
+      assert.equals(1, calls, 'manual lint must still run')
+    end)
+    vim.api.nvim_get_mode = real_mode
+    lint.try_lint = real_try
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    assert.is_truthy(ok, tostring(err))
+  end)
 end)

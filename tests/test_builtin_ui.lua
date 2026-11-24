@@ -275,3 +275,54 @@ describe('dashboard projects', function()
     helpers.remove_fixture(dir)
   end)
 end)
+
+describe('statusline progress invalidation', function()
+  local statusline = require 'custom.ui.statusline'
+
+  it('refreshes idle output on progress events, throttled to one redrawstatus burst', function()
+    assert.is_true(#vim.api.nvim_get_autocmds { group = 'BuiltinUIProgress' } > 0, 'BuiltinUIProgress group must be registered')
+
+    local prev = vim.api.nvim_get_current_buf()
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_set_current_buf(buf)
+
+    local real_status, real_pstatus, real_cmd = vim.lsp.status, vim.ui.progress_status, vim.cmd
+    local status_value = 'PROGRESS-IDLE-SENTINEL'
+    local redraws = 0
+    vim.lsp.status = function() return status_value end
+    vim.ui.progress_status = function() return '' end
+    vim.cmd = function(arg)
+      if type(arg) == 'string' and arg:find('redrawstatus', 1, true) then
+        redraws = redraws + 1
+      else
+        return real_cmd(arg)
+      end
+    end
+
+    local ok, err = pcall(function()
+      -- Seed a fresh idle cache so the baseline render reuses it.
+      statusline._progress = { at = vim.uv.now(), s = status_value }
+      local before = _G._builtin_statusline()
+      assert.is_truthy(before:find('PROGRESS-IDLE-SENTINEL', 1, true), 'premise: statusline shows cached idle progress')
+
+      status_value = 'PROGRESS-BUSY-SENTINEL'
+      -- A burst of progress events: each invalidates, only one redraw scheduled.
+      for _ = 1, 4 do
+        vim.api.nvim_exec_autocmds('LspProgress', {})
+      end
+      vim.api.nvim_exec_autocmds('Progress', {})
+      assert.equals(0, statusline._progress.at, 'progress events invalidate the cache')
+      vim.wait(200) -- let the throttled timer fire; no cursor move in between
+
+      local after = _G._builtin_statusline()
+      assert.is_truthy(after:find('PROGRESS-BUSY-SENTINEL', 1, true), 'progress event must refresh statusline output')
+      assert.equals(1, redraws, 'a burst of progress events must schedule exactly one redrawstatus')
+    end)
+
+    vim.lsp.status, vim.ui.progress_status, vim.cmd = real_status, real_pstatus, real_cmd
+    statusline._progress = { at = 0, s = '' }
+    vim.api.nvim_set_current_buf(prev)
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    assert.is_truthy(ok, tostring(err))
+  end)
+end)

@@ -20,20 +20,17 @@ M._icons = {} -- [ft] = icon-segment string or false
 M._bar_bg = nil
 
 function M._count_diags(buf)
+  -- ponytail: count() reads the diagnostic cache by severity in one pass;
+  -- get() materialises every diagnostic (10k here) on every cache refresh.
   local sev = vim.diagnostic.severity
-  local c = { e = 0, w = 0, i = 0, h = 0, total = 0 }
-  for _, d in ipairs(vim.diagnostic.get(buf)) do
-    c.total = c.total + 1
-    if d.severity == sev.ERROR then
-      c.e = c.e + 1
-    elseif d.severity == sev.WARN then
-      c.w = c.w + 1
-    elseif d.severity == sev.INFO then
-      c.i = c.i + 1
-    else
-      c.h = c.h + 1
-    end
-  end
+  local by_sev = vim.diagnostic.count(buf)
+  local c = {
+    e = by_sev[sev.ERROR] or 0,
+    w = by_sev[sev.WARN] or 0,
+    i = by_sev[sev.INFO] or 0,
+    h = by_sev[sev.HINT] or 0,
+  }
+  c.total = c.e + c.w + c.i + c.h
   M._diag_counts[buf] = c
   return c
 end
@@ -194,6 +191,26 @@ function M.setup_lualine()
     group = grp,
     callback = function() vim.cmd 'redrawstatus' end,
   })
+
+  -- ponytail: progress events arrive in bursts (one per LSP message). Invalidate
+  -- the cache on each, but coalesce the redraw into a single deferred callback
+  -- so a busy server cannot flood redrawstatus.
+  do
+    local progress_grp = vim.api.nvim_create_augroup('BuiltinUIProgress', { clear = true })
+    local scheduled = false
+    vim.api.nvim_create_autocmd({ 'LspProgress', 'Progress' }, {
+      group = progress_grp,
+      callback = function()
+        M._progress = { at = 0, s = '' }
+        if scheduled then return end
+        scheduled = true
+        vim.defer_fn(function()
+          scheduled = false
+          vim.cmd 'redrawstatus'
+        end, 16)
+      end,
+    })
+  end
 
   local mode_map = {
     n = 'NORMAL',

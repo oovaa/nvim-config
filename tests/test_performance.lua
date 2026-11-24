@@ -101,7 +101,7 @@ describe('performance', function()
 
   it('enables only the snacks modules this config uses', function()
     local sc = require('snacks').config
-    for _, mod in ipairs { 'input', 'notifier', 'picker', 'explorer', 'scope', 'words', 'indent' } do
+    for _, mod in ipairs { 'input', 'notifier', 'picker', 'explorer', 'scope', 'indent' } do
       assert.is_true(sc[mod] and sc[mod].enabled, 'snacks.' .. mod .. ' must be enabled')
     end
     -- opt-in and deliberately off: scroll fought vim.o.smoothscroll,
@@ -109,6 +109,42 @@ describe('performance', function()
     for _, mod in ipairs { 'scroll', 'statuscolumn', 'toggle' } do
       assert.is_falsy(sc[mod] and sc[mod].enabled, 'snacks.' .. mod .. ' must stay off')
     end
+    -- words is off: <leader>uH (LSP document highlight) is the single toggle.
+    assert.is_falsy(sc.words and sc.words.enabled, 'snacks.words must stay disabled')
+  end)
+
+  it('counts diagnostics with vim.diagnostic.count without calling get', function()
+    local statusline = require 'custom.ui.statusline'
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_name(buf, vim.fn.tempname() .. '.lua')
+    local ns = vim.api.nvim_create_namespace 'perf-diag-count'
+    local sev = vim.diagnostic.severity
+    local levels = { sev.ERROR, sev.WARN, sev.INFO, sev.HINT }
+    local diags = {}
+    for i = 1, 10000 do
+      diags[#diags + 1] = { lnum = 0, col = 0, severity = levels[(i - 1) % 4 + 1] }
+    end
+    vim.diagnostic.set(ns, buf, diags)
+
+    local real_get, get_calls = vim.diagnostic.get, 0
+    vim.diagnostic.get = function()
+      get_calls = get_calls + 1
+      error 'vim.diagnostic.get must not be called by _count_diags'
+    end
+    local ok, err = pcall(function()
+      statusline._diag_counts[buf] = nil -- force a fresh count, not a cache hit
+      local c = statusline._count_diags(buf)
+      assert.equals(2500, c.e, 'error total')
+      assert.equals(2500, c.w, 'warn total')
+      assert.equals(2500, c.i, 'info total')
+      assert.equals(2500, c.h, 'hint total')
+      assert.equals(10000, c.total, 'grand total')
+      assert.equals(0, get_calls, '_count_diags must use vim.diagnostic.count, not get')
+    end)
+    vim.diagnostic.get = real_get
+    vim.diagnostic.set(ns, buf, {})
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    assert.is_truthy(ok, tostring(err))
   end)
 
   it('gives the snacks picker a real glyph for every git state', function()
