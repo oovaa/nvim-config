@@ -108,7 +108,10 @@ require 'config.autocmds'
 -- Writes a --startuptime log and prints the tail so you can spot regressions.
 vim.api.nvim_create_user_command('StartupTime', function()
   local log = vim.fn.stdpath 'cache' .. '/startup.log'
-  vim.cmd('!nvim --startuptime ' .. log .. ' +q && sort -k2 ' .. log .. ' | tail -n 15')
+  vim.fn.delete(log)
+  -- ponytail: headless `+q` omits UI/VimEnter stages, so this log is a lower
+  -- bound on an interactive start. --startuptime appends, so clear it first.
+  vim.cmd('!nvim --startuptime ' .. vim.fn.fnameescape(log) .. ' +q && sort -k2,2nr ' .. vim.fn.fnameescape(log) .. ' | tail -n 15')
   local ok, lazy = pcall(require, 'lazy')
   if ok then
     local s = lazy.stats()

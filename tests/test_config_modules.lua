@@ -366,3 +366,64 @@ describe('config.runner', function()
     assert.equals('No file to run', msgs[1])
   end)
 end)
+
+describe('global user commands', function()
+  it('DiffOrig reads the current buffer file when the alternate buffer differs', function()
+    local dir = scratch_dir()
+    local alternate = dir .. '/alternate.txt'
+    local current = dir .. '/current.txt'
+    vim.fn.writefile({ 'ALTERNATE-ONLY-CONTENT' }, alternate)
+    vim.fn.writefile({ 'CURRENT-ONLY-CONTENT' }, current)
+    vim.cmd.edit(vim.fn.fnameescape(alternate))
+    vim.cmd.edit(vim.fn.fnameescape(current))
+    assert.equals(current, vim.api.nvim_buf_get_name(0), 'premise: current buffer is the second file')
+
+    -- capture the command the user command actually builds: relying on `#`
+    -- inside the scratch window is fragile (the alternate may point elsewhere).
+    local command = vim.api.nvim_get_commands({}).DiffOrig
+    assert.is_function(command and command.callback, ':DiffOrig must be a registered user command')
+    local captured, real_cmd = nil, vim.cmd
+    vim.cmd = function(arg)
+      if type(arg) == 'string' and arg:find('++edit', 1, true) then
+        captured = arg
+      else
+        return real_cmd(arg)
+      end
+    end
+    local ok, err = pcall(command.callback)
+    vim.cmd = real_cmd
+    vim.fn.delete(dir, 'rf')
+    assert.is_truthy(ok, tostring(err))
+    assert.is_truthy(captured, 'DiffOrig must build a :read command')
+    assert.is_truthy(captured:find(vim.fn.fnameescape(current), 1, true), 'the command must name the current file explicitly: ' .. captured)
+    assert.is_falsy(captured:find('++edit #', 1, true), 'the command must not depend on the alternate buffer: ' .. captured)
+  end)
+
+  it('clears the old startup log before profiling and sorts durations numerically', function()
+    local command = vim.api.nvim_get_commands({}).StartupTime
+    assert.is_function(command and command.callback, ':StartupTime must be a registered user command')
+    local log = vim.fn.stdpath 'cache' .. '/startup.log'
+    local events = {}
+    local real_cmd, real_delete = vim.cmd, vim.fn.delete
+    vim.fn.delete = function(path)
+      events[#events + 1] = { kind = 'delete', path = path }
+      return 0
+    end
+    vim.cmd = function(arg)
+      if type(arg) == 'string' and arg:find('--startuptime', 1, true) then
+        events[#events + 1] = { kind = 'cmd', cmd = arg }
+      else
+        return real_cmd(arg)
+      end
+    end
+    local ok, err = pcall(command.callback)
+    vim.cmd, vim.fn.delete = real_cmd, real_delete
+    assert.is_truthy(ok, tostring(err))
+    assert.equals('delete', events[1] and events[1].kind, 'the old log must be removed before profiling')
+    assert.equals(log, events[1] and events[1].path, 'the startup log path must be cleared')
+    local profile = events[2] and events[2].cmd
+    assert.is_truthy(profile and profile:find('--startuptime', 1, true), 'must run nvim --startuptime: ' .. tostring(profile))
+    assert.is_truthy(profile and profile:find('sort -k2,2nr', 1, true), 'must sort numerically descending on column 2: ' .. tostring(profile))
+    assert.is_true(profile:find('--startuptime', 1, true) < profile:find('sort -k2,2nr', 1, true), 'profile before sorting')
+  end)
+end)

@@ -121,9 +121,6 @@ S.keymaps = function()
     -- conditional breakpoint blocks on vim.fn.input (not stubbed here); its
     -- mapping is already asserted in test_post_audit.lua
     ['<leader>dB'] = true,
-    -- tips browser opens a full UI; in a headless sandbox it can emit a
-    -- traceback, and the command itself is asserted in test_post_audit.lua
-    ['<leader>nto'] = true,
     -- molten needs a live jupyter kernel plus image.nvim (cond=false headless,
     -- so the rplugin host tracebacks in the sandbox). Skipped here; the
     -- integrity test in tests/stress.lua still asserts every bound Molten
@@ -186,6 +183,24 @@ S.keymaps = function()
     end
   end
   H.pass('keymap count', ('%d unique mappings invoked'):format(vim.tbl_count(seen)))
+
+  -- notification history and the tips browser are real actions: drive both
+  -- directly and require no error text (the sweep above covers every binding).
+  local function drive(key)
+    -- the sweep leaves floats/splits behind; nui needs a full-height editor window
+    for _, w in ipairs(vim.api.nvim_list_wins()) do
+      if vim.api.nvim_win_get_config(w).relative ~= '' then pcall(vim.api.nvim_win_close, w, true) end
+    end
+    pcall(vim.cmd, 'silent! only')
+    scratch()
+    vim.cmd 'messages clear'
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), 'x', false)
+    vim.wait(120)
+    local bad = H.error_text(vim.api.nvim_exec2('messages', { output = true }).output or '')
+    return #bad == 0 or table.concat(bad, ' | ')
+  end
+  H.t('keymap: <leader>nn notification history opens without error', function() return drive '<leader>nn' end)
+  H.t('keymap: <leader>nto tips browser opens without error', function() return drive '<leader>nto' end)
 
   -- gitsigns requires a real repo; the maps above already errored in a scratch
   -- buffer if the require path were broken, so just assert the module loads

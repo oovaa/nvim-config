@@ -274,6 +274,117 @@ describe('dashboard projects', function()
     wipe_dashboard_buffers()
     helpers.remove_fixture(dir)
   end)
+
+  it('shortens the home prefix only at a path boundary', function()
+    local dir = tmpdir()
+    local home = vim.fn.expand '~'
+    local readable = function() return true end
+    local sibling = write_session(dir .. '/sibling.vim', home .. '2')
+    local row = M.get_resume_for(function() return sibling end, readable)
+    assert.is_truthy(row, 'a restorable home-sibling session still gets a row')
+    assert.is_truthy(row.label:find(home .. '2', 1, true), 'a sibling like /home/omar2 must keep its full path: ' .. row.label)
+    assert.is_nil(row.label:find('~2', 1, true), 'no bogus ~2 rewriting: ' .. row.label)
+    local child = write_session(dir .. '/child.vim', home .. '/projects/x')
+    local child_row = M.get_resume_for(function() return child end, readable)
+    assert.is_truthy(child_row.label:find('~/projects/x', 1, true), 'a real home child still shortens to ~: ' .. child_row.label)
+    helpers.remove_fixture(dir)
+  end)
+
+  it('g reuses one lazygit float buffer and job across repeated presses', function()
+    render(nil)
+    local g
+    for _, m in ipairs(vim.api.nvim_buf_get_keymap(0, 'n')) do
+      if m.lhs == 'g' then g = m.callback end
+    end
+    assert.is_function(g, 'the g button must be mapped in the dashboard buffer')
+
+    -- start from an empty shared float slot; clear fields in place (terminal.lua
+    -- holds a reference to this table, so replacing it would orphan the state).
+    local state = _G._builtin_terminal_state
+    local function close_floats()
+      for _, w in ipairs(vim.api.nvim_list_wins()) do
+        if vim.api.nvim_win_get_config(w).relative ~= '' then pcall(vim.api.nvim_win_close, w, true) end
+      end
+    end
+    close_floats()
+    if state then
+      local f = state.float
+      if f.buf and vim.api.nvim_buf_is_valid(f.buf) then pcall(vim.api.nvim_buf_delete, f.buf, { force = true }) end
+      f.buf, f.win, f.cmd, f.job = nil, nil, nil, nil
+    end
+
+    local real_jobstart, starts = vim.fn.jobstart, 0
+    vim.fn.jobstart = function()
+      starts = starts + 1
+      return 42000 + starts
+    end
+    local float = _G._builtin_terminal_state.float
+    local ok, err = pcall(function()
+      g() -- open
+      local buf1, job1 = float.buf, float.job
+      assert.is_number(buf1, 'g must open a float buffer')
+      assert.is_true(vim.api.nvim_buf_is_valid(buf1), 'g must open a valid float buffer')
+      assert.equals(42001, job1, 'g must start exactly one terminal job')
+      g() -- hide
+      g() -- reopen the same buffer
+      assert.equals(buf1, float.buf, 'repeated g presses must reuse the same float buffer')
+      assert.equals(job1, float.job, 'repeated g presses must reuse the same terminal job')
+      assert.equals(1, starts, 'g must not spawn a second terminal job')
+    end)
+    vim.fn.jobstart = real_jobstart
+    vim.cmd 'stopinsert'
+    close_floats()
+    if float.buf and vim.api.nvim_buf_is_valid(float.buf) then pcall(vim.api.nvim_buf_delete, float.buf, { force = true }) end
+    assert.is_truthy(ok, tostring(err))
+    wipe_dashboard_buffers()
+  end)
+
+  it('fits 40/60/80 columns with a long cwd without truncating actions or offsets', function()
+    local dir = tmpdir()
+    local long_cwd = dir .. '/' .. string.rep('x', 200)
+    local sess = write_session(dir .. '/long.vim', long_cwd)
+    local real_width = vim.api.nvim_win_get_width
+    local ok, err = pcall(function()
+      for _, w in ipairs { 40, 60, 80 } do
+        vim.api.nvim_win_get_width = function() return w end
+        local lines = render(sess)
+        for i, l in ipairs(lines) do
+          local cells = vim.fn.strdisplaywidth(l)
+          assert.is_true(cells <= w, ('line %d is %d cells wide in a %d-column window: %s'):format(i, cells, w, l))
+        end
+        assert.is_truthy(row_index(lines, 'Resume'), 'the Resume row must still render at width ' .. w)
+
+        local newfile_line, newfile_row
+        for i, l in ipairs(lines) do
+          if l:find('New File', 1, true) then
+            newfile_line, newfile_row = l, i
+            break
+          end
+        end
+        assert.is_truthy(newfile_line, 'New File button must render at width ' .. w)
+        local label_col = newfile_line:find('New File', 1, true) - 1
+        for _, m in ipairs(vim.api.nvim_buf_get_extmarks(0, -1, 0, -1, { details = true })) do
+          if m[2] == newfile_row - 1 and m[4].hl_group == 'Function' then assert.equals(label_col, m[3], 'the label highlight must stay at the byte offset') end
+        end
+
+        local s_map
+        for _, m in ipairs(vim.api.nvim_buf_get_keymap(0, 'n')) do
+          if m.lhs == 'S' then s_map = m.callback end
+        end
+        assert.is_function(s_map, 'Resume key must be mapped at width ' .. w)
+        local cmds, real_cmd = {}, vim.cmd
+        vim.cmd = function(c) cmds[#cmds + 1] = c end
+        local ok_act, act_err = pcall(s_map)
+        vim.cmd = real_cmd
+        assert.is_truthy(ok_act, tostring(act_err))
+        assert.is_true(vim.tbl_contains(cmds, 'source ' .. vim.fn.fnameescape(sess)), 'Resume must source the full session path')
+      end
+    end)
+    vim.api.nvim_win_get_width = real_width
+    assert.is_truthy(ok, tostring(err))
+    wipe_dashboard_buffers()
+    helpers.remove_fixture(dir)
+  end)
 end)
 
 describe('statusline progress invalidation', function()

@@ -105,6 +105,39 @@ describe('qol plugins', function()
     assert.equals(1, called, '<leader>st must open the snacks todo picker')
   end)
 
+  it('sp opens the projects picker, not a files picker in the cwd', function()
+    local m = mapped '<leader>sp'
+    assert.is_function(m and m.callback, '<leader>sp must resolve to a real handler')
+    assert.is_truthy((m.desc or ''):find('[P]rojects', 1, true) ~= nil, '<leader>sp desc should mention Projects: ' .. tostring(m.desc))
+    assert.is_falsy((m.desc or ''):find('builtin root', 1, true), 'a projects picker must not claim a builtin-root files search')
+
+    local snacks = require 'snacks'
+    local real_projects, real_files = snacks.picker.projects, snacks.picker.files
+    local projects_calls, files_calls = 0, 0
+    snacks.picker.projects = function() projects_calls = projects_calls + 1 end
+    snacks.picker.files = function() files_calls = files_calls + 1 end
+    local ok, err = pcall(m.callback)
+    snacks.picker.projects, snacks.picker.files = real_projects, real_files
+    assert.is_truthy(ok, tostring(err))
+    assert.equals(1, projects_calls, '<leader>sp must invoke the projects picker')
+    assert.equals(0, files_calls, '<leader>sp must not invoke the files picker')
+  end)
+
+  it('keeps notification history mapped under a which-key group', function()
+    local m = mapped '<leader>nn'
+    assert.is_function(m and m.callback, '<leader>nn must resolve to a real handler')
+    assert.is_truthy((m.desc or ''):find('Notification', 1, true), '<leader>nn desc should mention Notification')
+
+    require('lazy').load { plugins = { 'which-key.nvim' } }
+    local registered = {}
+    for _, entry in ipairs(require('which-key.config').spec or {}) do
+      registered[entry[1]] = entry.group
+    end
+    for _, g in ipairs { '<leader>n', '<leader>nt' } do
+      assert.is_truthy(registered[g], 'missing which-key group: ' .. g)
+    end
+  end)
+
   it('does not shadow real actions with empty which-key groups', function()
     -- which-key registers its groups at VeryLazy; load it so the resolved spec
     -- exists. Groups are a positional array with the key at [1], not a map.

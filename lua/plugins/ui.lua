@@ -143,14 +143,7 @@ return {
       { '<leader>sk', function() require('snacks').picker.keymaps() end, desc = '[S]earch [K]eymaps' },
       { '<leader>sf', function() require('snacks').picker.files() end, desc = '[S]earch [F]iles' },
       { '<leader><leader>', function() require('snacks').picker.files() end, desc = '[S]earch [F]iles' },
-      {
-        '<leader>sp',
-        function()
-          local root = vim.fs.root(0, { '.git', '_darcs', '.hg', '.bzr', '.svn', 'Makefile', 'package.json' }) or vim.uv.cwd() or vim.fn.getcwd()
-          require('snacks').picker.files { cwd = root }
-        end,
-        desc = '[S]earch [P]rojects (builtin root)',
-      },
+      { '<leader>sp', function() require('snacks').picker.projects() end, desc = '[S]earch [P]rojects' },
       { '<leader>ss', function() require('snacks').picker() end, desc = '[S]earch [S]elect picker' },
       { '<leader>sw', function() require('snacks').picker.grep_word() end, mode = { 'n', 'x' }, desc = '[S]earch current [W]ord' },
       { '<leader>sg', function() require('snacks').picker.grep() end, desc = '[S]earch by [G]rep' },

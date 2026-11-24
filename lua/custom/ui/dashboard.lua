@@ -2,6 +2,29 @@
 local M = {}
 local function nf(code) return vim.g.have_nerd_font and vim.fn.nr2char(code) or '*' end
 
+-- $HOME is shortened only on a whole path component: /home/omar2 is a sibling,
+-- not ~/2, so a bare prefix gsub would rewrite it into ~2.
+local function short(path)
+  local home = vim.fn.expand '~'
+  if path == home then return '~' end
+  local prefix = home .. '/'
+  if path:sub(1, #prefix) == prefix then return '~/' .. path:sub(#prefix + 1) end
+  return path
+end
+
+-- display-only truncation; never feed the result into an action or extmark.
+local function clip_tail(s, max)
+  if vim.fn.strdisplaywidth(s) <= max then return s end
+  return '…' .. vim.fn.strcharpart(s, vim.fn.strchars(s) - max + 1)
+end
+
+-- buttons keep their leading label ("Resume: …") rather than the tail; a
+-- recent file keeps its tail, where the distinguishing basename lives.
+local function clip_head(s, max)
+  if vim.fn.strdisplaywidth(s) <= max then return s end
+  return vim.fn.strcharpart(s, 0, max - 1) .. '…'
+end
+
 -- a session without a `badd` line has no buffers to restore — the picker's
 -- historical gate, shared by the conditional Resume row
 local function restorable(path)
@@ -28,7 +51,7 @@ function M.get_resume_for(find, readable)
     end
   end
   if not label then return nil end
-  label = label:gsub('^' .. vim.pesc(vim.fn.expand '~'), '~')
+  label = short(label)
   return {
     key = 'S',
     icon = nf(0xf017),
@@ -73,7 +96,7 @@ function M.setup_starter()
     { key = 'e', icon = nf(0xf15b), label = 'New File', action = '<cmd>ene<CR>' },
     { key = 'f', icon = nf(0xf002), label = 'Find File', action = function() require('snacks').picker.files() end },
     { key = 'r', icon = nf(0xf115), label = 'File Explorer', action = function() require('snacks').explorer() end },
-    { key = 'g', icon = nf(0xf126), label = 'Git (LazyGit)', action = function() require('config.terminal').new_float 'lazygit' end },
+    { key = 'g', icon = nf(0xf126), label = 'Git (LazyGit)', action = function() require('config.terminal').toggle_float 'lazygit' end },
     {
       key = 's',
       icon = nf(0xf017),
@@ -88,7 +111,7 @@ function M.setup_starter()
         projects = vim.tbl_filter(function(e) return not is_suppressed(e.label) end, projects)
         local items, map = {}, {}
         for _, e in ipairs(projects) do
-          local disp = e.label:gsub('^' .. vim.pesc(vim.fn.expand '~'), '~')
+          local disp = short(e.label)
           items[#items + 1] = disp
           map[disp] = e.path
         end
@@ -112,7 +135,7 @@ function M.setup_starter()
     { key = 'q', icon = nf(0xf011), label = 'Quit', action = '<cmd>qa<CR>' },
   }
   local config_dir = vim.fn.stdpath 'config'
-  local function collect_recent()
+  local function collect_recent(max_disp)
     local out, seen = {}, {}
     for _, f in ipairs(vim.v.oldfiles or {}) do
       if #out >= 9 then break end
@@ -121,9 +144,8 @@ function M.setup_starter()
       local key = vim.fn.fnamemodify(f, ':.')
       if not seen[key] then
         seen[key] = true
-        local disp = vim.fn.fnamemodify(f, ':~:.')
         -- one long path must not push the block past the window; keep the tail
-        if vim.fn.strdisplaywidth(disp) > 60 then disp = '…' .. vim.fn.strcharpart(disp, vim.fn.strchars(disp) - 59) end
+        local disp = clip_tail(vim.fn.fnamemodify(f, ':~:.'), max_disp)
         out[#out + 1] = { path = f, disp = disp }
       end
       ::continue::
@@ -148,23 +170,30 @@ function M.setup_starter()
       end
       local btns = vim.list_extend({}, buttons)
       if resume then table.insert(btns, 1, resume) end
-      local recent = collect_recent()
+      local win = vim.api.nvim_get_current_win()
+      local win_w = vim.api.nvim_win_get_width(win)
+      -- 4-cell minimum margin + 5 cells of index gutter for recents
+      local recent = collect_recent(math.max(8, win_w - 9))
       local raw = {}
       vim.list_extend(raw, { '', '' })
       vim.list_extend(raw, header)
       raw[#raw + 1] = ''
-      -- straight table: pad labels to fixed width so columns line up
+      -- straight table: pad labels to fixed width so columns line up. Only the
+      -- display copy is clipped (4-cell margin + 8-cell key/icon gutter); the
+      -- button's own label and action still carry the full path.
       local function pad_disp(s, w)
         local d = vim.fn.strdisplaywidth(s)
         if d >= w then return s end
         return s .. string.rep(' ', w - d)
       end
-      local label_w = 0
-      for _, b in ipairs(btns) do
-        label_w = math.max(label_w, vim.fn.strdisplaywidth(b.label))
+      local label_max = math.max(8, win_w - 12)
+      local button_disp, label_w = {}, 0
+      for i, b in ipairs(btns) do
+        button_disp[i] = clip_head(b.label, label_max)
+        label_w = math.max(label_w, vim.fn.strdisplaywidth(button_disp[i]))
       end
-      for _, b in ipairs(btns) do
-        raw[#raw + 1] = string.format('  %s  %s  %s', b.key, b.icon, pad_disp(b.label, label_w))
+      for i, b in ipairs(btns) do
+        raw[#raw + 1] = string.format('  %s  %s  %s', b.key, b.icon, pad_disp(button_disp[i], label_w))
       end
       raw[#raw + 1] = ''
       -- track the raw index of the first recent row so <CR> can map without
@@ -177,8 +206,6 @@ function M.setup_starter()
       raw[#raw + 1] = 'nvim-config · ' .. vim.version().major .. '.' .. vim.version().minor .. '.' .. vim.version().patch
 
       -- center as a block (like alpha margin 4) — not per-line, so left edge is straight
-      local win = vim.api.nvim_get_current_win()
-      local win_w = vim.api.nvim_win_get_width(win)
       local win_h = vim.api.nvim_win_get_height(win)
       local max_w = 0
       for _, l in ipairs(raw) do

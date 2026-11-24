@@ -197,11 +197,11 @@ end, { desc = 'Write current buffer via sudo', bang = true })
 -- :DiffOrig — side-by-side diff of the buffer against the file on disk.
 -- Classic vim QoL for "what have I changed since :w?" (gitsigns covers git,
 -- this covers unsaved edits anywhere).
-vim.api.nvim_create_user_command(
-  'DiffOrig',
-  function() vim.cmd 'vert new | set buftype=nofile | read ++edit # | 0d_ | diffthis | wincmd p | diffthis' end,
-  { desc = 'Diff buffer against saved file' }
-)
+vim.api.nvim_create_user_command('DiffOrig', function()
+  -- capture before `vert new` swaps in the scratch buffer (and its own alternate)
+  local name = vim.api.nvim_buf_get_name(0)
+  vim.cmd('vert new | set buftype=nofile | read ++edit ' .. vim.fn.fnameescape(name) .. ' | 0d_ | diffthis | wincmd p | diffthis')
+end, { desc = 'Diff buffer against saved file' })
 
 -- HTTP buffer mapping: <leader>hr lives ONLY in http buffers (buffer-local).
 -- A lazy.nvim `keys` entry would register a global load-shim instead.
