@@ -6,8 +6,9 @@ describe('autocmd idempotency', function()
   local H = require 'tests.helpers'
 
   it('the reload callback 4 times does not grow named augroups', function()
-    local before = H.autocmd_count()
-    before[''] = nil
+    -- Reload's notification lazy-loads snacks; initialize it before counting.
+    require('lazy').load { plugins = { 'snacks.nvim' } }
+    vim.notify 'warm reload notification'
 
     local lhs = (vim.g.mapleader or ' ') .. 'ur'
     local mapping
@@ -16,6 +17,9 @@ describe('autocmd idempotency', function()
     end
     assert.is_not_nil(mapping, 'normal-mode ' .. lhs .. ' mapping must exist')
     assert.is_function(mapping.callback, 'reload mapping must be a Lua callback')
+
+    local before = H.autocmd_count()
+    before[''] = nil
 
     for _ = 1, 4 do
       mapping.callback()
@@ -30,6 +34,7 @@ describe('autocmd idempotency', function()
     end
     for group in pairs(after) do
       assert.is_true(type(group) == 'string' and group ~= '', 'new augroup must be a non-empty string')
+      assert.is_not_nil(before[group], string.format('reload created new augroup %q', group))
     end
   end)
 end)

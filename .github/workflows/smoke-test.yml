@@ -101,7 +101,7 @@ jobs:
               cat /tmp/test.log
               exit 1
             fi
-            if sed 's/\x1b\[[0-9;]*m//g' /tmp/test.log | grep 'Pending:' | grep -qv '\[optional\]'; then
+            if sed 's/\x1b\[[0-9;]*m//g' /tmp/test.log | grep -E 'Pending:|Pending[[:space:]]+\|\|' | grep -qv '\[optional\]'; then
               echo "::error:: $f produced an unlabelled pending case"
               cat /tmp/test.log
               exit 1
