@@ -162,15 +162,39 @@ describe('performance', function()
     local file = vim.fn.tempname() .. '.py'
     vim.fn.mkdir(vim.fn.fnamemodify(file, ':h'), 'p')
     vim.fn.writefile({ 'class Example:', '    pass' }, file)
+    -- This buffer exists before lazy setup and never receives FileType, so only
+    -- the already-loaded-buffer bootstrap can start it.
+    local preload = [[
+      local buf = vim.api.nvim_create_buf(true, false)
+      vim.api.nvim_buf_set_name(buf, vim.fn.tempname() .. '.py')
+      vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'class Preloaded:', '    pass' })
+      vim.api.nvim_buf_call(buf, function() vim.cmd 'noautocmd setlocal filetype=python' end)
+      _G.treesitter_bootstrap_buf = buf
+    ]]
     local probe = [[
       local buf = vim.api.nvim_get_current_buf()
       vim.wait(2000, function() return vim.treesitter.highlighter.active[buf] ~= nil end, 50)
-      io.stdout:write('ft=' .. vim.bo[buf].filetype .. ' active=' .. tostring(vim.treesitter.highlighter.active[buf] ~= nil))
+      local folds = vim.wo.foldmethod == 'expr' and vim.wo.foldexpr == 'v:lua.vim.treesitter.foldexpr()'
+      local bootstrap = vim.treesitter.highlighter.active[_G.treesitter_bootstrap_buf] ~= nil
+      io.stdout:write('ft=' .. vim.bo[buf].filetype .. ' active=' .. tostring(vim.treesitter.highlighter.active[buf] ~= nil) .. ' folds=' .. tostring(folds) .. ' bootstrap=' .. tostring(bootstrap))
     ]]
-    local res = run { vim.v.progpath, '--headless', file, '-c', 'lua ' .. (probe:gsub('%s+', ' ')), '-c', 'qa!' }
+    local res = run {
+      vim.v.progpath,
+      '--headless',
+      '--cmd',
+      'lua ' .. (preload:gsub('%s+', ' ')),
+      file,
+      '-c',
+      'lua ' .. (probe:gsub('%s+', ' ')),
+      '-c',
+      'qa!',
+    }
     vim.fn.delete(file)
 
-    assert.is_truthy((res.stdout or ''):match 'ft=python active=true', 'startup Python buffer must highlight: ' .. (res.report or ''))
+    assert.is_truthy(
+      (res.stdout or ''):match 'ft=python active=true folds=true bootstrap=true',
+      'startup Python must highlight, receive Treesitter folding, and prove the loaded-buffer bootstrap ran: ' .. (res.report or '')
+    )
   end)
 
   it('does not highlight a 256KB Lua file passed as a startup argument', function()
