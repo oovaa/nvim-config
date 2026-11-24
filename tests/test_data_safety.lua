@@ -138,6 +138,26 @@ describe('data-safety', function()
     vim.fn.delete(d, 'rf')
   end)
 
+  it('T1.fixture: remove_fixture refuses foreign paths and owns its own', function()
+    local helpers = require 'tests.helpers'
+    local d = tmpdir 'fixture-guard'
+    local foreign = d .. '/do-not-delete'
+    vim.fn.writefile({ 'SENTINEL' }, foreign)
+
+    local ok = pcall(helpers.remove_fixture, foreign)
+    assert.is_false(ok, 'remove_fixture must refuse a path it did not create')
+    assert.equals(1, vim.fn.filereadable(foreign), 'foreign file must still exist after refused remove')
+
+    local p = helpers.fixture_path 'owned'
+    assert.is_nil(vim.uv.fs_stat(p), 'fixture_path must return a nonexistent path')
+    vim.fn.writefile({ 'owned-content' }, p)
+    assert.equals(1, vim.fn.filereadable(p), 'fixture file must be creatable')
+    helpers.remove_fixture(p)
+    assert.is_nil(vim.uv.fs_stat(p), 'remove_fixture must delete the owned path')
+
+    vim.fn.delete(d, 'rf')
+  end)
+
   it('T1.8: :q with unsaved changes never silently discards them', function()
     -- vim.o.confirm is on and auto-save's QuitPre saves first, so :q on a
     -- dirty buffer succeeds by writing — E37 cannot fire in the shipped

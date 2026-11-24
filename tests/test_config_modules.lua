@@ -2,6 +2,8 @@
 -- nothing but `assert.has_no_error(require ...)`: sessions and runner.
 -- Run with: nvim --headless -c 'lua require("plenary.busted").run("tests/test_config_modules.lua")' -c 'qa!'
 
+local helpers = require 'tests.helpers'
+
 local function scratch_dir()
   local d = vim.fn.tempname()
   vim.fn.mkdir(d, 'p')
@@ -93,7 +95,10 @@ describe('config.sessions', function()
 
   it('writes a session on exit, but not for a fileless buffer', function()
     local home = vim.fn.getcwd()
-    local dir = scratch_dir()
+    -- must be outside the temp tree: temp cwds are intentionally suppressed now;
+    -- unique basename so parallel runs cannot collide on stdpath('data').
+    local dir = helpers.fixture_path 'session-write-test'
+    vim.fn.mkdir(dir, 'p')
     local file = dir .. '/main.lua'
     vim.fn.writefile({ 'return 1' }, file)
 
@@ -114,7 +119,7 @@ describe('config.sessions', function()
     -- restore, and keep the test nvim from persisting this scratch session
     vim.cmd('cd ' .. vim.fn.fnameescape(home))
     vim.fn.delete(ghost)
-    vim.fn.delete(dir, 'rf')
+    helpers.remove_fixture(dir)
     vim.api.nvim_exec_autocmds('VimLeavePre', {})
   end)
 end)

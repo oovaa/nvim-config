@@ -4,6 +4,28 @@
 
 local M = {}
 
+-- Collision-safe fixture paths under stdpath('data')/test-fixtures/.
+-- fixture_path returns a unique, nonexistent path and records ownership;
+-- remove_fixture refuses to delete anything it did not create. The shared
+-- parent is never deleted — only the owned leaf (file or directory).
+local FIXTURE_ROOT = vim.fn.stdpath 'data' .. '/test-fixtures'
+local OWNED = {}
+
+function M.fixture_path(label)
+  vim.fn.mkdir(FIXTURE_ROOT, 'p')
+  local base = vim.fn.fnamemodify(vim.fn.tempname(), ':t')
+  local p = FIXTURE_ROOT .. '/' .. (label or 'fx') .. '-' .. base
+  if vim.uv.fs_stat(p) then error('fixture_path: path already exists: ' .. p) end
+  OWNED[p] = true
+  return p
+end
+
+function M.remove_fixture(path)
+  if not OWNED[path] then error('remove_fixture: not an owned fixture path: ' .. tostring(path)) end
+  OWNED[path] = nil
+  vim.fn.delete(path, 'rf')
+end
+
 function M.read(path) return table.concat(vim.fn.readfile(path), '\n') end
 
 function M.all()

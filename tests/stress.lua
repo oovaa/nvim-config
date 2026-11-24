@@ -4,6 +4,7 @@
 -- Plan: docs/superpowers/plans/2026-09-30-stress-test-plan.md
 local root = vim.fn.stdpath 'config'
 local H = dofile(root .. '/tests/stress_harness.lua')
+local helpers = require 'tests.helpers'
 
 -- snacks replaces vim.notify, so notify text never reaches :messages. Every
 -- test that asserts on a message captures it through this instead.
@@ -573,7 +574,9 @@ end
 section '8 sessions'
 -- =============================================================================
 do
-  local sdir = TMP .. '/proj'
+  -- outside the temp tree: temp cwds are intentionally suppressed now; unique
+  -- basename so parallel runs cannot collide on the shared stdpath('data').
+  local sdir = helpers.fixture_path 'session-stress-proj'
   vim.fn.mkdir(sdir, 'p')
   vim.fn.writefile({ 'return "session"' }, sdir .. '/alpha.lua')
   local cwd0 = vim.uv.cwd()
@@ -621,7 +624,7 @@ do
     for _, e in ipairs(before) do
       seen[e.path] = true
     end
-    for _, d in ipairs { '/tmp', vim.fn.expand '~' } do
+    for _, d in ipairs { '/tmp', TMP, vim.fn.expand '~' } do
       vim.cmd('silent! cd ' .. vim.fn.fnameescape(d))
       vim.cmd('silent! edit! ' .. vim.fn.fnameescape(TMP .. '/alpha.lua'))
       vim.api.nvim_exec_autocmds('VimLeavePre', {})
@@ -673,6 +676,7 @@ do
     return (type(a) == 'string' and a:find '%.vim$' ~= nil) or ('bad session path ' .. vim.inspect(a))
   end)
   pcall(vim.cmd, 'silent! cd ' .. vim.fn.fnameescape(cwd0 or vim.fn.getcwd()))
+  helpers.remove_fixture(sdir)
 end
 
 -- =============================================================================
@@ -993,8 +997,8 @@ do
   end)
 
   -- --- real attach, two buffers ---
-  local la = root .. '/stress_probe_a.lua'
-  local lb = root .. '/stress_probe_b.lua'
+  local la = helpers.fixture_path 'stress_probe_a'
+  local lb = helpers.fixture_path 'stress_probe_b'
   vim.fn.writefile({ 'local function stress_a() return 1 end', 'return stress_a' }, la)
   vim.fn.writefile({ 'local function stress_b() return 2 end', 'return stress_b' }, lb)
   pcall(vim.cmd, 'silent! only')
@@ -1053,8 +1057,8 @@ do
   end)
   pcall(vim.cmd, 'bdelete!')
   pcall(vim.cmd, 'bdelete!')
-  os.remove(la)
-  os.remove(lb)
+  helpers.remove_fixture(la)
+  helpers.remove_fixture(lb)
 
   -- jsonls via the FileType-created-in-FileType path
   H.t('lsp: jsonls attaches to a fresh .json buffer', function()
