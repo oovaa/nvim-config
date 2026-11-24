@@ -83,49 +83,59 @@ return {
       end, 250)
 
       -- Enable treesitter highlighting via Neovim built-in APIs (main branch doesn't support old config)
+      local function start(bufnr)
+        -- ponytail: plugin/scratch buffers (snacks_notif, qf, help...) have
+        -- filetypes with no parser; skip them so TSInstall never warns.
+        if vim.bo[bufnr].buftype ~= '' then return end
+        -- ponytail: skip treesitter on minified bundles / huge files (>200KB);
+        -- the parser chokes on them. Legacy regex highlighting covers it.
+        -- Raise/lower the size cap here if you want treesitter everywhere.
+        local name = vim.api.nvim_buf_get_name(bufnr)
+        local ok_stat, stat = pcall(vim.uv.fs_stat, name)
+        if ok_stat and stat and stat.size > 200 * 1024 then
+          vim.treesitter.stop(bufnr)
+          return
+        end
+        if name:match '%.min%.' then return end
+        local ft = vim.bo[bufnr].filetype
+        if ft and ft ~= '' then
+          -- ponytail: compound fts (yaml.docker-compose) have no own parser;
+          -- TSInstall would error, so install/check the base language. Same
+          -- for react compound filetypes — `typescriptreact` resolves to the
+          -- `tsx` parser (javascriptreact likewise), never to the literal ft.
+          local ft_map = { typescriptreact = 'tsx', javascriptreact = 'javascript', typescriptjsx = 'tsx', sh = 'bash', jsonc = 'json' }
+          local lang = ft_map[ft] or ft:match '^[^.]+'
+          -- same once-per-session state as the bootstrap above, so a language
+          -- whose build failed is not retried on every buffer of that type
+          local marks = vim.g.treesitter_bootstrap or {}
+          if vim.fn.executable 'tree-sitter' == 1 and not marks[lang] and vim.uv.fs_stat(parser_path(lang)) == nil then
+            marks[lang] = true
+            vim.g.treesitter_bootstrap = marks -- whole table, see the note above
+            pcall(vim.cmd, 'TSInstall ' .. lang)
+          end
+        end
+        local ok_ts = pcall(vim.treesitter.start, bufnr)
+        -- ponytail: treesitter-backed folding only where a parser actually
+        -- attached; manual folding stays the fallback (and large-file mode).
+        if ok_ts then
+          for _, win in ipairs(vim.api.nvim_list_wins()) do
+            if vim.api.nvim_win_get_buf(win) == bufnr then
+              vim.wo[win].foldmethod = 'expr'
+              vim.wo[win].foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+              vim.wo[win].foldlevel = 99
+            end
+          end
+        end
+      end
+
       vim.api.nvim_create_autocmd('FileType', {
         group = vim.api.nvim_create_augroup('treesitter-start', { clear = true }),
-        callback = function(args)
-          -- ponytail: plugin/scratch buffers (snacks_notif, qf, help...) have
-          -- filetypes with no parser; skip them so TSInstall never warns.
-          if vim.bo[args.buf].buftype ~= '' then return end
-          -- ponytail: skip treesitter on minified bundles / huge files (>200KB);
-          -- the parser chokes on them. Legacy regex highlighting covers it.
-          -- Raise/lower the size cap here if you want treesitter everywhere.
-          local name = vim.api.nvim_buf_get_name(args.buf)
-          local ok_stat, stat = pcall(vim.uv.fs_stat, name)
-          if name:match '%.min%.' or (ok_stat and stat and stat.size > 200 * 1024) then return end
-          local ft = vim.bo[args.buf].filetype
-          if ft and ft ~= '' then
-            -- ponytail: compound fts (yaml.docker-compose) have no own parser;
-            -- TSInstall would error, so install/check the base language. Same
-            -- for react compound filetypes — `typescriptreact` resolves to the
-            -- `tsx` parser (javascriptreact likewise), never to the literal ft.
-            local ft_map = { typescriptreact = 'tsx', javascriptreact = 'javascript', typescriptjsx = 'tsx', sh = 'bash', jsonc = 'json' }
-            local lang = ft_map[ft] or ft:match '^[^.]+'
-            -- same once-per-session state as the bootstrap above, so a language
-            -- whose build failed is not retried on every buffer of that type
-            local marks = vim.g.treesitter_bootstrap or {}
-            if vim.fn.executable 'tree-sitter' == 1 and not marks[lang] and vim.uv.fs_stat(parser_path(lang)) == nil then
-              marks[lang] = true
-              vim.g.treesitter_bootstrap = marks -- whole table, see the note above
-              pcall(vim.cmd, 'TSInstall ' .. lang)
-            end
-          end
-          local ok_ts = pcall(vim.treesitter.start, args.buf)
-          -- ponytail: treesitter-backed folding only where a parser actually
-          -- attached; manual folding stays the fallback (and large-file mode).
-          if ok_ts then
-            for _, win in ipairs(vim.api.nvim_list_wins()) do
-              if vim.api.nvim_win_get_buf(win) == args.buf then
-                vim.wo[win].foldmethod = 'expr'
-                vim.wo[win].foldexpr = 'v:lua.vim.treesitter.foldexpr()'
-                vim.wo[win].foldlevel = 99
-              end
-            end
-          end
-        end,
+        callback = function(args) start(args.buf) end,
       })
+      -- The startup file's FileType event can precede lazy loading this spec.
+      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].buftype == '' then start(buf) end
+      end
     end,
   },
 
@@ -152,18 +162,24 @@ return {
 
       local function sel(query)
         return function()
+          local bufnr = vim.api.nvim_get_current_buf()
+          if not vim.treesitter.get_parser(bufnr, nil, { error = false }) then return end
           local s = require 'nvim-treesitter-textobjects.select'
           if s.select_textobject then return s.select_textobject(query, 'textobjects') end
         end
       end
       local function mv(fn, query)
         return function()
+          local bufnr = vim.api.nvim_get_current_buf()
+          if not vim.treesitter.get_parser(bufnr, nil, { error = false }) then return end
           local m = require 'nvim-treesitter-textobjects.move'
           if m[fn] then return m[fn](query, 'textobjects') end
         end
       end
       local function sw(fn, query)
         return function()
+          local bufnr = vim.api.nvim_get_current_buf()
+          if not vim.treesitter.get_parser(bufnr, nil, { error = false }) then return end
           local s = require 'nvim-treesitter-textobjects.swap'
           if s[fn] then return s[fn](query) end
         end

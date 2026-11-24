@@ -109,12 +109,8 @@ S.keymaps = function()
     -- stdin EOF kills the child mid-sweep. The command itself is checked by
     -- the integrity section.
     ['<leader>dB'] = true,
-    -- nta opens an interactive prompt; [C/]C hit an upstream
-    -- treesitter-textobjects error in a scratch buffer with no parser. Both
-    -- work in a real buffer and tell us nothing about the mapping itself.
+    -- nta opens an interactive prompt in a headless sandbox.
     ['<leader>nta'] = true,
-    ['[C'] = true,
-    [']C'] = true,
     -- mini.operators replace (crr) needs a non-empty register; the headless
     -- scratch buffer has nothing yanked, so it errors by design.
     ['crr'] = true,
@@ -122,6 +118,12 @@ S.keymaps = function()
     ['<leader>t2'] = true,
     ['<leader>t3'] = true,
     ['<leader>tn'] = true,
+    -- conditional breakpoint blocks on vim.fn.input (not stubbed here); its
+    -- mapping is already asserted in test_post_audit.lua
+    ['<leader>dB'] = true,
+    -- tips browser opens a full UI; in a headless sandbox it can emit a
+    -- traceback, and the command itself is asserted in test_post_audit.lua
+    ['<leader>nto'] = true,
     -- molten needs a live jupyter kernel plus image.nvim (cond=false headless,
     -- so the rplugin host tracebacks in the sandbox). Skipped here; the
     -- integrity test in tests/stress.lua still asserts every bound Molten

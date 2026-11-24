@@ -4,6 +4,20 @@
 -- eagerly, and grep cannot see either.
 --   nvim --headless -c 'lua require("plenary.busted").run("tests/test_performance.lua")' -c 'qa!'
 
+-- Same child-process contract as tests/test_e2e_features.lua: exit 0 and no
+-- runtime traceback markers.
+local function run(cmd, opts)
+  opts = opts or {}
+  local obj = vim.system(cmd, { text = true, cwd = opts.cwd, env = opts.env, timeout = 30000 })
+  local res = obj:wait()
+  res.report = (res.stdout or '') .. (res.stderr or '')
+  assert(res.code == 0, string.format('child command failed (exit %s):\n%s', tostring(res.code), res.report))
+  for _, marker in ipairs { 'Invalid buffer id', 'stack traceback:', 'Error in command line:', 'vim.schedule callback:' } do
+    assert(not res.report:find(marker, 1, true), string.format('child output contained %q:\n%s', marker, res.report))
+  end
+  return res
+end
+
 describe('performance', function()
   local P = require('lazy.core.config').plugins
 
@@ -144,6 +158,36 @@ describe('performance', function()
     )
   end)
 
+  it('highlights a small Python file passed as a startup argument', function()
+    local file = vim.fn.tempname() .. '.py'
+    vim.fn.mkdir(vim.fn.fnamemodify(file, ':h'), 'p')
+    vim.fn.writefile({ 'class Example:', '    pass' }, file)
+    local probe = [[
+      local buf = vim.api.nvim_get_current_buf()
+      vim.wait(2000, function() return vim.treesitter.highlighter.active[buf] ~= nil end, 50)
+      io.stdout:write('ft=' .. vim.bo[buf].filetype .. ' active=' .. tostring(vim.treesitter.highlighter.active[buf] ~= nil))
+    ]]
+    local res = run { vim.v.progpath, '--headless', file, '-c', 'lua ' .. (probe:gsub('%s+', ' ')), '-c', 'qa!' }
+    vim.fn.delete(file)
+
+    assert.is_truthy((res.stdout or ''):match 'ft=python active=true', 'startup Python buffer must highlight: ' .. (res.report or ''))
+  end)
+
+  it('does not highlight a 256KB Lua file passed as a startup argument', function()
+    local file = vim.fn.tempname() .. '.lua'
+    vim.fn.mkdir(vim.fn.fnamemodify(file, ':h'), 'p')
+    vim.fn.writefile({ string.rep('x', 256 * 1024) }, file)
+    local probe = [[
+      local buf = vim.api.nvim_get_current_buf()
+      vim.wait(500)
+      io.stdout:write('ft=' .. vim.bo[buf].filetype .. ' active=' .. tostring(vim.treesitter.highlighter.active[buf] ~= nil))
+    ]]
+    local res = run { vim.v.progpath, '--headless', file, '-c', 'lua ' .. (probe:gsub('%s+', ' ')), '-c', 'qa!' }
+    vim.fn.delete(file)
+
+    assert.is_truthy((res.stdout or ''):match 'ft=lua active=false', 'oversized startup Lua buffer must stay unhighlighted: ' .. (res.report or ''))
+  end)
+
   -- A real buffer with a real filetype: `noautocmd setlocal` keeps the rest of
   -- the FileType chain (LSP, ftplugins) out of the unit test. Never call this
   -- with vim.cmd stubbed — the stub would swallow the `:setlocal`.
@@ -156,25 +200,27 @@ describe('performance', function()
     return buf, name
   end
 
-  -- Fire the real FileType handler with its two side effects stubbed out:
-  -- :TSInstall builds a parser over the network on a parser-less runner, and
-  -- vim.treesitter.start asserts a parser exists. Restored even if it throws.
+  -- Fire the real FileType handler with parser installation, start, and stop
+  -- stubbed out: :TSInstall builds a parser over the network on a parser-less
+  -- runner, while the real start/stop calls would need that parser. Restored
+  -- even if the handler throws.
   local function fire_treesitter(buf)
-    local rec = { started = {}, installed = {} }
-    local real_start, real_cmd = vim.treesitter.start, vim.cmd
+    local rec = { started = {}, installed = {}, stopped = {} }
+    local real_start, real_stop, real_cmd = vim.treesitter.start, vim.treesitter.stop, vim.cmd
     local ok, err = pcall(function()
       vim.treesitter.start = function(b) rec.started[#rec.started + 1] = b end
+      vim.treesitter.stop = function(b) rec.stopped[#rec.stopped + 1] = b end
       vim.cmd = function(c)
         if tostring(c):match '^TSInstall' then rec.installed[#rec.installed + 1] = tostring(c) end
       end
       vim.api.nvim_exec_autocmds('FileType', { group = 'treesitter-start', buffer = buf })
     end)
-    vim.treesitter.start, vim.cmd = real_start, real_cmd
+    vim.treesitter.start, vim.treesitter.stop, vim.cmd = real_start, real_stop, real_cmd
     if not ok then error(err) end
     return rec
   end
 
-  it('starts treesitter on a normal buffer but not on one over the 200KB cap', function()
+  it('starts treesitter on a small buffer and stops it over the 200KB cap', function()
     require('lazy').load { plugins = { 'nvim-treesitter' } }
     -- the treesitter cap (200KB) is stricter than large_file_size (1 MiB)
     local big, big_name = ft_buffer(256, 'lua')
@@ -187,6 +233,8 @@ describe('performance', function()
 
     assert.same({ small }, on_small.started, 'the small buffer must start highlighting')
     assert.same({}, on_big.started, 'the oversized buffer must not start highlighting')
+    assert.same({ big }, on_big.stopped, 'the oversized buffer must stop any existing highlighter')
+    assert.same({}, on_small.stopped, 'the small buffer must keep highlighting')
   end)
 
   it('attempts a parser install at most once per language per session', function()
@@ -224,6 +272,58 @@ describe('performance', function()
 
     assert.same({}, after_mark.installed, 'a language already attempted must not be installed again')
     assert.same({ 'TSInstall ' .. lang }, after_clear.installed, 'an unattempted language installs once, by base name')
+  end)
+
+  it('leaves class navigation and textobject wrappers inert without a parser', function()
+    require('lazy').load { plugins = { 'nvim-treesitter-textobjects' } }
+    local previous = vim.api.nvim_get_current_buf()
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_set_current_buf(buf)
+
+    local calls = {}
+    local function called(name)
+      return function() calls[#calls + 1] = name end
+    end
+    local stubs = {
+      ['nvim-treesitter-textobjects.select'] = { select_textobject = called 'select' },
+      ['nvim-treesitter-textobjects.move'] = {
+        goto_next_start = called 'move-next',
+        goto_previous_start = called 'move-previous',
+      },
+      ['nvim-treesitter-textobjects.swap'] = {
+        swap_next = called 'swap-next',
+        swap_previous = called 'swap-previous',
+      },
+    }
+    local saved = {}
+    for name, stub in pairs(stubs) do
+      saved[name] = package.loaded[name]
+      package.loaded[name] = stub
+    end
+
+    local ok, err = pcall(function()
+      assert.is_nil(vim.treesitter.get_parser(buf, nil, { error = false }), 'test premise: scratch buffer must have no parser')
+      for _, mapping in ipairs {
+        { 'n', '[C' },
+        { 'n', ']C' },
+        { 'o', 'ac' },
+        { 'o', 'ic' },
+        { 'n', ']m' },
+        { 'n', ']a' },
+      } do
+        local map = vim.fn.maparg(mapping[2], mapping[1], false, true)
+        assert.is_function(map.callback, mapping[1] .. ' ' .. mapping[2] .. ' must keep its Lua callback')
+        map.callback()
+      end
+    end)
+
+    for name in pairs(stubs) do
+      package.loaded[name] = saved[name]
+    end
+    vim.api.nvim_set_current_buf(previous)
+    vim.api.nvim_buf_delete(buf, { force = true })
+    if not ok then error(err) end
+    assert.same({}, calls, 'parserless wrappers must not call textobjects')
   end)
 
   it('keeps nvim-ts-autotag scoped to markup filetypes', function()
