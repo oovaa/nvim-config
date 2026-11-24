@@ -700,7 +700,11 @@ Verify dashboard, sessions, notifications/tips, completion before/after InsertEn
 
 Dispatch a read-only reviewer subagent with the complete diff from `origin/master`. Require correctness, test quality, architecture, security/privacy, and performance findings with severity labels. Fix all Critical/Required findings and rerun affected checks.
 
-- [ ] **Step 6: Final Git checks and push**
+- [ ] **Step 6: Validate on Azure in a clean Docker image**
+
+Use the user-authorized `ssh azure` host. Run the exact branch tree in a fresh disposable Docker container, install the latest Neovim through Homebrew, record Neovim/Homebrew/tool versions, and run boot smoke, Stylua, and every regular suite with the same strict output checks as CI. Mount or copy only a `git archive` of committed `HEAD`; never upload local sessions, caches, or credentials. Remove only the temporary container/image/data created for this check. The VPS currently has about 4.4 GB free, so if the clean toolchain cannot fit, report the exact blocker instead of deleting unrelated Docker data or claiming validation.
+
+- [ ] **Step 7: Final Git checks and push**
 
 ```bash
 git status --short
@@ -709,4 +713,4 @@ git log --oneline origin/master..HEAD
 git push origin master
 ```
 
-Expected: clean worktree, no whitespace errors, logical conventional commits, and successful push.
+Expected: clean worktree, no whitespace errors, logical conventional commits, successful push, and a clean-image validation record linked in the final report.
