@@ -128,9 +128,12 @@ local servers = {
     root_markers = tailwind_markers,
     -- root_markers alone still attaches with root_dir = cwd when no marker is
     -- found (e.g. a TS file in a monorepo whose only Tailwind config lives in a
-    -- sibling package). Returning nil aborts the attach entirely — the server
-    -- is useless without a Tailwind config anyway.
-    root_dir = function(fname) return vim.fs.root(fname, tailwind_markers) end,
+    -- sibling package). Only report a discovered root; the server is useless
+    -- without a Tailwind config anyway.
+    root_dir = function(bufnr, on_dir)
+      local root = vim.fs.root(bufnr, tailwind_markers)
+      if root then on_dir(root) end
+    end,
   },
   -- C/C++ LSP: clangd. Rust: rust-analyzer (rustup, not here).
   -- SQL: sqls — DB-aware completion/hover via `.sqls.yml`; without it,

@@ -183,7 +183,6 @@ return {
       local jdtls = require 'jdtls'
       local cwd = vim.fn.getcwd()
       local root_markers = { 'gradlew', 'mvnw', 'pom.xml', 'build.gradle', 'build.gradle.kts', '.git' }
-      local root = vim.fs.root(0, root_markers) or cwd
       local mason_pkg = vim.fn.stdpath 'data' .. '/mason/packages'
       local jdtls_pkg = mason_pkg .. '/jdtls'
       if vim.fn.executable 'java' ~= 1 then
@@ -204,7 +203,6 @@ return {
         return
       end
       local config_dir = jdtls_pkg .. (vim.fn.isdirectory(jdtls_pkg .. '/config_mac') == 1 and '/config_mac' or '/config_linux')
-      local data_dir = vim.fn.stdpath 'cache' .. '/jdtls/' .. vim.fn.fnamemodify(root, ':p:h:t') .. '-' .. vim.fn.sha256(root)
       -- Debug + test adapters: bundle jars if mason installed them (optional).
       local bundles = {}
       local jdtls_bundles_glob = mason_pkg .. '/java-test/extension/server/com.microsoft.java.test.plugin-*.jar'
@@ -213,50 +211,65 @@ return {
         local matches = vim.fn.glob(pattern, true, true)
         if matches and #matches > 0 then vim.list_extend(bundles, matches) end
       end
-      local blink_ok, blink = pcall(require, 'blink.cmp')
       local function on_attach(_, bufnr)
         -- Java debug/test: setup_dap is called by jdtls internally when
         -- opts.dap is passed; here we only discover main-class configs.
         if #bundles > 0 then pcall(require('jdtls.dap').setup_dap_main_class_configs) end
         -- standard LSP keymaps are applied globally by lsp.lua's LspAttach autocmd
       end
-      jdtls.start_or_attach({
-        cmd = {
-          'java',
-          '-Declipse.application=org.eclipse.jdt.ls.core.id1',
-          '-Dosgi.bundles.defaultStartLevel=4',
-          '-Declipse.product=org.eclipse.jdt.ls.core.product',
-          '-Dlog.level=INFO',
-          '-Xmx1g',
-          '--add-modules=ALL-SYSTEM',
-          '--add-opens',
-          'java.base/java.util=ALL-UNNAMED',
-          '--add-opens',
-          'java.base/java.lang=ALL-UNNAMED',
-          '-jar',
-          launcher,
-          '-configuration',
-          config_dir,
-          '-data',
-          data_dir,
-        },
-        root_dir = root,
-        capabilities = blink_ok and blink.get_lsp_capabilities() or {},
-        bundles = bundles,
-        on_attach = on_attach,
-        init_options = { bundles = bundles },
-        settings = {
-          java = {
-            eclipse = { downloadSources = true },
-            maven = { downloadSources = true },
-            format = { enabled = true },
-            signatureHelp = { enabled = true },
-            -- Google style via settings; google-java-format (conform) is the
-            -- actual writer. Comment out the conform java row to let jdtls format.
-            checkstyle = { enabled = false },
+      local function start(args)
+        local bufnr = args.buf
+        if vim.b[bufnr].large_file_mode then return end
+        local root = vim.fs.root(bufnr, root_markers) or cwd
+        local data_dir = vim.fn.stdpath 'cache' .. '/jdtls/' .. vim.fn.fnamemodify(root, ':p:h:t') .. '-' .. vim.fn.sha256(root)
+        jdtls.start_or_attach({
+          cmd = {
+            'java',
+            '-Declipse.application=org.eclipse.jdt.ls.core.id1',
+            '-Dosgi.bundles.defaultStartLevel=4',
+            '-Declipse.product=org.eclipse.jdt.ls.core.product',
+            '-Dlog.level=INFO',
+            '-Xmx1g',
+            '--add-modules=ALL-SYSTEM',
+            '--add-opens',
+            'java.base/java.util=ALL-UNNAMED',
+            '--add-opens',
+            'java.base/java.lang=ALL-UNNAMED',
+            '-jar',
+            launcher,
+            '-configuration',
+            config_dir,
+            '-data',
+            data_dir,
           },
-        },
-      }, { dap = { hotcodereplace = 'auto' } })
+          root_dir = root,
+          capabilities = vim.lsp.config['*'] and vim.lsp.config['*'].capabilities or vim.lsp.protocol.make_client_capabilities(),
+          bundles = bundles,
+          on_attach = on_attach,
+          init_options = { bundles = bundles },
+          settings = {
+            java = {
+              eclipse = { downloadSources = true },
+              maven = { downloadSources = true },
+              format = { enabled = true },
+              signatureHelp = { enabled = true },
+              -- Google style via settings; google-java-format (conform) is the
+              -- actual writer. Comment out the conform java row to let jdtls format.
+              checkstyle = { enabled = false },
+            },
+          },
+        }, { bufnr = bufnr, dap = { hotcodereplace = 'auto' } })
+      end
+      local group = vim.api.nvim_create_augroup('jdtls-attach', { clear = true })
+      vim.api.nvim_create_autocmd('FileType', {
+        group = group,
+        pattern = 'java',
+        callback = start,
+      })
+      -- FileType already fired before this lazy plugin loaded; attach those too.
+      for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].filetype == 'java' then start { bufnr = bufnr } end
+      end
       -- jdtls calls setup_dap internally when opts.dap is passed; the deferred
       -- duplicate was removed (main-class configs are discovered in on_attach).
     end,
