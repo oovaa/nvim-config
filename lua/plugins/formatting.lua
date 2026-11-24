@@ -17,7 +17,9 @@ local prettier = { 'prettier' }
 -- so the chain follows the buffer, not the load order. Where biome is absent
 -- the list is prettier alone.
 local function js_formatters(bufnr)
-  return require('config.health').biome_root(vim.api.nvim_buf_get_name(bufnr)) and { 'biome', 'biome-organize-imports', 'prettier' } or { 'prettier' }
+  -- ponytail: no `biome-organize-imports` entry — these chains stop at the
+  -- first formatter, so an entry after biome could never run.
+  return require('config.health').biome_root(vim.api.nvim_buf_get_name(bufnr)) and { 'biome', 'prettier' } or { 'prettier' }
 end
 -- Filetypes whose conform chain starts with the real formatter: stopping at
 -- the first hit makes the list a preference chain (biome where the repo

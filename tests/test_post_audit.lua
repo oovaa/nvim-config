@@ -342,4 +342,61 @@ describe('post-audit fixes', function()
   describe('Statusline search cache cleanup', function()
     it('has WinClosed autocmd for search cache', function() assert.is_truthy(code:match 'statusline%-search%-cleanup', 'must have cleanup autocmd') end)
   end)
+
+  -- ============================================================
+  -- Task 10: Markdown privacy, setup guidance and stale docs
+  -- ============================================================
+  describe('Markdown privacy and setup docs', function()
+    local root = vim.fn.stdpath 'config'
+
+    it('does not auto-download remote Markdown images', function()
+      local spec = H.read(root .. '/lua/custom/plugins/init.lua')
+      assert.is_truthy(spec:find('download_remote_images = false', 1, true), 'image.nvim must default remote images to off')
+    end)
+
+    it('checks node in the system block before packages are installed', function()
+      local setup = H.read(root .. '/setup.sh')
+      local sys = setup:find('step "1/7  System tools"', 1, true)
+      local install = setup:find('if (( ! CHECK_ONLY )) && (( ${#MISSING[@]} > 0 )); then', 1, true)
+      local node = setup:find('need node', 1, true)
+      assert.is_truthy(sys and install and node and sys < node and node < install, 'need node must precede system package installation')
+    end)
+
+    it('documents temp-subtree sessions and <leader>nn history', function()
+      local agents = H.read(root .. '/AGENTS.md')
+      local cheat = H.read(root .. '/CHEATSHEET.md')
+      assert.is_truthy(agents:find('suppressed as a subtree', 1, true), 'AGENTS.md must document temp-subtree session suppression')
+      assert.is_truthy(cheat:find('whole temp tree', 1, true), 'CHEATSHEET.md must document temp-subtree session suppression')
+      assert.is_truthy(cheat:find('`<leader>nn`', 1, true), 'CHEATSHEET.md must document <leader>nn notification history')
+    end)
+
+    it('documents tips coverage under the <leader>nt group', function()
+      local cheat = H.read(root .. '/CHEATSHEET.md')
+      local readme = H.read(root .. '/README.md')
+      assert.is_truthy(cheat:find('`<leader>nt`', 1, true), 'CHEATSHEET.md must document the <leader>nt tips group')
+      assert.is_truthy(readme:find('`<leader>nto`', 1, true), 'README.md must document the tips browser')
+    end)
+
+    it('describes vtsls as Mason-managed', function()
+      local readme = H.read(root .. '/README.md')
+      local setup = H.read(root .. '/SETUP.md')
+      assert.is_falsy(readme:find('npm install -g @vtsls/language-server', 1, true), 'README must not tell users to install vtsls by hand')
+      assert.is_falsy(setup:find('@vtsls/language-server', 1, true), 'SETUP must not list a manual vtsls install')
+      assert.is_truthy(readme:find('vtsls (Mason-managed)', 1, true), 'README must say vtsls is Mason-managed')
+      assert.is_truthy(setup:find('including `vtsls`', 1, true), 'SETUP must say Mason installs vtsls')
+    end)
+
+    it('documents the :StartupTime headless limitation', function()
+      local setup = H.read(root .. '/SETUP.md')
+      local cheat = H.read(root .. '/CHEATSHEET.md')
+      assert.is_truthy(setup:find('lower bound', 1, true), 'SETUP.md must note :StartupTime is a lower bound in headless runs')
+      assert.is_truthy(cheat:find('lower bound', 1, true), 'CHEATSHEET.md must note :StartupTime is a lower bound')
+    end)
+
+    it('documents the remote-image opt-in tradeoff', function()
+      local readme = H.read(root .. '/README.md')
+      assert.is_truthy(readme:find('download_remote_images = true', 1, true), 'README must show how to opt in to remote images')
+      assert.is_truthy(readme:find('internal network', 1, true), 'README must explain the internal-network tradeoff')
+    end)
+  end)
 end)

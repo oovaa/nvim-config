@@ -26,14 +26,13 @@ Checked by `:checkhealth config`. Install what's missing:
 | `git` | plugins, blame, lazy updates | OS package manager |
 | `rg` | snacks grep, grug-far | `brew install ripgrep` |
 | `fd` | Fast file finding (snacks pickers) | `brew install fd` |
-| `bun` | JS/TS runs, vtsls install | `curl -fsSL https://bun.sh/install \| bash` |
+| `bun` | JS/TS runs, biome install | `curl -fsSL https://bun.sh/install \| bash` |
 | `node` | LSP servers | `brew install node` |
 | `python3` + `pynvim` | molten, neotest-python | `pip install pynvim jupyter ipykernel` |
 | `make`, C compiler | tree-sitter grammar builds (the CLI compiles) | OS package manager |
 | `tree-sitter` | builds every nvim-treesitter parser (see below) | `brew install tree-sitter` |
 | `biome` | JS/TS format + lint (not via Mason) | `bun add -g @biomejs/biome` |
 | `xmlformat` | XML formatter (`xmlformatter` pkg, conform) | `uv tool install xmlformatter` |
-| `@vtsls/language-server` | TypeScript LSP (not via Mason) | `bun add -g @vtsls/language-server` |
 | `ty` / `pyrefly` / `pyright-langserver` | Python LSP, first on `PATH` wins (not via Mason) | `brew install pyrefly` |
 
 Nerd Font required (`vim.g.have_nerd_font = true`); kitty terminal for image rendering.
@@ -71,13 +70,15 @@ Leader is `<Space>`. Essentials:
 | `<leader>fr` | Project find & replace |
 | `<leader>o` | Code outline |
 | `<leader>tr` / `<leader>ts` | Run tests / summary |
-| `:StartupTime` | Profile startup (native + lazy.nvim) |
+| `<leader>nn` | Notification history (`<leader>un` dismisses all) |
+| `<leader>nto` | Neovim tips browser (all tips keys under `<leader>nt`) |
+| `:StartupTime` | Profile startup; headless `+q` omits UI/VimEnter stages, so the log is a lower bound |
 
 ## Manage plugins, themes, LSPs
 
 - **Plugins**: edit specs (`lua/plugins/` by section, `lua/custom/plugins/` for personal), then `:Lazy sync`. Check load cost with `:Lazy profile`.
 - **Themes**: `<leader>ty` to pick (snacks colorscheme picker with live preview); choice persists in `stdpath('data')/theme.txt`. To add one, add its plugin spec in `lua/custom/plugins/themes.lua`, then `:Lazy sync`.
-- **LSPs**: Mason auto-installs most servers on demand (`:Mason`). Exceptions installed manually: `vtsls` and the Python ladder (`ty`/`pyrefly`/`pyright-langserver`, see table above).
+- **LSPs**: Mason auto-installs most servers on demand (`:Mason`), including `vtsls` for TS/JS. Exceptions installed manually: the Python ladder (`ty`/`pyrefly`/`pyright-langserver`, see table above).
 - **Formatters**: conform.nvim per filetype in `lua/plugins/formatting.lua`; biome leads the JS/TS/JSON chain only in a repo with its own `biome.json`, prettier covers the rest; XML uses `xmlformatter` (`uv tool install xmlformatter`, binary in `~/.local/bin`). Auto-format skips files >1MB (`large_file_size` in `lua/config/options.lua`), manual `<leader>ff` always works.
 - **Tests**: plenary.busted suites in `tests/` — `nvim --headless -c 'lua require("plenary.busted").run("tests/test_qol.lua")' -c 'qa!'`
 

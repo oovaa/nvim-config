@@ -22,7 +22,7 @@ VS Code-like experience. **Leader key:** `<Space>`.
 ## 🚀 Session Management
 
 - Sessions saved on quit, restored from dashboard (`s`) via builtin `:mksession`
-  (suppressed in `~/`, `~/Downloads`, `/etc`, `/tmp`).
+  (suppressed in `~/`, `~/Downloads`, `/etc`, and the whole temp tree).
 - `<leader>sp` = Search Projects, `<leader>sr` = Search Resume (both Snacks
   pickers). Neither restores a session — use the dashboard `s` entry for that.
 
@@ -82,7 +82,7 @@ copy/paste, `.` toggle hidden, `t` open in tab.
 | `<leader>sp` | Search projects |
 | `<leader>st` | Search TODO comments |
 | `<leader>ls` / `<leader>lS` | LSP symbols (file / workspace) |
-| `<leader>n` / `<leader>un` | Notification history / dismiss all |
+| `<leader>nn` / `<leader>un` | Notification history / dismiss all |
 
 ## 💻 Code & Editing
 
@@ -133,7 +133,7 @@ Statusline shows `SPELL` while on. Language: `en_us`.
 
 | Keybinding | Action | Plugin |
 | :--- | :--- | :--- |
-| `<leader>n` | Notification history | `snacks.nvim` |
+| `<leader>nn` | Notification history | `snacks.nvim` |
 | `<leader>un` | Dismiss all notifications | `snacks.nvim` |
 | `:messages` | Raw message history | built-in |
 
@@ -174,6 +174,8 @@ Statusline shows `SPELL` while on. Language: `en_us`.
 | `<leader>ntb` / `<leader>ntr` | Browse bookmarked / random tip | `neovim-tips` |
 | `<leader>nte` / `<leader>nta` | Edit tips / add a tip | `neovim-tips` |
 
+All five tips keys live under the `<leader>nt` which-key group; notification history and tips share the `<leader>n` group (`<leader>nn` is a real action, not a group).
+
 Dropbar shows an IDE-style breadcrumb winbar (file path + LSP/treesitter symbols) and auto-hides on large files, help, and special buffers.
 
 ## 🌐 Live Preview & Emmet (frontend)
@@ -184,6 +186,9 @@ Dropbar shows an IDE-style breadcrumb winbar (file path + LSP/treesitter symbols
 | `<leader>hx` | Stop live preview |
 | `<leader>ho` | Open served page in browser |
 | `<leader>ht` | Toggle live reload (CSS hot-swaps) |
+| `<leader>hr` | Send HTTP request (`.http` buffers only) |
+
+`<leader>h` is the KiteHost/HTTP group, not a hot-reload toggle.
 
 - Saving any file in the served project refreshes the page; servers stop on exit.
 - Commands: `:KiteHost start|stop|status|toggle-live|open|reload`.
@@ -322,7 +327,7 @@ onedark, poimandres, rose-pine, and more. Nerd Font required (`have_nerd_font=tr
 - Mason installs LSP servers + formatters/linters. Go-based tools (`gopls`,
   `sqls`, `gofumpt`, `goimports`, `delve`) only when `go` is on `PATH`.
 - `tree-sitter` CLI is required (not via Mason) for `:TSInstall`.
-- `:StartupTime` profiles startup; `:NvimCheckPythonLsp` reports Python tooling.
+- `:StartupTime` profiles startup; its headless `+q` omits UI/VimEnter stages, so the log is a lower bound. `:NvimCheckPythonLsp` reports Python tooling.
 - `:SudoWrite` writes a root-owned buffer via `sudo tee`; `:ASToggle` toggles auto-save.
 
 ---

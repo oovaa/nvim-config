@@ -129,6 +129,36 @@ describe('qol plugins', function()
     assert.is_truthy((m.desc or ''):find('Notification', 1, true), '<leader>nn desc should mention Notification')
   end)
 
+  it('gy yanks the nearest diagnostic message, not the line total', function()
+    local ns = vim.api.nvim_create_namespace 'gy-test'
+    local prev = vim.api.nvim_get_current_buf()
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_set_current_buf(buf)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'xy' })
+    vim.diagnostic.set(ns, buf, {
+      { lnum = 0, col = 0, end_col = 1, message = 'far diagnostic', severity = 1 },
+      { lnum = 0, col = 1, end_col = 2, message = 'near diagnostic', severity = 1 },
+    })
+    vim.api.nvim_win_set_cursor(0, { 1, 1 })
+    local notices = {}
+    local real_notify, real_clipboard = vim.notify, vim.o.clipboard
+    vim.notify = function(msg) notices[#notices + 1] = tostring(msg) end
+    vim.o.clipboard = '' -- force the default register: headless has no '+' provider
+    local ok, err = pcall(function()
+      local m = mapped 'gy'
+      assert.is_function(m and m.callback, 'gy must resolve to a real handler')
+      m.callback()
+    end)
+    local yanked = vim.fn.getreg '"'
+    vim.notify, vim.o.clipboard = real_notify, real_clipboard
+    vim.api.nvim_set_current_buf(prev)
+    vim.diagnostic.reset(ns, buf)
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    assert.is_true(ok, tostring(err))
+    assert.equals('near diagnostic', yanked, 'gy must yank the nearest diagnostic message')
+    assert.is_false(notices[1] and notices[1]:find('Yanked 2 diagnostics', 1, true) ~= nil, 'gy must not report the line total')
+  end)
+
   it('does not shadow real actions with empty which-key groups', function()
     -- which-key registers its groups at VeryLazy; load it so the resolved spec
     -- exists. Groups are a positional array with the key at [1], not a map.
@@ -146,5 +176,12 @@ describe('qol plugins', function()
       assert.is_not_nil(registered['<leader>' .. g], 'missing which-key group: <leader>' .. g)
     end
     assert.is_not_nil(registered.gr, 'missing which-key group: gr')
+    -- Task 10 owns these labels; <leader>n is a group only, so <leader>nt*
+    -- actions stay reachable while the prefixes are discoverable. Which-key's
+    -- [H] style splits words with brackets, so strip them before comparing.
+    local function label(key) return (registered[key] or ''):gsub('[%[%]]', '') end
+    assert.equals('Host preview / HTTP', label '<leader>h', '<leader>h must describe KiteHost/HTTP, not hot reload')
+    assert.equals('Notifications / Neovim tips', label '<leader>n', '<leader>n must group Notifications/Neovim tips')
+    assert.equals('Neovim Tips', label '<leader>nt', '<leader>nt must group Neovim Tips')
   end)
 end)

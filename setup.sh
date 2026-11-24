@@ -68,6 +68,7 @@ need make "make" "LuaSnip jsregexp build"
 need gcc "C compiler" "tree-sitter CLI builds parsers"
 need curl "curl" "downloads"
 need unzip "unzip" "Mason packages"
+need node "node" "jsonls/vtsls LSPs, biome/prettier"
 need nvim "neovim >= 0.12" "see README install recipes"
 need tree-sitter "tree-sitter CLI" "builds every nvim-treesitter parser (brew install tree-sitter)"
 
@@ -102,7 +103,6 @@ if have bun; then ok "bun $(bun --version)"; else
     have bun && ok "bun $(bun --version)" || warn "bun install needs new shell (PATH); re-run script after"
   fi
 fi
-need node "node" "markdown-preview server, LSPs"
 need python3 "python3" "molten, neotest-python"
 
 if have python3 && ! python3 -c "import pynvim" &>/dev/null; then
@@ -143,12 +143,8 @@ else
 fi
 
 # --- 3. language servers outside Mason -------------------------------------
-step "3/7  Manual LSPs (vtsls, pyrefly)"
-if have vtsls; then ok "vtsls $(vtsls --version 2>/dev/null || true)"
-else
-  fail "vtsls — TypeScript LSP (Mason does not manage it)"
-  if (( ! CHECK_ONLY )) && have bun; then bun add -g @vtsls/language-server && ok "vtsls installed"; fi
-fi
+step "3/7  Manual LSPs (pyrefly)"
+info "vtsls is Mason-managed (vtsls in ensure_installed) — installed by :Lazy sync below"
 if have pyrefly; then ok "pyrefly $(pyrefly --version 2>/dev/null || true)"
 else
   fail "pyrefly — Python LSP (Mason does not manage it)"
@@ -235,7 +231,6 @@ warn "Nerd Font required (vim.g.have_nerd_font = true) — https://www.nerdfonts
 warn "kitty terminal for image rendering (image.nvim kitty backend)"
 warn "jupytext needed for molten notebooks: pip install jupytext (or uv pip install --user jupytext)"
 warn "clipboard: install xclip (X11) or wl-clipboard (Wayland) for system clipboard sync"
-warn "vtsls fallback if bun is unavailable: npm i -g @vtsls/language-server"
 warn "rust: rustup component add rust-analyzer clippy rustfmt (mason RA mismatches your toolchain)"
 warn "java: jdtls wants JDK 21+ (brew install temurin@21 or apt install openjdk-21-jdk)"
 warn "c/cpp: generate compile_commands.json (cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON, or bear -- make) and symlink to project root"

@@ -80,7 +80,11 @@ return {
           markdown = {
             enabled = true,
             clear_in_insert_mode = false,
-            download_remote_images = true,
+            -- ponytail: remote images are OFF by default — rendering them makes
+            -- requests to URLs embedded in untrusted Markdown, including internal
+            -- network addresses. Opt in by flipping this to true; local images
+            -- still render either way.
+            download_remote_images = false,
             only_render_image_at_cursor = false,
             filetypes = { 'markdown', 'vimwiki' },
           },

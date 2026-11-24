@@ -23,10 +23,10 @@ A starting point for Neovim that is:
 * **Editing**: oil.nvim edits directories as buffers (`-`), trouble.nvim diagnostics panels (`<leader>xx`/`xX`/`xs`/`xq`), dial.nvim dec/hex/date increment (`<C-a>`/`<C-x>`), treesj split/join (`<leader>j`), mini.visits tracking (`<leader>va`/`vv`), snacks zen (`<leader>z`/`Z`)
 * **Linting**: [nvim-lint](https://github.com/mfussenegger/nvim-lint) on save (oxlint or biome for JS/TS depending on `biome.json`, ruff, golangci-lint, clang-tidy, sqruff); errors surfaced via `vim.notify`
 * **Git**: gitsigns, LazyGit on `<leader>fg`, neogit (magit-like) on `<leader>gn`, inline blame on `<leader>gb`, virtual-text blame toggle on `<leader>ugb`, conflict resolution (`]x`/`[x`, `co`/`ct`/`cb`/`c0`)
-* **Navigation & reference**: dropbar breadcrumbs winbar (path + LSP/treesitter symbols, `<leader>;` to pick), neovim-tips browser of 2400+ tips (`<leader>nto` and friends)
+* **Navigation & reference**: dropbar breadcrumbs winbar (path + LSP/treesitter symbols, `<leader>;` to pick), neovim-tips browser of 2400+ tips (`<leader>nto` and friends under the `<leader>nt` group), notification history (`<leader>nn`)
 * **Debugging**: nvim-dap for Python, Go, C/C++, Rust, TypeScript/React and Java; molten-nvim + image.nvim for Jupyter-style notebooks
 * **Live preview**: [kitehost.nvim](https://github.com/selimacerbas/kitehost.nvim) — `<leader>hs` serves the current page on 127.0.0.1 and refreshes the browser on save (CSS hot-swaps; `<leader>ht` toggles live reload)
-* **Performance**: warm headless startup ~150–190 ms on this machine (measured 2026-11-09; first boot after a config change is slower while caches rebuild); 74 plugins registered; large-file mode above 1 MiB disables treesitter/LSP/lint/format and more
+* **Performance**: warm headless startup ~150–190 ms on this machine (measured 2026-11-09; first boot after a config change is slower while caches rebuild); 74 plugins registered; large-file mode above 1 MiB disables treesitter/LSP/lint/format and more. `:StartupTime` profiles via headless `+q`, which omits UI/VimEnter stages — its log is a lower bound for interactive startup.
 
 See `CHEATSHEET.md` for the full keybinding reference.
 
@@ -85,7 +85,11 @@ running Neovim for the first time.
   `<leader>m*` keys raise `E492`.
 - [`image.nvim`](https://github.com/3rd/image.nvim) renders images and is
   configured with the **`kitty` backend** — images only render in a
-  [kitty](https://sw.kovidgoyal.net/kitty/) (or compatible) terminal.
+  [kitty](https://sw.kovidgoyal.net/kitty/) (or compatible) terminal. Remote
+  images are **not downloaded automatically**: rendering them makes requests to
+  URLs embedded in untrusted Markdown, including internal network addresses.
+  Local images still render; to opt in, set `download_remote_images = true` in
+  `lua/custom/plugins/init.lua`'s Markdown integration.
 
 **Language tooling (installed automatically via Mason on first run):**
 - [Mason](https://github.com/mason-org/mason.nvim) installs most LSP servers,
@@ -102,7 +106,7 @@ running Neovim for the first time.
   - SQL: `go` (sqls is a Go binary — installed manually if Mason's network
     times out), `sqruff` (Rust — Mason-managed)
   - Python: `python3`
-  - TypeScript/JS: `node`/`bun` + `vtsls` (see below)
+  - TypeScript/JS: `node` + `vtsls (Mason-managed)` — `bun` is optional for code runs and biome setup
   - etc.
 
 **Per-language details:**
@@ -117,8 +121,9 @@ running Neovim for the first time.
 - **C/C++** — `clangd` + `clang-format` + `clang-tidy` (never both in clangd
   and nvim-lint — clang-tidy lives in nvim-lint only). `codelldb` debugger
   (shared with Rust). Needs `compile_commands.json`.
-- **TypeScript/React** — `vtsls` primary; `biome` where `biome.json` exists
-  (per `config.health.biome_root`), prettier fallback. `oxlint` lint chain.
+- **TypeScript/React** — `vtsls` primary (Mason installs it); `biome` where
+  `biome.json` exists (per `config.health.biome_root`), prettier fallback.
+  `oxlint` lint chain.
   `js-debug-adapter` (pwa-node/pwa-chrome) for debugging.
 - **SQL** — `sqls` (DB-aware completion/hover via `.sqls.yml`) + `sqruff`
   (Rust linter/formatter). The config lives at `~/.config/nvim/sqruff.toml`
@@ -128,12 +133,6 @@ running Neovim for the first time.
   treated as success so it never raises a false format error.
 
 **Installed manually (NOT managed by Mason):**
-- [`@vtsls/language-server`](https://github.com/yioneko/vtsls) — the
-  TypeScript/JavaScript LSP. This config's `nvim-vtsls` plugin invokes `vtsls`
-  directly, so it must be on your `PATH`:
-  ```sh
-  npm install -g @vtsls/language-server
-  ```
 - [`@biomejs/biome`](https://biomejs.dev) — JS/TS/JSON formatter (leads the
   conform chain inside a repo that has its own `biome.json`; prettier covers
   everything else) and linter in biome-configured projects:

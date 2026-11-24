@@ -117,7 +117,9 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
     only falls back to `_G._builtin_list_projects` / `_G._builtin_find_session`
     (`custom/ui/dashboard.lua`), which are plain aliases kept for the stress
     harness and legacy reload callers — don't "fix" the picker back onto the
-    `_G` names. `~/`, `~/Downloads`, `/etc`, `/tmp` are suppressed (exact match, not subdirs).
+    `_G` names. `~/`, `~/Downloads`, `/etc` are suppressed by exact match (not
+    subdirs); the whole temp tree (`$TMPDIR`/`/tmp`, including `/tmp/nvim/*`
+    test sandboxes) is suppressed as a subtree so it cannot clutter `s`.
 11. **Auto-save and format-on-save are coupled across insert mode.** `defer_save`
     includes `TextChanged`, so normal-mode edits — and mid-insert pauses — save
     without leaving insert mode; `format_on_save` returns nil while the mode is
@@ -132,8 +134,9 @@ In nvim, `:checkhealth config` is this repo's own check (`lua/config/health.lua`
      `/home/omar`, and repos that never asked for biome get its lineWidth/quote
      style. Formatting: `lua/plugins/formatting.lua` calls `js_formatters(bufnr)`
      per buffer (conform supports a function in `formatters_by_ft`), returning
-     `{ 'biome', 'biome-organize-imports', 'prettier' }` under a repo config and
-     `{ 'prettier' }` otherwise; biome leads there on measured speed (0.04s vs
+     `{ 'biome', 'prettier' }` under a repo config and `{ 'prettier' }` otherwise
+     (the old `biome-organize-imports` entry was unreachable: these chains stop
+     at the first formatter); biome leads on measured speed (0.04s vs
      0.17s median, 121-line JS file, ~4x — past the 30% bar), and that does
      **not** weaken trap 5 — prettier is the fallback backend, only `prettierd`
      is forbidden. Linting: `biome_or_oxlint` in `lua/plugins/ui.lua` returns
