@@ -112,7 +112,7 @@ running Neovim for the first time.
 
 **Per-language details:**
 - **Go** — `gopls` (staticcheck, gofumpt, codelenses, inlay hints) +
-  `golangci-lint` (needs `.golangci.yml` in the project) + `delve` debugger.
+  `golangci-lint` (`.golangci.yml` optional — defaults apply without one) + `delve` debugger.
   Large-file mode kicks in above 1 MiB.
 - **Rust** — `rustaceanvim` (auto-detects rust-analyzer + codelldb).
   Clippy runs on save (`checkOnSave`); rustfmt formats on `<leader>ff`.

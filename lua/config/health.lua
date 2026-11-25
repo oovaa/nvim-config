@@ -38,7 +38,7 @@ local optional = {
   { bin = 'nginx-language-server', why = 'nginx LSP (optional)' },
   { bin = 'nginxfmt', why = 'nginx format on <leader>ff (pip install nginx-config-formatter)' },
   { bin = 'gopls', why = 'go LSP (mason installs; staticcheck+gofumpt built in)' },
-  { bin = 'golangci-lint', why = 'go linter (needs .golangci.yml in project)' },
+  { bin = 'golangci-lint', why = 'go linter (.golangci.yml optional; runs defaults without one)' },
   { bin = 'dlv', why = 'go debugger / delve (works with <leader>dc)' },
   { bin = 'clangd', why = 'C/C++ LSP (needs compile_commands.json — cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON or bear)' },
   { bin = 'clang-format', why = 'C/C++ formatter' },

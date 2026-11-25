@@ -19,7 +19,8 @@ local function run_file()
   end
   local cmd
   if runners[ft] then
-    cmd = runners[ft] .. ' ' .. vim.fn.shellescape(file)
+    -- `go run .` targets the module root package; a file arg would become argv.
+    cmd = runners[ft] .. (ft == 'go' and '' or ' ' .. vim.fn.shellescape(file))
   elseif ft == 'cpp' then
     local out = vim.fn.tempname()
     cmd = string.format('g++ %s -o %s && %s; rm -f %s', vim.fn.shellescape(file), vim.fn.shellescape(out), vim.fn.shellescape(out), vim.fn.shellescape(out))

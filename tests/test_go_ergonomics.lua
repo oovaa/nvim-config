@@ -34,18 +34,15 @@ describe('go backend ergonomics', function()
     return linter
   end
 
-  it('runs Go files with `go run .` via the existing runner key', function()
-    local f = vim.fn.tempname() .. '.go'
-    vim.fn.writefile({ 'package main', 'func main() {}' }, f)
+  -- vim.cmd is callable; a callable table records the terminal command and
+  -- swallows the helper calls (wincmd, startinsert) the runner makes after it.
+  local function run_cmd(fname, ft)
     local buf = vim.api.nvim_create_buf(true, false)
-    vim.api.nvim_buf_set_name(buf, f)
+    vim.api.nvim_buf_set_name(buf, fname)
     vim.api.nvim_set_current_buf(buf)
-    vim.bo[buf].filetype = 'go'
-
+    vim.bo[buf].filetype = ft
     local cmds = {}
     local real_cmd = vim.cmd
-    -- vim.cmd is callable; a callable table records the command and swallows
-    -- the helper calls (wincmd, startinsert) the runner makes after it.
     vim.cmd = setmetatable({}, {
       __call = function(_, arg) cmds[#cmds + 1] = tostring(arg) end,
       __index = function()
@@ -55,12 +52,25 @@ describe('go backend ergonomics', function()
     local ok, err = pcall(function() mapped('<leader>R').callback() end)
     vim.cmd = real_cmd
     assert.is_true(ok, tostring(err))
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    return cmds[1] or ''
+  end
 
-    local joined = table.concat(cmds, ' ')
-    assert.is_truthy(joined:find('go run %.', 1), 'runner must use `go run .`: ' .. joined)
-    assert.is_truthy(joined:find(f, 1, true), 'runner must pass the Go file: ' .. joined)
+  it('runs Go files with exactly `go run .` via the existing runner key', function()
+    local f = vim.fn.tempname() .. '.go'
+    vim.fn.writefile({ 'package main', 'func main() {}' }, f)
+    local cmd = run_cmd(f, 'go')
+    assert.equals('split | terminal go run .', cmd, 'Go runner must not append the file path: ' .. cmd)
+    assert.is_nil(cmd:find(f, 1, true), 'Go command must not contain the file path: ' .. cmd)
     -- both built-in runner keys point at the same handler
     assert.equals(mapped('<leader>R').callback, mapped('<leader>rf').callback, '<leader>R and <leader>rf share the runner')
+    vim.fn.delete(f)
+  end)
+
+  it('still appends the escaped file path for a non-Go runner', function()
+    local f = vim.fn.tempname() .. ' space.py'
+    local cmd = run_cmd(f, 'python')
+    assert.equals('split | terminal python3 -u ' .. vim.fn.shellescape(f), cmd, 'non-Go runner must append the escaped file: ' .. cmd)
     vim.fn.delete(f)
   end)
 
