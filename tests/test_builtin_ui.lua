@@ -522,7 +522,7 @@ describe('statusline progress invalidation', function()
     assert.is_truthy(ok, tostring(err))
   end)
 
-  it('reuses the search-count segment when only the cursor column moves', function()
+  it('caches search count per position but recomputes the index on a column move', function()
     local prev = vim.api.nvim_get_current_buf()
     local buf = vim.api.nvim_create_buf(true, false)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'alpha beta gamma', 'second line' })
@@ -532,25 +532,33 @@ describe('statusline progress invalidation', function()
     local real_searchcount, calls = vim.fn.searchcount, 0
     vim.o.hlsearch = true
     vim.fn.setreg('/', 'beta')
-    vim.fn.searchcount = function()
+    -- Delegate to the real searchcount: its `current` is relative to the cursor
+    -- column, so a stub that ignores the column would mask the regression.
+    vim.fn.searchcount = function(opts)
       calls = calls + 1
-      return { current = calls, total = 2, incomplete = 0 }
+      return real_searchcount(opts)
     end
     local ok, err = pcall(function()
       statusline._search[win] = nil
       vim.api.nvim_win_set_cursor(win, { 1, 0 })
       local first = _G._builtin_statusline()
       assert.equals(1, calls, 'the first render must compute the search count')
-      assert.is_truthy(first:find('1/2', 1, true), 'search count must be displayed: ' .. first)
+      assert.is_truthy(first:find('0/1', 1, true), 'cursor before the match shows index 0: ' .. first)
 
-      vim.api.nvim_win_set_cursor(win, { 1, 5 })
-      local second = _G._builtin_statusline()
-      assert.equals(1, calls, 'a same-line column move must reuse the cached search count')
-      assert.is_truthy(second:find('1/2', 1, true))
+      _G._builtin_statusline() -- pure redraw, same cursor position
+      assert.equals(1, calls, 'a pure redraw at the same position must reuse the cached segment')
+
+      vim.api.nvim_win_set_cursor(win, { 1, 6 })
+      local moved = _G._builtin_statusline()
+      assert.equals(2, calls, 'a same-line column move must invalidate the cache')
+      assert.is_truthy(moved:find('1/1', 1, true), 'cursor inside the match must show index 1: ' .. moved)
+
+      _G._builtin_statusline() -- pure redraw at the new position
+      assert.equals(2, calls, 'a pure redraw at the new position must reuse the cached segment')
 
       vim.api.nvim_win_set_cursor(win, { 2, 0 })
       _G._builtin_statusline()
-      assert.equals(2, calls, 'a different line must invalidate the cache')
+      assert.equals(3, calls, 'a different line must also invalidate the cache')
     end)
     vim.fn.searchcount = real_searchcount
     vim.o.hlsearch = old_hls
