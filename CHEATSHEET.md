@@ -110,7 +110,7 @@ copy/paste, `.` toggle hidden, `t` open in tab.
 | `<leader>rr` | Refactoring menu | `refactoring.nvim` |
 | `<leader>p` | Paste image from clipboard | `img-clip.nvim` |
 | `<leader>hr` | Send HTTP request (`.http` files) | `rest.nvim` |
-| `<leader>R` / `<leader>rf` | Run current file | built-in |
+| `<leader>R` / `<leader>rf` | Run current file (Go: `go run .`) | built-in |
 | `:DiffOrig` | Diff buffer vs saved file | built-in |
 
 `auto-save.nvim` writes on `InsertLeave`/`TextChanged` (debounced); `ASToggle`
@@ -245,6 +245,7 @@ next/prev parameter. Provided by `nvim-treesitter-textobjects`;
 | `<leader>dr` | Toggle REPL | `nvim-dap` |
 | `<leader>dt` | Terminate | `nvim-dap` |
 | `<leader>dn` / `<leader>df` / `<leader>ds` | Debug nearest / file / selection | `nvim-dap-python` |
+| `<leader>dT` | Debug nearest test (Go) | `nvim-dap-go` |
 
 Supports Python, Go, C/C++, Rust, TS/React, Java (`nvim-dap-go`, `nvim-jdtls`,
 `rustaceanvim`, `nvim-vtsls`).

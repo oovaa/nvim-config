@@ -267,7 +267,7 @@ warn "clipboard: install xclip (X11) or wl-clipboard (Wayland) for system clipbo
 warn "rust: rustup component add rust-analyzer clippy rustfmt (mason RA mismatches your toolchain)"
 warn "java: jdtls wants JDK 21+ (brew install temurin@21 or apt install openjdk-21-jdk)"
 warn "c/cpp: generate compile_commands.json (cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON, or bear -- make) and symlink to project root"
-warn "go: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest if .golangci.yml lint is empty"
+warn "go: golangci-lint is Mason-managed (no go install needed); .golangci.yml optional — lint runs defaults without one"
 warn "sql: sqruff config lives at ~/.config/nvim/sqruff.toml and is passed with --config — no per-project .sqruff needed; DB-aware completion needs .sqls.yml (see sqls docs)"
 warn "jdtls: mason downloads often 403 — install manually from https://open-vsx.org/api/redhat/java/latest (extract server/ into mason/packages/jdtls, equinox launcher), see README Language tooling"
 

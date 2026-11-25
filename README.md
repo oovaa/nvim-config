@@ -95,7 +95,8 @@ running Neovim for the first time.
 - [Mason](https://github.com/mason-org/mason.nvim) installs most LSP servers,
   linters and formatters for you (lua_ls, ruff, oxlint, prettier, stylua, ...).
   For the languages you use, have the matching toolchain available:
-  - Go: `go` (gopls, gofumpt, goimports, golangci-lint, delve)
+  - Go: `go` toolchain (gopls, gofumpt, goimports, delve); `golangci-lint` is
+    Mason-managed — no `go install` needed
   - Rust: `rustc`/`cargo` + `rustup` (rust-analyzer is installed via
     `rustup component add rust-analyzer` — *not* Mason, to keep it in sync with
     the toolchain; clippy + rustfmt via `rustup component add clippy rustfmt`)

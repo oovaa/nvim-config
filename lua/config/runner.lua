@@ -8,6 +8,7 @@ local runners = {
   javascriptreact = 'bun',
   typescriptreact = 'bun',
   python = 'python3 -u',
+  go = 'go run .',
 }
 local function run_file()
   local ft = vim.bo.filetype

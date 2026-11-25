@@ -121,6 +121,9 @@ return {
     'leoluz/nvim-dap-go',
     ft = { 'go' },
     dependencies = { 'mfussenegger/nvim-dap' },
+    keys = {
+      { '<leader>dT', function() require('dap-go').debug_test() end, desc = '[D]ebug [T]est (nearest, Go)' },
+    },
     config = function() require('dap-go').setup() end,
   },
 }

@@ -213,6 +213,15 @@ return {
         if root then return vim.tbl_extend('force', lint.linters.biomejs, { cwd = root }) end
         return lint.linters.oxlint
       end
+      -- ponytail: golangci-lint reads .golangci.yml relative to cwd; from a
+      -- foreign root it silently yields zero diagnostics. Pin to the buffer's
+      -- module/workspace root (same copy-not-mutation rule as biome above).
+      lint.linters.golangcilint_rooted = function()
+        local name = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
+        local root = vim.fs.root(name, { 'go.mod', 'go.work' })
+        if root then return vim.tbl_extend('force', lint.linters.golangcilint, { cwd = root }) end
+        return lint.linters.golangcilint
+      end
       -- sqruff: modern Rust SQL linter (replaces sqlfluff). Its
       -- github-annotation-native output is one ::<severity> line per finding;
       -- needs a file path (not stdin); append_fname=false because the path is
@@ -247,8 +256,8 @@ return {
         javascriptreact = { 'biome_or_oxlint' },
         typescriptreact = { 'biome_or_oxlint' },
         python = { 'ruff' },
-        -- golangci-lint needs a .golangci.yml (or it runs defaults); falls back to nothing without one
-        go = { 'golangcilint' },
+        -- golangci-lint runs from the buffer's go.mod/go.work root (defaults if no .golangci.yml)
+        go = { 'golangcilint_rooted' },
         -- clang-tidy needs .clang-tidy or compile_commands.json; silent no-op without them
         c = { 'clangtidy' },
         cpp = { 'clangtidy' },
