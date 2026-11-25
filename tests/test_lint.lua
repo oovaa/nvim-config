@@ -97,23 +97,20 @@ describe('lint', function()
 
   it('ignores a biome.json in $HOME, for a buffer under it', function()
     local health = require 'config.health'
-    -- Ensure the precondition (a biome.json in $HOME) exists on every machine,
-    -- including CI, so the rejection logic is actually exercised.
-    local home_config = vim.env.HOME .. '/biome.json'
-    local created = false
-    if vim.fn.filereadable(home_config) == 0 then
-      vim.fn.writefile({ '{}' }, home_config)
-      created = true
-    end
+    -- Fixture HOME only: the real $HOME must never get a biome.json from a test.
+    local home = tmpdir()
+    vim.fn.writefile({ '{}' }, home .. '/biome.json')
+    local real_home = vim.env.HOME
+    vim.env.HOME = home
     local ok, err = pcall(function()
-      -- ~/biome.json exists here, so the upward root walk would otherwise enable
-      -- biome (with cwd = $HOME) for every repo under home.
-      assert.equals(vim.fs.normalize(vim.env.HOME), vim.fs.normalize(vim.fs.root(vim.env.HOME .. '/x/probe.js', { 'biome.json' })))
-      assert.is_nil(health.biome_root(vim.env.HOME .. '/x/probe.js'))
-      assert.equals('oxlint', health.js_linter(vim.env.HOME .. '/x/probe.js'))
+      -- ~/biome.json exists in the fixture, so the upward root walk would
+      -- otherwise enable biome for every repo under home.
+      assert.equals(vim.fs.normalize(home), vim.fs.normalize(vim.fs.root(home .. '/x/probe.js', { 'biome.json' })))
+      assert.is_nil(health.biome_root(home .. '/x/probe.js'))
+      assert.equals('oxlint', health.js_linter(home .. '/x/probe.js'))
     end)
-    -- Always clean up: a failed assertion must not leave $HOME/biome.json behind.
-    if created then vim.fn.delete(home_config) end
+    vim.env.HOME = real_home
+    vim.fn.delete(home, 'rf')
     assert.is_true(ok, tostring(err))
   end)
 
@@ -164,6 +161,46 @@ describe('lint', function()
     vim.api.nvim_get_mode = real_mode
     lint.try_lint = real_try
     pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    assert.is_truthy(ok, tostring(err))
+  end)
+
+  it('lints the event buffer even when another buffer is current', function()
+    local lint = lint_mod()
+    local callback
+    for _, a in ipairs(vim.api.nvim_get_autocmds { group = 'lint-on-save' }) do
+      local evs = type(a.event) == 'table' and a.event or { a.event }
+      if vim.tbl_contains(evs, 'BufWritePost') then callback = a.callback end
+    end
+    assert.is_function(callback, 'BufWritePost lint callback must exist')
+
+    local dir = tmpdir()
+    local target = dir .. '/probe.sql'
+    vim.fn.writefile({ 'select 1;' }, target)
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_name(buf, target)
+    local other = vim.api.nvim_create_buf(false, true)
+    local prev = vim.api.nvim_get_current_buf()
+    vim.api.nvim_set_current_buf(other)
+
+    local real_try, real_mode = lint.try_lint, vim.api.nvim_get_mode
+    local seen_buf, seen_name = nil, nil
+    lint.try_lint = function()
+      seen_buf = vim.api.nvim_get_current_buf()
+      for _, a in ipairs(lint.linters.sqruff.args) do
+        if type(a) == 'function' then seen_name = a() end
+      end
+    end
+    vim.api.nvim_get_mode = function() return { mode = 'n', blocking = false } end
+    local ok, err = pcall(function()
+      callback { buf = buf, event = 'BufWritePost' }
+      assert.equals(buf, seen_buf, 'lint must run in the event buffer, not the buffer on screen')
+      assert.equals(target, seen_name, 'sqruff file-path args must name the lint target')
+    end)
+    vim.api.nvim_get_mode, lint.try_lint = real_mode, real_try
+    vim.api.nvim_set_current_buf(prev)
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    pcall(vim.api.nvim_buf_delete, other, { force = true })
+    vim.fn.delete(dir, 'rf')
     assert.is_truthy(ok, tostring(err))
   end)
 end)

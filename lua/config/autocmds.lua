@@ -16,7 +16,12 @@ vim.api.nvim_create_autocmd('FileType', {
   desc = 'Enable spell checking for prose filetypes',
   group = vim.api.nvim_create_augroup('spell-prose', { clear = true }),
   pattern = { 'markdown' },
-  callback = function() vim.wo.spell = true end,
+  callback = function(args)
+    -- FileType can fire for a non-current buffer; spell is window-local.
+    for _, win in ipairs(vim.fn.win_findbuf(args.buf)) do
+      vim.wo[win].spell = true
+    end
+  end,
 })
 
 -- Restore cursor to last edit position when reopening a file.
@@ -200,6 +205,10 @@ end, { desc = 'Write current buffer via sudo', bang = true })
 vim.api.nvim_create_user_command('DiffOrig', function()
   -- capture before `vert new` swaps in the scratch buffer (and its own alternate)
   local name = vim.api.nvim_buf_get_name(0)
+  if name == '' then
+    vim.notify('DiffOrig: current buffer has no file', vim.log.levels.ERROR)
+    return
+  end
   vim.cmd('vert new | set buftype=nofile | read ++edit ' .. vim.fn.fnameescape(name) .. ' | 0d_ | diffthis | wincmd p | diffthis')
 end, { desc = 'Diff buffer against saved file' })
 

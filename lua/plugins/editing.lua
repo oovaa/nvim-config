@@ -258,7 +258,7 @@ return {
               checkstyle = { enabled = false },
             },
           },
-        }, { bufnr = bufnr, dap = { hotcodereplace = 'auto' } })
+        }, { dap = { hotcodereplace = 'auto' } }, { bufnr = bufnr })
       end
       local group = vim.api.nvim_create_augroup('jdtls-attach', { clear = true })
       vim.api.nvim_create_autocmd('FileType', {

@@ -300,17 +300,10 @@ describe('performance', function()
   it('attempts a parser install at most once per language per session', function()
     assert.are.equal(1, vim.fn.executable 'tree-sitter', 'CI must install the tree-sitter CLI')
     require('lazy').load { plugins = { 'nvim-treesitter' } }
-    -- :TSInstall only runs for a language with no parser built, so drive one
-    -- this box has not built (none of these are in the 16-language bootstrap)
-    local site = vim.fs.joinpath(vim.fn.stdpath 'data', 'site', 'parser')
-    local lang
-    for _, l in ipairs { 'elixir', 'scala', 'haskell' } do
-      if vim.uv.fs_stat(vim.fs.joinpath(site, l .. '.so')) == nil then
-        lang = l
-        break
-      end
-    end
-    assert.is_not_nil(lang, 'test premise: one of these languages must have no parser built')
+    -- :TSInstall only runs for a language with no parser built. Use a synthetic
+    -- ft: no host can have that parser, unlike elixir/scala/haskell which may
+    -- all be installed. The install path is still the real FileType handler.
+    local lang = 'deep_fix_absent_lang'
 
     local marked, marked_name = ft_buffer(1, lang)
     -- seed the attempt state the way the config writes it: vim.g hands out a

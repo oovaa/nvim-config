@@ -170,7 +170,7 @@ function M.check()
   else
     vim.health.warn(
       'tree-sitter missing — nvim-treesitter cannot build parsers',
-      'npm i -g tree-sitter-cli (or brew install tree-sitter, or :Mason install tree-sitter-cli)'
+      'npm i -g tree-sitter-cli or brew install tree-sitter (not Mason: its copy shadows the real CLI)'
     )
   end
   -- nvim-lint picks the JS/TS linter per buffer (biome_or_oxlint in ui.lua),

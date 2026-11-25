@@ -52,6 +52,16 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"      # ...and in this step too
           bun --version; uv --version; biome --version; tree-sitter --version; ruff --version
 
+      - name: Verify bootstrap prerequisites (non-destructive)
+        run: |
+          for tool in git script; do
+            command -v "$tool" || { echo "::error::$tool missing"; exit 1; }
+          done
+          script --version | head -1 # util-linux script(1), used by the stress harness
+          bash -n setup.sh           # POSIX/bash syntax, no execution
+          ./setup.sh --check > /tmp/setup-check.log 2>&1 || { cat /tmp/setup-check.log; exit 1; }
+          grep -q 'check mode' /tmp/setup-check.log # --check reported, installed nothing
+
       - name: Boot headless (fails if init.lua errors)
         run: |
           nvim --headless -c 'qa' 2>&1 | tee /tmp/boot.log

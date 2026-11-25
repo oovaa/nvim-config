@@ -196,7 +196,10 @@ describe('post-audit fixes', function()
   describe('Java DAP wiring', function()
     it('passes declarative DAP opts with hotcodereplace auto', function()
       local editing = H.read(vim.fn.stdpath 'config' .. '/lua/plugins/editing.lua')
-      assert.is_truthy(editing:match "{ bufnr = bufnr, dap = { hotcodereplace = 'auto' } }", 'jdtls must receive per-buffer declarative dap opts')
+      assert.is_truthy(
+        editing:match "start_or_attach%(%b{},%s*{ dap = { hotcodereplace = 'auto' } },%s*{ bufnr = bufnr }",
+        'jdtls must receive DAP opts in the second slot and bufnr in the third'
+      )
       assert.is_falsy(editing:match 'vim%.defer_fn%s*%(.-setup_dap', 'must not defer a duplicate setup_dap call')
     end)
 
@@ -360,6 +363,25 @@ describe('post-audit fixes', function()
       local install = setup:find('if (( ! CHECK_ONLY )) && (( ${#MISSING[@]} > 0 )); then', 1, true)
       local node = setup:find('need node', 1, true)
       assert.is_truthy(sys and install and node and sys < node and node < install, 'need node must precede system package installation')
+    end)
+
+    it('maps tree-sitter-cli, gates nvim >= 0.12 and refuses a red verification', function()
+      local setup = H.read(root .. '/setup.sh')
+      assert.is_truthy(setup:find('tree-sitter-cli); else', 1, true), 'apt/dnf/pacman need the tree-sitter-cli package')
+      assert.is_truthy(setup:find('nvim_version_ok', 1, true), 'must check the installed nvim version')
+      assert.is_truthy(setup:find('minor >= 12', 1, true), 'the floor must be 0.12')
+      assert.is_truthy(setup:find('verify_failed', 1, true), 'verification must gate the success message')
+      assert.is_truthy(setup:find('Success:[[:space:]]*[0-9]', 1, true), 'each suite must print a real Success summary')
+      assert.is_truthy(setup:find('first interactive launch', 1, true), 'vtsls must be Mason-installed on first interactive launch')
+    end)
+
+    it('CI checks real bootstrap prerequisites without running setup', function()
+      local ci = H.read(root .. '/.github/workflows/smoke-test.yml')
+      assert.is_truthy(ci:find('command -v "$tool"', 1, true), 'CI must verify git and script')
+      assert.is_truthy(ci:find('script --version', 1, true), 'CI must verify util-linux script(1)')
+      assert.is_truthy(ci:find('bash -n setup.sh', 1, true), 'CI must syntax-check setup.sh')
+      assert.is_truthy(ci:find('./setup.sh --check', 1, true), 'CI must run the non-destructive check')
+      assert.is_truthy(ci:find('stress:', 1, true), 'the stress job must stay')
     end)
 
     it('documents temp-subtree sessions and <leader>nn history', function()

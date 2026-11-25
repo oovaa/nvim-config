@@ -328,11 +328,11 @@ function M.setup_lualine()
     if vim.wo.spell then fname = fname .. ' %#SL_search#SPELL' .. hl_c end
 
     -- search count, [cur/total] — only while hlsearch is on.
-    -- Cached on pattern + buffer content + cursor line; pure redraws reuse
-    -- the last segment instead of re-scanning the buffer.
+    -- Cached on pattern + buffer content + cursor line; a column move does not
+    -- change the count, so pure redraws reuse the last segment.
     local pat = vim.v.hlsearch == 1 and vim.fn.getreg '/' or ''
     local cur = vim.api.nvim_win_get_cursor(0)
-    local skey = pat .. '\0' .. buf0 .. '\0' .. (vim.b[buf0].changedtick or 0) .. '\0' .. cur[1] .. ',' .. cur[2]
+    local skey = pat .. '\0' .. buf0 .. '\0' .. (vim.b[buf0].changedtick or 0) .. '\0' .. cur[1]
     local winid = vim.api.nvim_get_current_win()
     local scache = M._search[winid] or { key = nil, s = '' }
     if pat ~= '' and skey ~= scache.key then

@@ -84,8 +84,21 @@ local function toggle_float(cmd)
       true,
       { relative = 'editor', width = width, height = height, row = row, col = col, style = 'minimal', border = 'rounded' }
     )
-    float.job = vim.fn.jobstart(cmd, { term = true })
+    float.job = vim.fn.jobstart(cmd, {
+      term = true,
+      -- A finished job leaves a dead terminal buffer: drop the slot (and the
+      -- float if still open) so a same-command toggle spawns a fresh shell.
+      on_exit = function(id)
+        if float.job ~= id then return end
+        if is_win_valid(float.win) and vim.api.nvim_win_get_buf(float.win) == float.buf then pcall(vim.api.nvim_win_close, float.win, true) end
+        float.buf, float.win, float.job, float.cmd = nil, nil, nil, nil
+      end,
+    })
     float.cmd = cmd
+    if float.job <= 0 then -- jobstart failed; no on_exit will fire
+      if is_win_valid(float.win) then pcall(vim.api.nvim_win_close, float.win, true) end
+      float.buf, float.win, float.job, float.cmd = nil, nil, nil, nil
+    end
     vim.cmd.startinsert()
   end
 end

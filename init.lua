@@ -16,7 +16,7 @@
  EXTERNAL BINARIES (outside mason — reinstall manually on a new machine):
    brew: jupyter + jupytext (molten notebooks); image.nvim uses kitty's graphics protocol (no binary)
    ~/.local/bin: nvim (bob), yazi, tokei, bottom, hyperfine
-   npm -g: none (all JS tooling via mason)
+   npm -g: none (biome installed manually; LSPs/formatters via Mason where available)
 
  GETTING STARTED:
    1. Read through this file top to bottom
@@ -69,14 +69,13 @@
 -- BYTECODE CACHE (fastest, safest startup win)
 -- Caches compiled Lua modules so Neovim doesn't re-parse every file on boot.
 -- Requires Neovim >= 0.9. Pairs well with lazy.nvim's own module cache below.
--- NOTE: floor is effectively 0.11 — `smoothscroll` (0.10+) and `winborder`
--- (0.11+) in lua/config/options.lua are set unguarded.
+-- NOTE: floor is 0.12 (CI pins v0.12.6) — 0.12-only options in
+-- lua/config/options.lua are set unguarded.
 -- ============================================================================
 vim.loader.enable()
 
--- ponytail: node shim removed; tsserver_path is set explicitly in
--- typescript-tools config, and the old node->bun shim broke node formatters
--- (prettierd/prettier run via real linuxbrew node now).
+-- ponytail: node shim removed — prettier and the other JS/TS formatters use
+-- the real node on PATH; vtsls owns TypeScript LSP (no typescript-tools).
 
 -- ============================================================================
 -- SECTION 1: PROVIDER DISABLES
@@ -111,7 +110,7 @@ vim.api.nvim_create_user_command('StartupTime', function()
   vim.fn.delete(log)
   -- ponytail: headless `+q` omits UI/VimEnter stages, so this log is a lower
   -- bound on an interactive start. --startuptime appends, so clear it first.
-  vim.cmd('!nvim --startuptime ' .. vim.fn.shellescape(log) .. ' +q && sort -k2,2nr ' .. vim.fn.shellescape(log) .. ' | tail -n 15')
+  vim.cmd('!nvim --startuptime ' .. vim.fn.shellescape(log) .. ' +q && sort -k2,2nr ' .. vim.fn.shellescape(log) .. ' | head -n 15')
   local ok, lazy = pcall(require, 'lazy')
   if ok then
     local s = lazy.stats()

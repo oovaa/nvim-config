@@ -51,7 +51,7 @@ return {
         -- modified ○) with status nerd glyphs. Written as nr2char() calls
         -- — literal emoji bytes get stripped in transit, escapes don't.
         -- Every entry must be a real glyph: added/deleted/renamed shipped
-        -- as '' and rendered iconless (tests/test_ui.lua guards this).
+        -- as '' and rendered iconless (tests/test_performance.lua:150-159 guards this).
         -- F417 fa-tag, F067 diff_added, F068 diff_removed, F059 fa-eye-slash,
         -- F111 fa-code-fork (rename), F071 diff_type_change (unmerged).
         icons = {
@@ -143,7 +143,29 @@ return {
       { '<leader>sk', function() require('snacks').picker.keymaps() end, desc = '[S]earch [K]eymaps' },
       { '<leader>sf', function() require('snacks').picker.files() end, desc = '[S]earch [F]iles' },
       { '<leader><leader>', function() require('snacks').picker.files() end, desc = '[S]earch [F]iles' },
-      { '<leader>sp', function() require('snacks').picker.projects() end, desc = '[S]earch [P]rojects' },
+      {
+        '<leader>sp',
+        function()
+          -- snacks' default `load_session` restores its own dashboard sessions;
+          -- this config's sessions are owned by config.sessions, so confirm
+          -- sources the canonical file (or browses a project with no session).
+          require('snacks').picker.projects {
+            confirm = function(picker, item)
+              local dir = item and (item.file or item.text)
+              if not dir or dir == '' then return end
+              picker:close()
+              vim.cmd('cd ' .. vim.fn.fnameescape(dir))
+              local session = require('config.sessions').find_session_for(dir)
+              if vim.fn.filereadable(session) == 1 then
+                vim.cmd('source ' .. vim.fn.fnameescape(session))
+              else
+                require('snacks').picker.files { cwd = dir }
+              end
+            end,
+          }
+        end,
+        desc = '[S]earch [P]rojects',
+      },
       { '<leader>ss', function() require('snacks').picker() end, desc = '[S]earch [S]elect picker' },
       { '<leader>sw', function() require('snacks').picker.grep_word() end, mode = { 'n', 'x' }, desc = '[S]earch current [W]ord' },
       { '<leader>sg', function() require('snacks').picker.grep() end, desc = '[S]earch by [G]rep' },
@@ -201,9 +223,12 @@ return {
       -- Explicit --config: keeps dialect/line-length rules consistent with the
       -- conform formatter and avoids cwd-based auto-discovery surprises.
       local sqruff_cfg = vim.fs.normalize '~/.config/nvim/sqruff.toml'
+      -- try_lint has no bufnr arg: it runs inside nvim_buf_call(ev.buf), so the
+      -- current buffer here is the lint target, not whichever buffer is on screen.
+      local function lint_target_name() return vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf()) end
       lint.linters.sqruff = {
         cmd = sqruff_bin,
-        args = { 'lint', '--config', sqruff_cfg, '--format', 'github-annotation-native', function() return vim.api.nvim_buf_get_name(0) end },
+        args = { 'lint', '--config', sqruff_cfg, '--format', 'github-annotation-native', lint_target_name },
         stdin = false,
         append_fname = false,
         stream = 'both',
@@ -243,7 +268,7 @@ return {
             local m0 = mode:sub(1, 1)
             if m0 == 'i' or mode:sub(1, 2) == 'ni' or m0 == 's' or m0 == 'S' or m0 == 'R' or m0 == '\19' then return end
           end
-          local ok, err = pcall(lint.try_lint)
+          local ok, err = pcall(vim.api.nvim_buf_call, ev.buf, lint.try_lint)
           if not ok then vim.notify('Lint error: ' .. tostring(err), vim.log.levels.WARN) end
         end,
       })

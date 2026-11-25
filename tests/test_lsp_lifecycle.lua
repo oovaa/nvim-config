@@ -284,10 +284,11 @@ describe('lsp lifecycle', function()
 
   it('attaches each Java buffer with its own root, data dir and launcher', function()
     package.loaded['blink.cmp'] = { get_lsp_capabilities = function() error 'JDTLS must not require Blink capabilities' end }
-    local recorded, requested = {}, nil
-    require('jdtls').start_or_attach = function(opts, start_opts)
+    local recorded, requested, start_args = {}, nil, nil
+    require('jdtls').start_or_attach = function(opts, dap_opts, start_opts)
       recorded[#recorded + 1] = opts
-      requested = start_opts
+      requested = dap_opts
+      start_args = start_opts
     end
 
     local project_a = root .. '/java-a'
@@ -323,10 +324,12 @@ describe('lsp lifecycle', function()
       autocmds[1].callback { buf = bufnr, bufnr = bufnr, id = autocmds[1].id, event = 'FileType', match = 'java', group = autocmds[1].group_name }
     end
     fire(buf_a)
-    assert.same({ bufnr = buf_a, dap = { hotcodereplace = 'auto' } }, requested)
+    assert.same({ dap = { hotcodereplace = 'auto' } }, requested, 'DAP opts belong in the second argument slot')
+    assert.same({ bufnr = buf_a }, start_args, 'bufnr belongs in the third argument slot')
     local opts_a = recorded[#recorded]
     fire(buf_b)
-    assert.same({ bufnr = buf_b, dap = { hotcodereplace = 'auto' } }, requested)
+    assert.same({ dap = { hotcodereplace = 'auto' } }, requested)
+    assert.same({ bufnr = buf_b }, start_args, 'each buffer gets its own bufnr in the third slot')
     local opts_b = recorded[#recorded]
     vim.b[buf_a].large_file_mode = true
     local before_large = #recorded
@@ -351,10 +354,11 @@ describe('lsp lifecycle', function()
   end)
 
   it('attaches an already-open Java buffer through the per-buffer handler and skips large files', function()
-    local recorded, requested = {}, nil
-    require('jdtls').start_or_attach = function(opts, start_opts)
+    local recorded, requested, start_args = {}, nil, nil
+    require('jdtls').start_or_attach = function(opts, dap_opts, start_opts)
       recorded[#recorded + 1] = opts
-      requested = start_opts
+      requested = dap_opts
+      start_args = start_opts
     end
 
     local project = root .. '/java-open'
@@ -390,7 +394,8 @@ describe('lsp lifecycle', function()
     local autocmds = vim.api.nvim_get_autocmds { event = 'FileType', pattern = 'java', group = 'jdtls-attach' }
     assert.equals(1, #autocmds, 'the sweep and future FileType events must share one handler')
     assert.equals(1, #recorded, 'only the small already-open Java buffer should attach during the sweep')
-    assert.same({ bufnr = buf, dap = { hotcodereplace = 'auto' } }, requested)
+    assert.same({ dap = { hotcodereplace = 'auto' } }, requested)
+    assert.same({ bufnr = buf }, start_args, 'the sweep must pass its buffer via the third argument slot')
     assert.equals(project, recorded[1].root_dir)
     assert.equals(
       vim.fn.stdpath 'cache' .. '/jdtls/' .. vim.fn.fnamemodify(project, ':p:h:t') .. '-' .. vim.fn.sha256(project),

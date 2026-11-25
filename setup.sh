@@ -81,7 +81,8 @@ if (( ! CHECK_ONLY )) && (( ${#MISSING[@]} > 0 )); then
       rg) if [[ "$PM" == apt || "$PM" == dnf ]]; then pkgs+=(ripgrep); else pkgs+=(ripgrep); fi ;;
       node) if [[ "$PM" == apt ]]; then pkgs+=(nodejs); elif [[ "$PM" == dnf ]]; then pkgs+=(nodejs); else pkgs+=(node); fi ;;
       nvim) pkgs+=(neovim) ;;
-      tree-sitter) pkgs+=(tree-sitter) ;;
+      # binary is `tree-sitter`; apt/dnf/pacman ship it as tree-sitter-cli.
+      tree-sitter) if [[ "$PM" == apt || "$PM" == dnf || "$PM" == pacman ]]; then pkgs+=(tree-sitter-cli); else pkgs+=(tree-sitter); fi ;;
       *) pkgs+=("$b") ;;
     esac
   done
@@ -90,6 +91,23 @@ if (( ! CHECK_ONLY )) && (( ${#MISSING[@]} > 0 )); then
     brew|apt|dnf|pacman) pm_install "${pkgs[@]}" || true ;;
     *) warn "install the missing tools by hand, then re-run" ;;
   esac
+fi
+
+# nvim 0.12-only options in lua/config/options.lua error on older versions,
+# so refuse to sync plugins / claim success on an unsupported nvim.
+nvim_version_ok() {
+  local v major minor
+  v=$(nvim --version 2>/dev/null | head -1 | sed -n 's/.*NVIM v\([0-9][0-9.]*\).*/\1/p')
+  [[ -n "$v" ]] || return 1
+  IFS=. read -r major minor _ <<<"$v"
+  (( major > 0 || (major == 0 && minor >= 12) ))
+}
+if have nvim && ! nvim_version_ok; then
+  warn "nvim $(nvim --version | head -1) is older than 0.12 — see README install recipes"
+  if (( ! CHECK_ONLY )); then
+    echo -e "${RED}Setup aborted: Neovim >= 0.12 is required (see README).${RESET}"
+    exit 1
+  fi
 fi
 
 # --- 2. runtimes -----------------------------------------------------------
@@ -144,7 +162,7 @@ fi
 
 # --- 3. language servers outside Mason -------------------------------------
 step "3/7  Manual LSPs (pyrefly)"
-info "vtsls is Mason-managed (vtsls in ensure_installed) — installed by :Lazy sync below"
+info "vtsls is Mason-managed (vtsls in ensure_installed) — installed by Mason on first interactive launch"
 if have pyrefly; then ok "pyrefly $(pyrefly --version 2>/dev/null || true)"
 else
   fail "pyrefly — Python LSP (Mason does not manage it)"
@@ -214,13 +232,28 @@ if have nvim && (( ! CHECK_ONLY )); then
   info "health check:"
   nvim --headless -c 'checkhealth config' -c 'qa!' 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -E '^(OK|WARNING|ERROR)|- (OK|WARNING|ERROR)' | head -12 || true
   info "test suites:"
+  verify_failed=0
   for f in tests/test_*.lua; do
     t=${f#tests/}; t=${t%.lua}
-    res=$(nvim --headless -c "lua require(\"plenary.busted\").run(\"tests/$t.lua\")" -c 'qa!' 2>&1 \
-      | sed 's/\x1b\[[0-9;]*m//g' | grep -E '^(Success|Failed)' | tr '\n' ' ')
-    # shellcheck disable=SC2086
+    log=$(mktemp)
+    status=0
+    nvim --headless -c "lua require(\"plenary.busted\").run(\"tests/$t.lua\")" -c 'qa!' >"$log" 2>&1 || status=$?
+    clean=$(sed 's/\x1b\[[0-9;]*m//g' "$log")
+    res=$(printf '%s\n' "$clean" | grep -E '^(Success|Failed)' | tr '\n' ' ' || true)
     echo "  $t: $res"
+    # Mirror CI's strict gate: exit status, a real Success summary, no Failed/
+    # Errors count and no runtime traceback. "Setup complete" must be honest.
+    if (( status != 0 )) || ! printf '%s' "$res" | grep -qE 'Success:[[:space:]]*[0-9]'; then
+      warn "$t failed to load or produced no results (exit $status)"; cat "$log"; verify_failed=1
+    elif printf '%s\n' "$clean" | grep -qE 'Failed *:.*[1-9]|Errors *:.*[1-9]|vim\.schedule callback:|stack traceback:|Error in command line:'; then
+      warn "$t failed or produced a traceback"; cat "$log"; verify_failed=1
+    fi
+    rm -f "$log"
   done
+  if (( verify_failed )); then
+    echo -e "${RED}Verification failed — setup incomplete.${RESET}"
+    exit 1
+  fi
 else
   info "skipped (check mode or no nvim)"
 fi

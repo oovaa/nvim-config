@@ -132,7 +132,9 @@ describe('render-markdown size guard', function()
       for i, path in ipairs(files) do
         vim.cmd('edit! ' .. vim.fn.fnameescape(path))
         local b = vim.api.nvim_get_current_buf()
-        local want_ft = i == 4 and 'text' or 'markdown'
+        -- .mdx gets a compound filetype (markdown.mdx); the guard must match
+        -- it without being forced to plain markdown.
+        local want_ft = i == 2 and 'markdown.mdx' or (i == 4 and 'text' or 'markdown')
         if vim.bo[b].filetype ~= want_ft then vim.bo[b].filetype = want_ft end
         bufs[i] = b
       end

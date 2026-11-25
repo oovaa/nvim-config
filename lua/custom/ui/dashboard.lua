@@ -109,26 +109,36 @@ function M.setup_starter()
         local list_fn = (sess_mod and sess_mod.list_projects) or _G._builtin_list_projects
         local projects = list_fn and list_fn(M.sessions_dir()) or {}
         projects = vim.tbl_filter(function(e) return not is_suppressed(e.label) end, projects)
-        local items, map = {}, {}
-        for _, e in ipairs(projects) do
-          local disp = short(e.label)
-          items[#items + 1] = disp
-          map[disp] = e.path
+        -- `short()` clips labels: two long projects can render identically.
+        -- vim.ui.select passes the chosen index, so key paths by index and
+        -- keep the clipped label display-only.
+        local items, paths = {}, {}
+        for i, e in ipairs(projects) do
+          items[i] = short(e.label)
+          paths[i] = e.path
         end
         if #items == 0 then
           vim.notify(
-            'No session for ' .. (vim.uv.cwd() or vim.fn.getcwd()) .. ' — sessions are saved on quit (suppressed: ~, ~/Downloads, /etc, /tmp)',
+            'No session for ' .. (vim.uv.cwd() or vim.fn.getcwd()) .. ' — sessions are saved on quit (suppressed: ~, ~/Downloads, /etc, whole temp tree)',
             vim.log.levels.INFO
           )
           return
         end
-        local function do_pick(choice)
-          if choice and map[choice] then
+        local function do_pick(choice, idx)
+          if not idx then -- label-only caller: resolve by position
+            for i, disp in ipairs(items) do
+              if disp == choice then
+                idx = i
+                break
+              end
+            end
+          end
+          if idx and paths[idx] then
             if vim.bo.filetype == 'dashboard' then pcall(vim.cmd, 'bwipeout!') end
-            vim.cmd('source ' .. vim.fn.fnameescape(map[choice]))
+            vim.cmd('source ' .. vim.fn.fnameescape(paths[idx]))
           end
         end
-        vim.ui.select(items, { prompt = 'Select session:' }, function(choice) do_pick(choice) end)
+        vim.ui.select(items, { prompt = 'Select session:' }, function(choice, idx) do_pick(choice, idx) end)
       end,
     },
     { key = 'u', icon = nf(0xf021), label = 'Update Plugins', action = '<cmd>Lazy sync<CR>' },

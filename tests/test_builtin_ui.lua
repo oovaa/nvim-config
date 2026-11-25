@@ -238,12 +238,51 @@ describe('dashboard projects', function()
     assert.equals('Select session:', captured_prompt)
     assert.same({ short(zzz), short(aaa) }, captured_items, 'items keep list_projects (recency) order, no alphabetical re-sort')
 
-    ok, err = pcall(on_choice, captured_items[1])
+    ok, err = pcall(on_choice, captured_items[1], 1)
     local picked_cwd = vim.fn.getcwd()
     pcall(vim.fn.chdir, orig_cwd)
     assert.is_truthy(ok, tostring(err))
     assert.equals(vim.fn.fnamemodify(dir, ':p'), vim.fn.fnamemodify(picked_cwd, ':p'), 'picking sources the session, whose cd moves nvim in place')
 
+    wipe_dashboard_buffers()
+    helpers.remove_fixture(dir)
+  end)
+
+  it('s picker keys duplicate long labels by index so neither action is lost', function()
+    local dir = tmpdir()
+    local first, second = dir .. '/first.vim', dir .. '/second.vim'
+    vim.fn.writefile({ 'let g:deep_fix_dash_pick = 1' }, first)
+    vim.fn.writefile({ 'let g:deep_fix_dash_pick = 2' }, second)
+    render(nil)
+    local s_map
+    for _, m in ipairs(vim.api.nvim_buf_get_keymap(0, 'n')) do
+      if m.lhs == 's' then s_map = m.callback end
+    end
+    assert.is_function(s_map, 'the s button must be mapped in the dashboard buffer')
+
+    local label = dir .. '/same/long/project/label'
+    local items, on_choice = nil, nil
+    local orig_list, orig_select = S.list_projects, vim.ui.select
+    S.list_projects = function()
+      return {
+        { label = label, path = first, mtime = 2 },
+        { label = label, path = second, mtime = 1 },
+      }
+    end
+    vim.ui.select = function(is, _, cb)
+      items, on_choice = is, cb
+    end
+    local ok, err = pcall(s_map)
+    vim.ui.select, S.list_projects = orig_select, orig_list
+    assert.is_truthy(ok, tostring(err))
+    assert.equals(2, #items, 'both long projects must remain listed')
+    assert.equals(items[1], items[2], 'premise: their clipped display labels collide')
+    assert.is_truthy(items[1]:find('same/long/project/label', 1, true), 'display text must keep the project tail')
+
+    ok, err = pcall(on_choice, label, 2)
+    assert.is_truthy(ok, tostring(err))
+    assert.equals(2, vim.g.deep_fix_dash_pick or 0, 'the second duplicate label must source its own session')
+    vim.g.deep_fix_dash_pick = nil
     wipe_dashboard_buffers()
     helpers.remove_fixture(dir)
   end)
@@ -335,6 +374,52 @@ describe('dashboard projects', function()
     vim.cmd 'stopinsert'
     close_floats()
     if float.buf and vim.api.nvim_buf_is_valid(float.buf) then pcall(vim.api.nvim_buf_delete, float.buf, { force = true }) end
+    assert.is_truthy(ok, tostring(err))
+    wipe_dashboard_buffers()
+  end)
+
+  it('drops a float whose job exited so a same-command press spawns a fresh job', function()
+    render(nil)
+    local g
+    for _, m in ipairs(vim.api.nvim_buf_get_keymap(0, 'n')) do
+      if m.lhs == 'g' then g = m.callback end
+    end
+    assert.is_function(g, 'the g button must be mapped in the dashboard buffer')
+
+    local state = _G._builtin_terminal_state
+    local function close_floats()
+      for _, w in ipairs(vim.api.nvim_list_wins()) do
+        if vim.api.nvim_win_get_config(w).relative ~= '' then pcall(vim.api.nvim_win_close, w, true) end
+      end
+    end
+    close_floats()
+    local float = state.float
+    if float.buf and vim.api.nvim_buf_is_valid(float.buf) then pcall(vim.api.nvim_buf_delete, float.buf, { force = true }) end
+    float.buf, float.win, float.cmd, float.job = nil, nil, nil, nil
+
+    local real_jobstart, starts, on_exit = vim.fn.jobstart, 0, nil
+    vim.fn.jobstart = function(_, opts)
+      starts = starts + 1
+      on_exit = opts and opts.on_exit
+      return 43000 + starts
+    end
+    local ok, err = pcall(function()
+      g()
+      local buf1, job1 = float.buf, float.job
+      assert.is_number(buf1, 'g must open a float buffer')
+      assert.is_function(on_exit, 'jobstart must register an exit handler')
+      on_exit(job1)
+      assert.is_nil(float.buf, 'an exited job must clear the float buffer slot')
+      assert.is_nil(float.job, 'an exited job must clear the job slot')
+      g()
+      assert.equals(2, starts, 'same-command press after exit must spawn a fresh job')
+      assert.is_true(float.buf ~= buf1, 'the dead buffer must not be reused')
+    end)
+    vim.fn.jobstart = real_jobstart
+    vim.cmd 'stopinsert'
+    close_floats()
+    if float.buf and vim.api.nvim_buf_is_valid(float.buf) then pcall(vim.api.nvim_buf_delete, float.buf, { force = true }) end
+    float.buf, float.win, float.cmd, float.job = nil, nil, nil, nil
     assert.is_truthy(ok, tostring(err))
     wipe_dashboard_buffers()
   end)
@@ -432,6 +517,45 @@ describe('statusline progress invalidation', function()
 
     vim.lsp.status, vim.ui.progress_status, vim.cmd = real_status, real_pstatus, real_cmd
     statusline._progress = { at = 0, s = '' }
+    vim.api.nvim_set_current_buf(prev)
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    assert.is_truthy(ok, tostring(err))
+  end)
+
+  it('reuses the search-count segment when only the cursor column moves', function()
+    local prev = vim.api.nvim_get_current_buf()
+    local buf = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'alpha beta gamma', 'second line' })
+    vim.api.nvim_set_current_buf(buf)
+    local win = vim.api.nvim_get_current_win()
+    local old_reg, old_hls = vim.fn.getreg '/', vim.o.hlsearch
+    local real_searchcount, calls = vim.fn.searchcount, 0
+    vim.o.hlsearch = true
+    vim.fn.setreg('/', 'beta')
+    vim.fn.searchcount = function()
+      calls = calls + 1
+      return { current = calls, total = 2, incomplete = 0 }
+    end
+    local ok, err = pcall(function()
+      statusline._search[win] = nil
+      vim.api.nvim_win_set_cursor(win, { 1, 0 })
+      local first = _G._builtin_statusline()
+      assert.equals(1, calls, 'the first render must compute the search count')
+      assert.is_truthy(first:find('1/2', 1, true), 'search count must be displayed: ' .. first)
+
+      vim.api.nvim_win_set_cursor(win, { 1, 5 })
+      local second = _G._builtin_statusline()
+      assert.equals(1, calls, 'a same-line column move must reuse the cached search count')
+      assert.is_truthy(second:find('1/2', 1, true))
+
+      vim.api.nvim_win_set_cursor(win, { 2, 0 })
+      _G._builtin_statusline()
+      assert.equals(2, calls, 'a different line must invalidate the cache')
+    end)
+    vim.fn.searchcount = real_searchcount
+    vim.o.hlsearch = old_hls
+    vim.fn.setreg('/', old_reg)
+    statusline._search[win] = nil
     vim.api.nvim_set_current_buf(prev)
     pcall(vim.api.nvim_buf_delete, buf, { force = true })
     assert.is_truthy(ok, tostring(err))

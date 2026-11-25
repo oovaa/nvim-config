@@ -109,7 +109,7 @@ describe('config behaviour', function()
     pcall(vim.api.nvim_buf_delete, scratch, { force = true })
     pcall(vim.api.nvim_buf_delete, huge_buf, { force = true })
     vim.fn.delete(dir, 'rf')
-    assert.is_true(vim.fn.isdirectory(install_dir) >= 0)
+    assert.equals(1, vim.fn.isdirectory(install_dir), 'the parser install dir must exist')
   end)
 
   it('never documents the checkhealth invocation that errors', function()

@@ -55,23 +55,20 @@ describe('formatting', function()
 
   it('never picks up a biome.json in $HOME', function()
     local health = require 'config.health'
-    -- Ensure the precondition (a biome.json in $HOME) exists on every machine,
-    -- including CI, so the rejection logic is actually exercised.
-    local home_config = vim.env.HOME .. '/biome.json'
-    local created = false
-    if vim.fn.filereadable(home_config) == 0 then
-      vim.fn.writefile({ '{}' }, home_config)
-      created = true
-    end
+    -- Fixture HOME, never the real one: writing $HOME/biome.json changes
+    -- format/lint selection for every repo below it if cleanup is interrupted.
+    local home = tmpdir()
+    vim.fn.writefile({ '{}' }, home .. '/biome.json')
+    local real_home = vim.env.HOME
+    vim.env.HOME = home
     local ok, err = pcall(function()
-      -- the home config exists on this machine; it must not enable biome anywhere
-      assert.equals(vim.fs.normalize(vim.env.HOME), vim.fs.normalize(vim.fs.root(vim.env.HOME .. '/probe.js', { 'biome.json' })))
-      assert.is_nil(health.biome_root(vim.env.HOME .. '/probe.js'))
-      assert.equals('oxlint', health.js_linter(vim.env.HOME .. '/probe.js'))
+      -- the home config exists in the fixture; it must not enable biome anywhere
+      assert.equals(vim.fs.normalize(home), vim.fs.normalize(vim.fs.root(home .. '/probe.js', { 'biome.json' })))
+      assert.is_nil(health.biome_root(home .. '/probe.js'))
+      assert.equals('oxlint', health.js_linter(home .. '/probe.js'))
     end)
-    -- Always clean up: a failed assertion must not leave $HOME/biome.json behind
-    -- (it would change format/lint selection for every repo below $HOME).
-    if created then vim.fn.delete(home_config) end
+    vim.env.HOME = real_home
+    vim.fn.delete(home, 'rf')
     assert.is_true(ok, tostring(err))
   end)
 

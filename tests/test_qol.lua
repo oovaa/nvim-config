@@ -123,6 +123,40 @@ describe('qol plugins', function()
     assert.equals(0, files_calls, '<leader>sp must not invoke the files picker')
   end)
 
+  it('<leader>sp confirm sources the canonical session for the chosen project', function()
+    local m = mapped '<leader>sp'
+    local snacks = require 'snacks'
+    local real_projects, real_files = snacks.picker.projects, snacks.picker.files
+    local confirm, files_opts = nil, nil
+    local dir = vim.fn.tempname() .. '-project'
+    vim.fn.mkdir(dir, 'p')
+    local session = require('config.sessions').session_file_for(dir)
+    vim.fn.mkdir(vim.fn.fnamemodify(session, ':h'), 'p')
+    vim.fn.writefile({ 'let g:deep_fix_sp_sourced = 1' }, session)
+    local before_cwd = vim.fn.getcwd()
+    local ok, err = pcall(function()
+      snacks.picker.projects = function(opts) confirm = opts and opts.confirm end
+      m.callback()
+      assert.is_function(confirm, 'projects picker must supply a confirm handler')
+      confirm({ close = function() end }, { file = dir, text = dir })
+      assert.equals(1, vim.g.deep_fix_sp_sourced or 0, 'the canonical session must be sourced, not a snacks dashboard session')
+      assert.equals(vim.fn.fnamemodify(dir, ':p'), vim.fn.fnamemodify(vim.fn.getcwd(), ':p'), 'confirm must chdir to the chosen project')
+
+      vim.g.deep_fix_sp_sourced, files_opts = nil, nil
+      vim.fn.delete(session)
+      snacks.picker.files = function(opts) files_opts = opts end
+      confirm({ close = function() end }, { file = dir, text = dir })
+      assert.is_nil(vim.g.deep_fix_sp_sourced, 'a project with no session must not source anything')
+      assert.same({ cwd = dir }, files_opts, 'a project with no session must open a files picker at that dir')
+    end)
+    snacks.picker.projects, snacks.picker.files = real_projects, real_files
+    vim.cmd('cd ' .. vim.fn.fnameescape(before_cwd))
+    vim.g.deep_fix_sp_sourced = nil
+    vim.fn.delete(session)
+    vim.fn.delete(dir, 'rf')
+    assert.is_truthy(ok, tostring(err))
+  end)
+
   it('keeps notification history mapped', function()
     local m = mapped '<leader>nn'
     assert.is_function(m and m.callback, '<leader>nn must resolve to a real handler')
@@ -157,6 +191,36 @@ describe('qol plugins', function()
     assert.is_true(ok, tostring(err))
     assert.equals('near diagnostic', yanked, 'gy must yank the nearest diagnostic message')
     assert.is_false(notices[1] and notices[1]:find('Yanked 2 diagnostics', 1, true) ~= nil, 'gy must not report the line total')
+  end)
+
+  it('<leader>yd yanks all diagnostics on the line and reports the plural count', function()
+    local ns = vim.api.nvim_create_namespace 'yd-test'
+    local prev = vim.api.nvim_get_current_buf()
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_set_current_buf(buf)
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { 'xy' })
+    vim.diagnostic.set(ns, buf, {
+      { lnum = 0, col = 0, end_col = 1, message = 'first problem', severity = 1 },
+      { lnum = 0, col = 1, end_col = 2, message = 'second problem', severity = 1 },
+    })
+    vim.api.nvim_win_set_cursor(0, { 1, 0 })
+    local notices = {}
+    local real_notify, real_clipboard = vim.notify, vim.o.clipboard
+    vim.notify = function(msg) notices[#notices + 1] = tostring(msg) end
+    vim.o.clipboard = '' -- headless has no '+' provider
+    local ok, err = pcall(function()
+      local m = mapped '<leader>yd'
+      assert.is_function(m and m.callback, '<leader>yd must resolve to a real handler')
+      m.callback()
+    end)
+    local yanked = vim.fn.getreg '"'
+    vim.notify, vim.o.clipboard = real_notify, real_clipboard
+    vim.api.nvim_set_current_buf(prev)
+    vim.diagnostic.reset(ns, buf)
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    assert.is_true(ok, tostring(err))
+    assert.equals('first problem\nsecond problem', yanked, '<leader>yd must join every message')
+    assert.is_truthy(notices[1] and notices[1]:find('Yanked 2 diagnostics', 1, true), 'must report the plural count: ' .. tostring(notices[1]))
   end)
 
   it('does not shadow real actions with empty which-key groups', function()

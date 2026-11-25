@@ -13,7 +13,7 @@ return {
   -- LOADING: ft = only loads for markdown files
   {
     'MeanderingProgrammer/render-markdown.nvim',
-    ft = 'markdown',
+    ft = { 'markdown', 'markdown.*' },
     dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' },
     -- ponytail: guard per buffer in config. A `cond` runs once at lazy.setup()
     -- against the startup buffer only — it either disables rendering for the
@@ -24,7 +24,9 @@ return {
       local api = require 'render-markdown.api'
       render.setup(opts)
       local guard = function(buf)
-        if not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].filetype ~= 'markdown' then return end
+        if not vim.api.nvim_buf_is_valid(buf) then return end
+        local ft = vim.bo[buf].filetype
+        if ft ~= 'markdown' and not ft:match '^markdown%.' then return end -- markdown.mdx et al.
         local name = vim.api.nvim_buf_get_name(buf)
         local ok, st = pcall(vim.uv.fs_stat, name)
         if ok and st and st.size > 200 * 1024 then pcall(vim.api.nvim_buf_call, buf, function() api.buf_disable() end) end
@@ -33,7 +35,7 @@ return {
       -- byte threshold (fs_stat.size) stays the same for every extension.
       vim.api.nvim_create_autocmd('FileType', {
         group = vim.api.nvim_create_augroup('render-markdown-size-guard', { clear = true }),
-        pattern = 'markdown',
+        pattern = { 'markdown', 'markdown.*' },
         callback = function(ev) guard(ev.buf) end,
       })
       for _, buf in ipairs(vim.api.nvim_list_bufs()) do

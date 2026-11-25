@@ -399,6 +399,33 @@ describe('global user commands', function()
     assert.is_falsy(captured:find('++edit #', 1, true), 'the command must not depend on the alternate buffer: ' .. captured)
   end)
 
+  it('DiffOrig refuses an unnamed buffer without opening a split', function()
+    local command = vim.api.nvim_get_commands({}).DiffOrig
+    local prev = vim.api.nvim_get_current_buf()
+    local buf = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_set_current_buf(buf)
+    local notices, built = {}, false
+    local real_notify, real_cmd = vim.notify, vim.cmd
+    vim.notify = function(msg, level) notices[#notices + 1] = { msg = msg, level = level } end
+    vim.cmd = function(arg)
+      if type(arg) == 'string' and arg:find('++edit', 1, true) then
+        built = true
+      else
+        return real_cmd(arg)
+      end
+    end
+    local wins = #vim.api.nvim_list_wins()
+    local ok, err = pcall(command.callback)
+    local same_wins = #vim.api.nvim_list_wins() == wins
+    vim.cmd, vim.notify = real_cmd, real_notify
+    vim.api.nvim_set_current_buf(prev)
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    assert.is_true(ok, tostring(err))
+    assert.is_false(built, 'unnamed buffer must not build a :read command')
+    assert.is_true(same_wins, 'unnamed buffer must not leak a split')
+    assert.is_truthy(notices[1] and notices[1].msg:find('no file', 1, true), 'must explain why: ' .. tostring(notices[1] and notices[1].msg))
+  end)
+
   it('clears the old startup log before profiling and sorts durations numerically', function()
     local command = vim.api.nvim_get_commands({}).StartupTime
     assert.is_function(command and command.callback, ':StartupTime must be a registered user command')
@@ -424,6 +451,8 @@ describe('global user commands', function()
     local profile = events[2] and events[2].cmd
     assert.is_truthy(profile and profile:find('--startuptime', 1, true), 'must run nvim --startuptime: ' .. tostring(profile))
     assert.is_truthy(profile and profile:find('sort -k2,2nr', 1, true), 'must sort numerically descending on column 2: ' .. tostring(profile))
+    assert.is_truthy(profile and profile:find('head -n 15', 1, true), 'must show the 15 slowest sources via head: ' .. tostring(profile))
+    assert.is_falsy(profile and profile:find('tail -n 15', 1, true), 'tail would show the fastest sources')
     assert.is_true(profile:find('--startuptime', 1, true) < profile:find('sort -k2,2nr', 1, true), 'profile before sorting')
   end)
 end)

@@ -45,6 +45,30 @@ describe('keymaps/autocmds', function()
     vim.diagnostic.reset(ns, buf)
     vim.cmd 'bwipeout!'
   end)
+  it('spell FileType sets spell in the prose buffer windows, not the current window', function()
+    vim.cmd 'enew'
+    local target = vim.api.nvim_get_current_buf()
+    vim.cmd 'vsplit'
+    vim.cmd 'enew'
+    local other = vim.api.nvim_get_current_buf()
+    local target_win, other_win = nil, nil
+    for _, w in ipairs(vim.api.nvim_list_wins()) do
+      local b = vim.api.nvim_win_get_buf(w)
+      if b == target then target_win = w end
+      if b == other then other_win = w end
+    end
+    assert.is_truthy(target_win and other_win, 'premise: two windows showing different buffers')
+    vim.bo[target].filetype = 'markdown'
+    vim.wo[target_win].spell, vim.wo[other_win].spell = false, false
+    -- Fire only this config's group, for a non-current buffer.
+    vim.api.nvim_exec_autocmds('FileType', { buffer = target, group = 'spell-prose' })
+    assert.is_true(vim.wo[target_win].spell, 'the prose window must gain spell')
+    assert.is_false(vim.wo[other_win].spell, 'the window showing another buffer must stay untouched')
+    vim.wo[target_win].spell, vim.wo[other_win].spell = false, false
+    pcall(vim.cmd, 'only')
+    pcall(vim.api.nvim_buf_delete, target, { force = true })
+    pcall(vim.api.nvim_buf_delete, other, { force = true })
+  end)
   it('no duplicate lhs in normal mode keymaps', function()
     local seen, dupes = {}, {}
     for _, m in ipairs(vim.api.nvim_get_keymap 'n') do
