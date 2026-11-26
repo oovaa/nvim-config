@@ -154,6 +154,15 @@ S.keymaps = function()
   -- (<Plug>PlenaryTestFile runs a test harness and takes the process down)
   local is_plug = function(m) return m.lhs:find('<Plug>', 1, true) ~= nil end
 
+  -- close floats left by the previous key before touching buffers again:
+  -- snacks' BufWinEnter handler swaps buffers and recurses when floats stack
+  local close_floats = function()
+    for _, w in ipairs(vim.api.nvim_list_wins()) do
+      local ok, cfg = pcall(vim.api.nvim_win_get_config, w)
+      if ok and cfg.relative ~= '' then pcall(vim.api.nvim_win_close, w, true) end
+    end
+  end
+
   local seen = {}
   for _, mode in ipairs { 'n', 'x', 'v' } do
     for _, m in ipairs(vim.api.nvim_get_keymap(mode)) do
@@ -165,12 +174,20 @@ S.keymaps = function()
           seen[key] = true
           H.t(string.format('keymap %s %s', mode, m.lhs), function()
             H.pass('key in flight: ' .. key)
-            scratch()
             vim.wait(40) -- let anything queued by the previous key land first
+            close_floats()
+            scratch()
             vim.cmd 'messages clear'
             local keys = vim.api.nvim_replace_termcodes(m.lhs, true, false, true)
             vim.api.nvim_feedkeys(keys, 'x', false)
             vim.wait(120)
+            -- snacks' finder finishes in a scheduled async task; closing a
+            -- picker while it is still active makes its done callback index
+            -- a torn-down matcher (upstream race, not a config error)
+            local ok_async, async = pcall(require, 'snacks.picker.util.async')
+            if ok_async then vim.wait(500, function() return #async._active == 0 end) end
+            close_floats()
+            vim.wait(40)
             local bad = H.error_text(vim.api.nvim_exec2('messages', { output = true }).output or '')
             vim.wait(60)
             vim.cmd 'messages clear' -- discard late fallout before the next key
@@ -189,7 +206,9 @@ S.keymaps = function()
   local function drive(key)
     -- the sweep leaves floats/splits behind; nui needs a full-height editor window
     for _, w in ipairs(vim.api.nvim_list_wins()) do
-      if vim.api.nvim_win_get_config(w).relative ~= '' then pcall(vim.api.nvim_win_close, w, true) end
+      -- closing one float can close a sibling; a listed win may already be gone
+      local ok, cfg = pcall(vim.api.nvim_win_get_config, w)
+      if ok and cfg.relative ~= '' then pcall(vim.api.nvim_win_close, w, true) end
     end
     pcall(vim.cmd, 'silent! only')
     scratch()
@@ -230,7 +249,9 @@ S.terminal = function()
 
   local function cleanup()
     for _, w in ipairs(vim.api.nvim_list_wins()) do
-      if vim.api.nvim_win_get_config(w).relative ~= '' then pcall(vim.api.nvim_win_close, w, true) end
+      -- closing one float can close a sibling; a listed win may already be gone
+      local ok, cfg = pcall(vim.api.nvim_win_get_config, w)
+      if ok and cfg.relative ~= '' then pcall(vim.api.nvim_win_close, w, true) end
     end
     pcall(vim.cmd, 'silent! only')
   end
