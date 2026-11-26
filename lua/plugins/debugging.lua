@@ -122,7 +122,17 @@ return {
     ft = { 'go' },
     dependencies = { 'mfussenegger/nvim-dap' },
     keys = {
-      { '<leader>dT', function() require('dap-go').debug_test() end, desc = '[D]ebug [T]est (nearest, Go)' },
+      {
+        '<leader>dT',
+        function()
+          if vim.bo.filetype ~= 'go' then
+            vim.notify('<leader>dT needs a Go file', vim.log.levels.WARN)
+            return
+          end
+          require('dap-go').debug_test()
+        end,
+        desc = '[D]ebug [T]est (nearest, Go)',
+      },
     },
     config = function() require('dap-go').setup() end,
   },

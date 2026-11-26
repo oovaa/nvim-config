@@ -81,13 +81,45 @@ describe('go backend ergonomics', function()
 
     local dapgo = require 'dap-go'
     assert.is_function(dapgo.debug_test, 'dap-go must expose debug_test()')
+    local prev = vim.api.nvim_get_current_buf()
+    local buf = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_set_current_buf(buf)
+    vim.bo[buf].filetype = 'go'
     local original = dapgo.debug_test
     local called = 0
     dapgo.debug_test = function() called = called + 1 end
     local ok, err = pcall(m.callback)
     dapgo.debug_test = original
+    vim.api.nvim_set_current_buf(prev)
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
     assert.is_true(ok, tostring(err))
     assert.equals(1, called, '<leader>dT must invoke dap-go.debug_test() exactly once')
+  end)
+
+  it('<leader>dT warns instead of erroring outside a Go buffer', function()
+    require('lazy').load { plugins = { 'nvim-dap-go' } }
+    local m = mapped '<leader>dT'
+    local prev = vim.api.nvim_get_current_buf()
+    local buf = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_set_current_buf(buf)
+    vim.bo[buf].filetype = 'markdown'
+
+    local msgs = {}
+    local real_notify = vim.notify
+    vim.notify = function(msg, level) msgs[#msgs + 1] = { msg = msg, level = level } end
+    local dapgo = require 'dap-go'
+    local original = dapgo.debug_test
+    local called = 0
+    dapgo.debug_test = function() called = called + 1 end
+    local ok, err = pcall(m.callback)
+    dapgo.debug_test = original
+    vim.notify = real_notify
+    vim.api.nvim_set_current_buf(prev)
+    pcall(vim.api.nvim_buf_delete, buf, { force = true })
+
+    assert.is_true(ok, '<leader>dT must not throw outside Go: ' .. tostring(err))
+    assert.equals(0, called, 'debug_test must not run outside a Go buffer')
+    assert.equals(vim.log.levels.WARN, msgs[1] and msgs[1].level, 'must warn instead of erroring')
   end)
 
   it('pins golangci-lint cwd to the buffer module root, not nvim cwd', function()
