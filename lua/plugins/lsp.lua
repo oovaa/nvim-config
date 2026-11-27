@@ -28,6 +28,8 @@ return {
     config = function()
       -- NOTE: opts = {} above is passed here, NOT auto-setup (a spec with
       -- an explicit config never gets lazy's automatic require('mason').setup).
+      -- Swap Mason's npm manager for bun-backed installs (npm stays the fallback).
+      require('config.mason_bun').setup()
       -- Call it ourselves: setup prepends Mason's bin/ to PATH so servers resolve.
       require('mason').setup {}
       -- Brief aside: **What is LSP?**
